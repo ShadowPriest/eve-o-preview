@@ -170,7 +170,10 @@ namespace EveOPreview.Services.Implementation
         {
             if (this._enableWineCompatabilityMode)
             {
-                this.WineActivateWindow(windowName);
+				User32NativeMethods.SendMessage(handle, InteropConstants.WM_SYSCOMMAND, InteropConstants.SC_MINIMIZE, 0);
+				User32NativeMethods.SetForegroundWindow(handle);
+				User32NativeMethods.SetFocus(handle);
+				User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_RESTORE);
             }
             else
             {
