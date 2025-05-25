@@ -31,6 +31,7 @@ Video Guides:
 * [Eve online , How To : EVE-O Preview (multiboxing; legal)](https://youtu.be/2r0NMKbogXU)
 
 Support:
+
 Discord: https://discord.gg/xYt8R9AFXB
 
 ## System Requirements
