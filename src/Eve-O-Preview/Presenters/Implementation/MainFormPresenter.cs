@@ -109,7 +109,9 @@ namespace EveOPreview.Presenters
 			this.View.EnableClientLayoutTracking = this._configuration.EnableClientLayoutTracking;
 			this.View.HideActiveClientThumbnail = this._configuration.HideActiveClientThumbnail;
 			this.View.MinimizeInactiveClients = this._configuration.MinimizeInactiveClients;
+#if WINDOWS
 			this.View.HideCaptionOnClients = this._configuration.HideCaptionOnClients;
+#endif
 			this.View.WindowsAnimationStyle = ViewAnimationStyleConverter.Convert(this._configuration.WindowsAnimationStyle);
 			this.View.ShowThumbnailsAlwaysOnTop = this._configuration.ShowThumbnailsAlwaysOnTop;
 			this.View.HideThumbnailsOnLostFocus = this._configuration.HideThumbnailsOnLostFocus;
@@ -148,10 +150,12 @@ namespace EveOPreview.Presenters
 			this._configuration.HideActiveClientThumbnail = this.View.HideActiveClientThumbnail;
 			this._configuration.MinimizeInactiveClients = this.View.MinimizeInactiveClients;
 
+#if WINDOWS
 			if (this._configuration.HideCaptionOnClients != this.View.HideCaptionOnClients ) {
 				this._configuration.HideCaptionOnClients = this.View.HideCaptionOnClients;
 				await this._mediator.Publish(new ThumbnailFrameSettingsUpdated());
 			}
+#endif
 			this._configuration.WindowsAnimationStyle = ViewAnimationStyleConverter.Convert(this.View.WindowsAnimationStyle); 
             this._configuration.ShowThumbnailsAlwaysOnTop = this.View.ShowThumbnailsAlwaysOnTop;
 			this._configuration.HideThumbnailsOnLostFocus = this.View.HideThumbnailsOnLostFocus;

@@ -36,6 +36,11 @@ namespace EveOPreview.View
 
 			InitializeComponent();
 
+#if LINUX
+			this.HideCaptionOnClientsCheckBox.Visible = false;
+			this.HideCaptionOnClientsCheckBox.Enabled = false;
+#endif
+
 			this.ThumbnailsList.DisplayMember = "Title";
 
 			this.InitZoomAnchorMap();
@@ -125,11 +130,13 @@ namespace EveOPreview.View
 			get => this.MinimizeInactiveClientsCheckBox.Checked;
 			set => this.MinimizeInactiveClientsCheckBox.Checked = value;
 		}
+#if WINDOWS
 		public bool HideCaptionOnClients
 		{
 			get => this.HideCaptionOnClientsCheckBox.Checked;
 			set => this.HideCaptionOnClientsCheckBox.Checked = value;
 		}
+#endif
 		public ViewAnimationStyle WindowsAnimationStyle
 		{
 			get => (ViewAnimationStyle)this.AnimationStyleCombo.SelectedItem;

@@ -40,7 +40,9 @@ namespace EveOPreview.Configuration
 		bool HideActiveClientThumbnail { get; set; }
 		bool HideLoginClientThumbnail { get; set; }
 		bool MinimizeInactiveClients { get; set; }
+#if WINDOWS
 		bool HideCaptionOnClients { get; set; }
+#endif
 		AnimationStyle WindowsAnimationStyle { get; set; }
 		bool ShowThumbnailsAlwaysOnTop { get; set; }
 		bool EnablePerClientThumbnailLayouts { get; set; }

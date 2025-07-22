@@ -300,7 +300,9 @@ namespace EveOPreview.Services
 				view.RegisterHotkey(this._configuration.GetClientHotkey(view.Title));
 
 				this.ApplyClientLayout(view);
+#if WINDOWS
 				this.ApplyCaptionBar(view);
+#endif
 
 				// TODO Add extension filter here later
 				if (view.Title != ThumbnailManager.DEFAULT_CLIENT_TITLE)
@@ -328,7 +330,9 @@ namespace EveOPreview.Services
 					view.RegisterHotkey(this._configuration.GetClientHotkey(process.Title));
 
 					this.ApplyClientLayout(view);
+#if WINDOWS
 					this.ApplyCaptionBar(view);
+#endif
 				}
 			}
 
@@ -541,7 +545,9 @@ namespace EveOPreview.Services
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
 				entry.Value.SetFrames(this._configuration.ShowThumbnailFrames);
+#if WINDOWS
 				ApplyCaptionBar(entry.Value);
+#endif
 			}
 
 			this.EnableViewEvents();
@@ -833,6 +839,7 @@ namespace EveOPreview.Services
 			}
 			return false;
 		}
+#if WINDOWS
 		private void ApplyCaptionBar(IThumbnailView view)
 
 		{
@@ -844,6 +851,7 @@ namespace EveOPreview.Services
 			changed = changed | SetWindowStyle(view, InteropConstants.WS_CAPTION, enable);
 			changed = changed | SetWindowStyle(view, InteropConstants.WS_THICKFRAME, enable);
 		}
+#endif
 		private void ApplyClientLayout(IThumbnailView view)
 		{
 			IntPtr clientHandle = view.Id;

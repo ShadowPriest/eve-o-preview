@@ -98,7 +98,9 @@ namespace EveOPreview.Configuration.Implementation
 			this.HideActiveClientThumbnail = false;
 			this.HideLoginClientThumbnail = false;
 			this.MinimizeInactiveClients = false;
+#if WINDOWS
 			this.HideCaptionOnClients = false;
+#endif
 			this.WindowsAnimationStyle = AnimationStyle.NoAnimation;
 			this.ShowThumbnailsAlwaysOnTop = true;
 			this.EnablePerClientThumbnailLayouts = false;
@@ -221,7 +223,9 @@ namespace EveOPreview.Configuration.Implementation
 		public bool HideActiveClientThumbnail { get; set; }
 		public bool HideLoginClientThumbnail { get; set; }
 		public bool MinimizeInactiveClients { get; set; }
+#if WINDOWS
 		public bool HideCaptionOnClients { get; set; }
+#endif
 		public AnimationStyle WindowsAnimationStyle { get; set; }
 		public bool ShowThumbnailsAlwaysOnTop { get; set; }
 
