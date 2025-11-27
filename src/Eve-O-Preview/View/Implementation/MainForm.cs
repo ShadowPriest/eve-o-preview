@@ -47,6 +47,7 @@ namespace EveOPreview.View
 			this.InitFormSize();
 
 			this.AnimationStyleCombo.DataSource = Enum.GetValues(typeof(AnimationStyle));
+			this.CaptionOnClientsStyleCombo.DataSource = Enum.GetValues(typeof(CaptionBarStyle));
 		}
 
 		public bool MinimizeToTray
@@ -129,10 +130,10 @@ namespace EveOPreview.View
 			get => this.MinimizeInactiveClientsCheckBox.Checked;
 			set => this.MinimizeInactiveClientsCheckBox.Checked = value;
 		}
-		public bool HideCaptionOnClients
+		public ViewCaptionBarStyle CaptionOnClientsStyle
 		{
-			get => this.HideCaptionOnClientsCheckBox.Checked;
-			set => this.HideCaptionOnClientsCheckBox.Checked = value;
+			get => (ViewCaptionBarStyle)this.CaptionOnClientsStyleCombo.SelectedItem;
+			set => this.CaptionOnClientsStyleCombo.SelectedIndex = (int)value;
 		}
 		public ViewAnimationStyle WindowsAnimationStyle
 		{
