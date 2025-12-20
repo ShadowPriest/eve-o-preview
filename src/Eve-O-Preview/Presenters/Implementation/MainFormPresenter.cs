@@ -108,11 +108,13 @@ namespace EveOPreview.Presenters
 			{
 				LocalizationExtensions.SetLanguage(this._configuration.Language);
 			}
+			this.View.InitializeLanguageControls();
+
+			this.View.Language = this._configuration.Language;	
 
 			this.View.MinimizeToTray = this._configuration.MinimizeToTray;
 
 			this.View.ThumbnailOpacity = this._configuration.ThumbnailOpacity;
-			// Set form Language
 
 			this.View.EnableClientLayoutTracking = this._configuration.EnableClientLayoutTracking;
 			this.View.HideActiveClientThumbnail = this._configuration.HideActiveClientThumbnail;
@@ -147,8 +149,6 @@ namespace EveOPreview.Presenters
 			this.View.OverlayLabelFont = this._configuration.OverlayLabelFont;
 
 			this.View.IconName = this._configuration.IconName;
-
-			this.View.InitializeLanguageControls();
 		}
 
 		private async void SaveApplicationSettings()
@@ -156,7 +156,10 @@ namespace EveOPreview.Presenters
 			this._configuration.MinimizeToTray = this.View.MinimizeToTray;
 
 			this._configuration.ThumbnailOpacity = (float)this.View.ThumbnailOpacity;
-			// save form language 
+
+			if (this._configuration.Language != this.View.Language) {
+				this._configuration.Language = this.View.Language;
+			}
 
 			this._configuration.EnableClientLayoutTracking = this.View.EnableClientLayoutTracking;
 			this._configuration.HideActiveClientThumbnail = this.View.HideActiveClientThumbnail;
