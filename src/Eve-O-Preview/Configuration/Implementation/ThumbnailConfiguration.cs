@@ -18,6 +18,8 @@ namespace EveOPreview.Configuration.Implementation
 		{
 			this.ConfigVersion = 1;
 
+			this.Language = "en-US";
+
 			this.CycleGroup1ForwardHotkeys = new List<string> { "F14", "Control+F14" };
 			this.CycleGroup1BackwardHotkeys = new List<string> { "F13", "Control+F13" };
 			this.CycleGroup1ClientsOrder = new Dictionary<string, int>
@@ -160,6 +162,9 @@ namespace EveOPreview.Configuration.Implementation
 
 		[JsonProperty("ConfigVersion")]
 		public int ConfigVersion { get; set; }
+
+		[JsonProperty("Language")]
+		public string Language { get; set; }
 
 		[JsonIgnore]
 		public Dictionary<string, bool> CycleGroupExclusions { get; set; }

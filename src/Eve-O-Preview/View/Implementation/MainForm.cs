@@ -1,5 +1,5 @@
 using EveOPreview.Configuration;
-using EveOPreview.Properties;
+using EveOPreview.Configuration.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -92,6 +92,12 @@ namespace EveOPreview.View
 					this.ApplicationSettingsChanged?.Invoke();
 				}
 			}
+		}
+
+		public string Language
+		{
+			get => "en-US";
+			set => this.Language = value;
 		}
 
 		public double ThumbnailOpacity
@@ -664,5 +670,24 @@ namespace EveOPreview.View
 			this.OptionChanged_Handler(sender, e);
 
 		}
+
+		public void InitializeLanguageControls()
+		{
+			//InitializeLanguageCombo();
+			LocalizationExtensions.ApplyLocalization(this);
+			this.NotifyIcon.Text = LocalizationExtensions.GetString($"{this.Name}.NotifyIcon", this.NotifyIcon.Text);
+			foreach(var v in this.TrayMenu.Items)
+			{
+				try
+				{
+					ToolStripMenuItem f = (ToolStripMenuItem)v;
+					f.Text = LocalizationExtensions.GetString($"{this.Name}.{f.Name}", f.Text);
+				}
+				catch
+				{
+				}
+			}
+		}
+
 	}
 }

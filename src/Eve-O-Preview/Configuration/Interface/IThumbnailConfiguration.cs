@@ -6,6 +6,8 @@ namespace EveOPreview.Configuration
 {
 	public interface IThumbnailConfiguration
 	{
+
+		string Language { get; set; }
 		List<string> CycleGroup1ForwardHotkeys { get; set; }
 		List<string> CycleGroup1BackwardHotkeys { get; set; }
 		Dictionary<string, int> CycleGroup1ClientsOrder { get; set; }

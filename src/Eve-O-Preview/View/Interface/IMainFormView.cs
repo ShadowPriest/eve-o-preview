@@ -11,6 +11,7 @@ namespace EveOPreview.View
 	/// </summary>
 	public interface IMainFormView : IView
 	{
+		string Language { get; set; }
 		bool MinimizeToTray { get; set; }
 
 		double ThumbnailOpacity { get; set; }
@@ -67,5 +68,6 @@ namespace EveOPreview.View
 		Action ThumbnailsSizeChanged { get; set; }
 		Action<string> ThumbnailStateChanged { get; set; }
 		Action DocumentationLinkActivated { get; set; }
+		void InitializeLanguageControls();
 	}
 }
