@@ -112,7 +112,6 @@ namespace EveOPreview.Services
 		{
 			return GetClientByPointer(this._activeClient.Handle);
 		}
-
 		public void SetActive(KeyValuePair<IntPtr, IThumbnailView> newClient)
 		{
 			this.GetActiveClient()?.ClearBorder();
@@ -1054,6 +1053,48 @@ namespace EveOPreview.Services
 			return (left > ThumbnailManager.WINDOW_POSITION_THRESHOLD_LOW) && (left < ThumbnailManager.WINDOW_POSITION_THRESHOLD_HIGH)
 					&& (top > ThumbnailManager.WINDOW_POSITION_THRESHOLD_LOW) && (top < ThumbnailManager.WINDOW_POSITION_THRESHOLD_HIGH)
 					&& (width > ThumbnailManager.WINDOW_SIZE_THRESHOLD) && (height > ThumbnailManager.WINDOW_SIZE_THRESHOLD);
+		}
+
+		public void ReloadCycleClientHotkeys()
+		{
+			// Unregister and dispose previous handlers
+			foreach (var handler in this._cycleClientHotkeyHandlers)
+			{
+				try
+				{
+					handler.Unregister();
+					handler.Dispose();
+				}
+				catch { /* ignore */ }
+			}
+			this._cycleClientHotkeyHandlers.Clear();
+
+			// Re-register based on current configuration
+			RegisterCycleClientHotkey(this._configuration.CycleGroup1ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup1ClientsOrder);
+			RegisterCycleClientHotkey(this._configuration.CycleGroup1BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup1ClientsOrder);
+
+			RegisterCycleClientHotkey(this._configuration.CycleGroup2ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup2ClientsOrder);
+			RegisterCycleClientHotkey(this._configuration.CycleGroup2BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup2ClientsOrder);
+
+			RegisterCycleClientHotkey(this._configuration.CycleGroup3ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup3ClientsOrder);
+			RegisterCycleClientHotkey(this._configuration.CycleGroup3BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup3ClientsOrder);
+
+			RegisterCycleClientHotkey(this._configuration.CycleGroup4ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup4ClientsOrder);
+			RegisterCycleClientHotkey(this._configuration.CycleGroup4BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup4ClientsOrder);
+
+			RegisterCycleClientHotkey(this._configuration.CycleGroup5ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup5ClientsOrder);
+			RegisterCycleClientHotkey(this._configuration.CycleGroup5BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup5ClientsOrder);
+
+			// Also hot-reload per-client individual hotkeys
+			foreach (var kv in this._thumbnailViews)
+			{
+				var view = kv.Value;
+				try
+				{
+					view.RegisterHotkey(this._configuration.GetClientHotkey(view.Title));
+				}
+				catch { /* ignore single view failure */ }
+			}
 		}
 	}
 }

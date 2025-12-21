@@ -224,9 +224,6 @@ namespace EveOPreview.Configuration.Implementation
 
 		public static string GetString(string key, string current)
 		{
-
-			System.Diagnostics.Debug.WriteLine($"\"{key}\": \"{current}\"");
-
 			// Try to get string in current language
 			if (_localizations.ContainsKey(_currentLanguage) && _localizations[_currentLanguage].ContainsKey(key))
 			{
@@ -240,6 +237,7 @@ namespace EveOPreview.Configuration.Implementation
 			}
 
 			// Key not found
+			System.Diagnostics.Debug.WriteLine($"\"{key}\": \"{current}\"");
 			return current;
 		}
 

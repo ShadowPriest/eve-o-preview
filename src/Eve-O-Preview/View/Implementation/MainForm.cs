@@ -24,6 +24,7 @@ namespace EveOPreview.View
 		private Size _minimumSize;
 		private Size _maximumSize;
 		private string _iconName;
+		private bool _hotkeyCaptureActive = false;
 		#endregion
 
 		public MainForm(ApplicationContext context)
@@ -411,6 +412,9 @@ namespace EveOPreview.View
 			foreach (IThumbnailDescription view in thumbnails)
 			{
 				this.ThumbnailsList.SetItemChecked(this.ThumbnailsList.Items.Add(view), view.IsDisabled);
+
+				if (! this.HotkeysClientsList.Items.Contains(view.Title))  this.HotkeysClientsList.Items.Add(view.Title, false);
+
 			}
 
 			this.ThumbnailsList.EndUpdate();
@@ -450,6 +454,7 @@ namespace EveOPreview.View
 		public Action<string> ThumbnailStateChanged { get; set; }
 
 		public Action DocumentationLinkActivated { get; set; }
+		public Action SelectedCycleGroupChanged { get; set; }
 
 		#region UI events
 		private void ContentTabControl_DrawItem(object sender, DrawItemEventArgs e)
@@ -486,6 +491,236 @@ namespace EveOPreview.View
 
 			this.ApplicationSettingsChanged?.Invoke();
 		}
+
+		public int SelectedCycleGroup
+		{
+			get => (this.CycleGroupSelectorComboBox?.SelectedIndex ?? 0) + 1;
+			set
+			{
+				int idx = Math.Max(0, Math.Min(4, value - 1));
+				if (this.CycleGroupSelectorComboBox != null)
+				{
+					this.CycleGroupSelectorComboBox.SelectedIndex = idx;
+				}
+			}
+		}
+
+		public string CycleGroupForwardHotkeysText
+		{
+			get => this.HotkeysForwardListBox != null ? string.Join(",", this.HotkeysForwardListBox.Items.Cast<object>().Select(i => i.ToString())) : string.Empty;
+			set
+			{
+				if (this.HotkeysForwardListBox == null) return;
+				this.HotkeysForwardListBox.Items.Clear();
+				if (string.IsNullOrWhiteSpace(value)) return;
+				foreach (var part in value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()))
+				{
+					this.HotkeysForwardListBox.Items.Add(part);
+				}
+			}
+		}
+
+		public string CycleGroupBackwardHotkeysText
+		{
+			get => this.HotkeysBackwardListBox != null ? string.Join(",", this.HotkeysBackwardListBox.Items.Cast<object>().Select(i => i.ToString())) : string.Empty;
+			set
+			{
+				if (this.HotkeysBackwardListBox == null) return;
+				this.HotkeysBackwardListBox.Items.Clear();
+				if (string.IsNullOrWhiteSpace(value)) return;
+				foreach (var part in value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()))
+				{
+					this.HotkeysBackwardListBox.Items.Add(part);
+				}
+			}
+		}
+
+		public void SetAvailableClients(IList<string> clients)
+		{
+			if (this.HotkeysClientsList == null) return;
+			this.HotkeysClientsList.Items.Clear();
+			foreach (var c in clients)
+			{
+				this.HotkeysClientsList.Items.Add(c, false);
+			}
+		}
+
+		public IList<string> GetSelectedClientsForCurrentGroup()
+		{
+			if (this.HotkeysClientsList == null) return new List<string>();
+			var ordered = new List<string>();
+			for (int i = 0; i < this.HotkeysClientsList.Items.Count; i++)
+			{
+				if (this.HotkeysClientsList.GetItemChecked(i))
+				{
+					ordered.Add(this.HotkeysClientsList.Items[i].ToString());
+				}
+			}
+			return ordered;
+		}
+
+		public void SetSelectedClientsForCurrentGroup(IList<string> orderedClients)
+		{
+			if (this.HotkeysClientsList == null) return;
+			// Reorder items so orderedClients appear first in the given order, others follow
+			var all = this.HotkeysClientsList.Items.Cast<object>().Select(o => o.ToString()).ToList();
+			var newOrder = new List<string>();
+			if (orderedClients != null)
+			{
+				foreach (var s in orderedClients)
+				{
+					if (all.Contains(s) && !newOrder.Contains(s)) newOrder.Add(s);
+				}
+			}
+			foreach (var a in all)
+			{
+				if (!newOrder.Contains(a)) newOrder.Add(a);
+			}
+			this.HotkeysClientsList.Items.Clear();
+			foreach (var it in newOrder)
+			{
+				this.HotkeysClientsList.Items.Add(it, orderedClients != null && orderedClients.Contains(it));
+			}
+		}
+
+		private void CycleGroupSelectorComboBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			// Notify presenter that the selected group changed
+			this.SelectedCycleGroupChanged?.Invoke();
+		}
+
+		private void HotkeysForwardAddButton_Click(object sender, EventArgs e)
+		{
+			if (string.IsNullOrWhiteSpace(this.HotkeyCaptureTextBox?.Text)) return;
+			var keyText = this.HotkeyCaptureTextBox.Text.Trim();
+			if (this.ValidateAndMaybeWarnHotkey(keyText))
+			{
+				if (!this.HotkeysForwardListBox.Items.Contains(keyText))
+				{
+					this.HotkeysForwardListBox.Items.Add(keyText);
+					this.ApplicationSettingsChanged?.Invoke();
+				}
+			}
+		}
+
+		private void HotkeysForwardRemoveButton_Click(object sender, EventArgs e)
+		{
+			if (this.HotkeysForwardListBox.SelectedIndex < 0) return;
+			this.HotkeysForwardListBox.Items.RemoveAt(this.HotkeysForwardListBox.SelectedIndex);
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		private void HotkeysBackwardAddButton_Click(object sender, EventArgs e)
+		{
+			if (string.IsNullOrWhiteSpace(this.HotkeyCaptureTextBox?.Text)) return;
+			var keyText = this.HotkeyCaptureTextBox.Text.Trim();
+			if (this.ValidateAndMaybeWarnHotkey(keyText))
+			{
+				if (!this.HotkeysBackwardListBox.Items.Contains(keyText))
+				{
+					this.HotkeysBackwardListBox.Items.Add(keyText);
+					this.ApplicationSettingsChanged?.Invoke();
+				}
+			}
+		}
+
+		private void HotkeysBackwardRemoveButton_Click(object sender, EventArgs e)
+		{
+			if (this.HotkeysBackwardListBox.SelectedIndex < 0) return;
+			this.HotkeysBackwardListBox.Items.RemoveAt(this.HotkeysBackwardListBox.SelectedIndex);
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		private void HotkeyCaptureTextBox_Enter(object sender, EventArgs e)
+		{
+			this.HotkeyCaptureTextBox.Text = LocalizationExtensions.GetString("MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton", "Capture");
+			this.HotkeyCaptureTextBox.SelectAll();
+		}
+
+		private void HotkeyCaptureTextBox_Leave(object sender, EventArgs e)
+		{
+			// clear placeholder if left unchanged
+			if (this.HotkeyCaptureTextBox.Text == LocalizationExtensions.GetString("MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton", "Capture")) this.HotkeyCaptureTextBox.Text = string.Empty;
+		}
+
+		private void HotkeysClientUpButton_Click(object sender, EventArgs e)
+		{
+			int idx = this.HotkeysClientsList.SelectedIndex;
+			if (idx <= 0) return;
+			var item = this.HotkeysClientsList.Items[idx];
+			var checkedState = this.HotkeysClientsList.GetItemChecked(idx);
+			this.HotkeysClientsList.Items.RemoveAt(idx);
+			this.HotkeysClientsList.Items.Insert(idx - 1, item);
+			this.HotkeysClientsList.SetItemChecked(idx - 1, checkedState);
+			this.HotkeysClientsList.SelectedIndex = idx - 1;
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		private void HotkeysClientDownButton_Click(object sender, EventArgs e)
+		{
+			int idx = this.HotkeysClientsList.SelectedIndex;
+			if (idx < 0 || idx >= this.HotkeysClientsList.Items.Count - 1) return;
+			var item = this.HotkeysClientsList.Items[idx];
+			var checkedState = this.HotkeysClientsList.GetItemChecked(idx);
+			this.HotkeysClientsList.Items.RemoveAt(idx);
+			this.HotkeysClientsList.Items.Insert(idx + 1, item);
+			this.HotkeysClientsList.SetItemChecked(idx + 1, checkedState);
+			this.HotkeysClientsList.SelectedIndex = idx + 1;
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		private void HotkeySaveButton_Click(object sender, EventArgs e)
+		{
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		/// <summary>
+		/// Convert the hotkey string to Keys and attempt to register/unregister to verify its validity; if invalid, display a pop-up message.		/// </summary>
+		/// <param name="keyText">For example, "Control+F14"</param>
+		// <returns>Returns true if valid, otherwise false</returns>
+		private bool ValidateAndMaybeWarnHotkey(string keyText)
+		{
+			Keys parsed = Keys.None;
+			try
+			{
+				var conv = new KeysConverter();
+				var obj = conv.ConvertFromInvariantString(keyText);
+				if (obj is Keys k)
+				{
+					parsed = k;
+				}
+			}
+			catch
+			{
+				parsed = Keys.None;
+			}
+
+			// Filtering invalid values ??and modifying only keys
+			if (parsed == Keys.None || parsed == Keys.ControlKey || parsed == Keys.ShiftKey || parsed == Keys.Menu || parsed == Keys.ProcessKey)
+			{
+				MessageBox.Show(LocalizationExtensions.GetString("Messages.InvalidHotkey","Invalid hotkey"), LocalizationExtensions.GetString("Messages.Error","Error"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				return false;
+			}
+
+			// Attempt to register and verify usage
+			EveOPreview.UI.Hotkeys.HotkeyHandler tester = null;
+			try
+			{
+				tester = new EveOPreview.UI.Hotkeys.HotkeyHandler(default(IntPtr), parsed);
+				if (!tester.CanRegister())
+				{
+					MessageBox.Show(LocalizationExtensions.GetString("Messages.HotkeyAlreadyInUse", "Hotkey Already in use"), LocalizationExtensions.GetString("Messages.Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					return false;
+				}
+			}
+			finally
+			{
+				tester?.Dispose();
+			}
+
+			return true;
+		}
+
 
 		private void ThumbnailSizeChanged_Handler(object sender, EventArgs e)
 		{
@@ -719,5 +954,72 @@ namespace EveOPreview.View
 		{
 
 		}
+
+		private void HotkeyCaptureButton_Click(object sender, EventArgs e)
+		{
+			this._hotkeyCaptureActive = true;
+			if (this.HotkeyCaptureButton != null)
+			{
+				// if you rename the object - adjust this string
+				this.HotkeyCaptureButton.Text = LocalizationExtensions.GetString("MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton_Press", "Press key...");
+			}
+			if (this.HotkeyCaptureTextBox != null)
+			{
+				this.HotkeyCaptureTextBox.Text = string.Empty;
+				this.HotkeyCaptureTextBox.Focus();
+			}
+		}
+
+		private void HotkeyCaptureTextBox_MouseDown(object sender, MouseEventArgs e)
+		{
+			this.HotkeyCaptureTextBox.Focus();
+		}
+
+		private void HotkeyCaptureTextBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (!this._hotkeyCaptureActive)
+			{
+				// not currently capturing
+				return;
+			}
+			e.SuppressKeyPress = true;
+			e.Handled = true;
+
+			// Filter only modifier keys and unrecognized ones. ProcessKey
+			var baseKey = e.KeyCode;
+			if (baseKey == Keys.ControlKey || baseKey == Keys.ShiftKey || baseKey == Keys.Menu || baseKey == Keys.ProcessKey)
+			{
+				return;
+			}
+
+			// Uses Microsoft's official KeysConverter to output canonical strings (invariant regions), compatible with Keys Enum.
+			var combined = e.KeyData; // Includes modifier keys
+
+			string keyText = new KeysConverter().ConvertToInvariantString(combined);
+			if (string.IsNullOrWhiteSpace(keyText))
+			{
+				return;
+			}
+			this.HotkeyCaptureTextBox.Text = keyText;
+
+			// Done
+			this._hotkeyCaptureActive = false;
+			if (this.HotkeyCaptureButton != null)
+			{
+				// if you rename the object - adjust this string
+				this.HotkeyCaptureButton.Text = LocalizationExtensions.GetString("MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton", "Capture");
+			}
+		}
+
+		public void BeginUpdateUI()
+		{
+			this._suppressEvents = true;
+		}
+
+		public void EndUpdateUI()
+		{
+			this._suppressEvents = false;
+		}
+
 	}
 }

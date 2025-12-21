@@ -51,6 +51,7 @@ namespace EveOPreview.View
 			Label ZoomAnchorLabel;
 			TabPage OverlayTabPage;
 			Panel OverlaySettingsPanel;
+			Label CycleGroupLabel;
 			TabPage ClientsTabPage;
 			Panel ClientsPanel;
 			Label ThumbnailsListLabel;
@@ -126,6 +127,23 @@ namespace EveOPreview.View
 			EnableActiveClientHighlightCheckBox = new CheckBox();
 			ShowThumbnailOverlaysCheckBox = new CheckBox();
 			ShowThumbnailFramesCheckBox = new CheckBox();
+			CycleGroupTabPage = new TabPage();
+			CycleGroupSelectorComboBox = new ComboBox();
+			HotkeysForwardLabel = new Label();
+			HotkeysForwardListBox = new ListBox();
+			HotkeysForwardAddButton = new Button();
+			HotkeysForwardRemoveButton = new Button();
+			HotkeysBackwardLabel = new Label();
+			HotkeysBackwardListBox = new ListBox();
+			HotkeysBackwardAddButton = new Button();
+			HotkeysBackwardRemoveButton = new Button();
+			HotkeysClientsList = new CheckedListBox();
+			HotkeysClientUpButton = new Button();
+			HotkeysClientDownButton = new Button();
+			HotkeyReadmeTextBox = new TextBox();
+			HotkeySaveButton = new Button();
+			HotkeyCaptureTextBox = new TextBox();
+			HotkeyCaptureButton = new Button();
 			ThumbnailsList = new CheckedListBox();
 			LanguageTabPage = new TabPage();
 			LanguageLabel = new Label();
@@ -153,6 +171,7 @@ namespace EveOPreview.View
 			ZoomAnchorLabel = new Label();
 			OverlayTabPage = new TabPage();
 			OverlaySettingsPanel = new Panel();
+			CycleGroupLabel = new Label();
 			ClientsTabPage = new TabPage();
 			ClientsPanel = new Panel();
 			ThumbnailsListLabel = new Label();
@@ -180,6 +199,7 @@ namespace EveOPreview.View
 			OverlaySettingsPanel.SuspendLayout();
 			panel2.SuspendLayout();
 			panel1.SuspendLayout();
+			CycleGroupTabPage.SuspendLayout();
 			ClientsTabPage.SuspendLayout();
 			ClientsPanel.SuspendLayout();
 			LanguageTabPage.SuspendLayout();
@@ -221,6 +241,7 @@ namespace EveOPreview.View
 			ContentTabControl.Controls.Add(ThumbnailTabPage);
 			ContentTabControl.Controls.Add(ZoomTabPage);
 			ContentTabControl.Controls.Add(OverlayTabPage);
+			ContentTabControl.Controls.Add(CycleGroupTabPage);
 			ContentTabControl.Controls.Add(ClientsTabPage);
 			ContentTabControl.Controls.Add(LanguageTabPage);
 			ContentTabControl.Controls.Add(AboutTabPage);
@@ -232,7 +253,7 @@ namespace EveOPreview.View
 			ContentTabControl.Multiline = true;
 			ContentTabControl.Name = "ContentTabControl";
 			ContentTabControl.SelectedIndex = 0;
-			ContentTabControl.Size = new Size(455, 251);
+			ContentTabControl.Size = new Size(493, 288);
 			ContentTabControl.SizeMode = TabSizeMode.Fixed;
 			ContentTabControl.TabIndex = 6;
 			ContentTabControl.DrawItem += ContentTabControl_DrawItem;
@@ -245,7 +266,7 @@ namespace EveOPreview.View
 			GeneralTabPage.Margin = new Padding(4);
 			GeneralTabPage.Name = "GeneralTabPage";
 			GeneralTabPage.Padding = new Padding(4);
-			GeneralTabPage.Size = new Size(327, 243);
+			GeneralTabPage.Size = new Size(365, 280);
 			GeneralTabPage.TabIndex = 0;
 			GeneralTabPage.Text = "General";
 			// 
@@ -267,7 +288,7 @@ namespace EveOPreview.View
 			GeneralSettingsPanel.Location = new Point(4, 4);
 			GeneralSettingsPanel.Margin = new Padding(4);
 			GeneralSettingsPanel.Name = "GeneralSettingsPanel";
-			GeneralSettingsPanel.Size = new Size(319, 235);
+			GeneralSettingsPanel.Size = new Size(357, 272);
 			GeneralSettingsPanel.TabIndex = 18;
 			GeneralSettingsPanel.Paint += GeneralSettingsPanel_Paint;
 			// 
@@ -414,7 +435,7 @@ namespace EveOPreview.View
 			ThumbnailTabPage.Margin = new Padding(4);
 			ThumbnailTabPage.Name = "ThumbnailTabPage";
 			ThumbnailTabPage.Padding = new Padding(4);
-			ThumbnailTabPage.Size = new Size(327, 243);
+			ThumbnailTabPage.Size = new Size(365, 280);
 			ThumbnailTabPage.TabIndex = 1;
 			ThumbnailTabPage.Text = "Thumbnail";
 			// 
@@ -440,7 +461,7 @@ namespace EveOPreview.View
 			ThumbnailSettingsPanel.Location = new Point(4, 4);
 			ThumbnailSettingsPanel.Margin = new Padding(4);
 			ThumbnailSettingsPanel.Name = "ThumbnailSettingsPanel";
-			ThumbnailSettingsPanel.Size = new Size(319, 235);
+			ThumbnailSettingsPanel.Size = new Size(357, 272);
 			ThumbnailSettingsPanel.TabIndex = 19;
 			// 
 			// DoNotDisplayPreviewColour
@@ -631,7 +652,7 @@ namespace EveOPreview.View
 			ZoomTabPage.Location = new Point(124, 4);
 			ZoomTabPage.Margin = new Padding(4);
 			ZoomTabPage.Name = "ZoomTabPage";
-			ZoomTabPage.Size = new Size(327, 243);
+			ZoomTabPage.Size = new Size(365, 280);
 			ZoomTabPage.TabIndex = 2;
 			ZoomTabPage.Text = "Zoom";
 			// 
@@ -647,7 +668,7 @@ namespace EveOPreview.View
 			ZoomSettingsPanel.Location = new Point(0, 0);
 			ZoomSettingsPanel.Margin = new Padding(4);
 			ZoomSettingsPanel.Name = "ZoomSettingsPanel";
-			ZoomSettingsPanel.Size = new Size(327, 243);
+			ZoomSettingsPanel.Size = new Size(365, 280);
 			ZoomSettingsPanel.TabIndex = 36;
 			// 
 			// ZoomFactorLabel
@@ -832,7 +853,7 @@ namespace EveOPreview.View
 			OverlayTabPage.Location = new Point(124, 4);
 			OverlayTabPage.Margin = new Padding(4);
 			OverlayTabPage.Name = "OverlayTabPage";
-			OverlayTabPage.Size = new Size(327, 243);
+			OverlayTabPage.Size = new Size(365, 280);
 			OverlayTabPage.TabIndex = 3;
 			OverlayTabPage.Text = "Overlay";
 			// 
@@ -856,7 +877,7 @@ namespace EveOPreview.View
 			OverlaySettingsPanel.Location = new Point(0, 0);
 			OverlaySettingsPanel.Margin = new Padding(4);
 			OverlaySettingsPanel.Name = "OverlaySettingsPanel";
-			OverlaySettingsPanel.Size = new Size(327, 243);
+			OverlaySettingsPanel.Size = new Size(365, 280);
 			OverlaySettingsPanel.TabIndex = 25;
 			// 
 			// CycleGroupIndicatorPositionLabel
@@ -1238,6 +1259,202 @@ namespace EveOPreview.View
 			ShowThumbnailFramesCheckBox.UseVisualStyleBackColor = true;
 			ShowThumbnailFramesCheckBox.CheckedChanged += OptionChanged_Handler;
 			// 
+			// CycleGroupTabPage
+			// 
+			CycleGroupTabPage.Controls.Add(CycleGroupLabel);
+			CycleGroupTabPage.Controls.Add(CycleGroupSelectorComboBox);
+			CycleGroupTabPage.Controls.Add(HotkeysForwardLabel);
+			CycleGroupTabPage.Controls.Add(HotkeysForwardListBox);
+			CycleGroupTabPage.Controls.Add(HotkeysForwardAddButton);
+			CycleGroupTabPage.Controls.Add(HotkeysForwardRemoveButton);
+			CycleGroupTabPage.Controls.Add(HotkeysBackwardLabel);
+			CycleGroupTabPage.Controls.Add(HotkeysBackwardListBox);
+			CycleGroupTabPage.Controls.Add(HotkeysBackwardAddButton);
+			CycleGroupTabPage.Controls.Add(HotkeysBackwardRemoveButton);
+			CycleGroupTabPage.Controls.Add(HotkeysClientsList);
+			CycleGroupTabPage.Controls.Add(HotkeysClientUpButton);
+			CycleGroupTabPage.Controls.Add(HotkeysClientDownButton);
+			CycleGroupTabPage.Controls.Add(HotkeyReadmeTextBox);
+			CycleGroupTabPage.Controls.Add(HotkeySaveButton);
+			CycleGroupTabPage.Controls.Add(HotkeyCaptureTextBox);
+			CycleGroupTabPage.Controls.Add(HotkeyCaptureButton);
+			CycleGroupTabPage.Location = new Point(124, 4);
+			CycleGroupTabPage.Name = "CycleGroupTabPage";
+			CycleGroupTabPage.Padding = new Padding(3);
+			CycleGroupTabPage.Size = new Size(365, 280);
+			CycleGroupTabPage.TabIndex = 7;
+			CycleGroupTabPage.Text = "Cycle Groups";
+			CycleGroupTabPage.UseVisualStyleBackColor = true;
+			// 
+			// CycleGroupLabel
+			// 
+			CycleGroupLabel.AutoSize = true;
+			CycleGroupLabel.Location = new Point(7, 11);
+			CycleGroupLabel.Margin = new Padding(4, 0, 4, 0);
+			CycleGroupLabel.Name = "CycleGroupLabel";
+			CycleGroupLabel.Size = new Size(40, 15);
+			CycleGroupLabel.TabIndex = 30;
+			CycleGroupLabel.Text = "Group";
+			// 
+			// CycleGroupSelectorComboBox
+			// 
+			CycleGroupSelectorComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+			CycleGroupSelectorComboBox.Items.AddRange(new object[] { "1", "2", "3", "4", "5" });
+			CycleGroupSelectorComboBox.Location = new Point(64, 8);
+			CycleGroupSelectorComboBox.Margin = new Padding(2);
+			CycleGroupSelectorComboBox.Name = "CycleGroupSelectorComboBox";
+			CycleGroupSelectorComboBox.Size = new Size(43, 23);
+			CycleGroupSelectorComboBox.TabIndex = 16;
+			CycleGroupSelectorComboBox.SelectedIndexChanged += CycleGroupSelectorComboBox_SelectedIndexChanged;
+			// 
+			// HotkeysForwardLabel
+			// 
+			HotkeysForwardLabel.AutoSize = true;
+			HotkeysForwardLabel.Location = new Point(3, 49);
+			HotkeysForwardLabel.Margin = new Padding(2, 0, 2, 0);
+			HotkeysForwardLabel.Name = "HotkeysForwardLabel";
+			HotkeysForwardLabel.Size = new Size(31, 15);
+			HotkeysForwardLabel.TabIndex = 17;
+			HotkeysForwardLabel.Text = ">>>";
+			// 
+			// HotkeysForwardListBox
+			// 
+			HotkeysForwardListBox.ItemHeight = 15;
+			HotkeysForwardListBox.Location = new Point(14, 69);
+			HotkeysForwardListBox.Margin = new Padding(2);
+			HotkeysForwardListBox.Name = "HotkeysForwardListBox";
+			HotkeysForwardListBox.Size = new Size(102, 64);
+			HotkeysForwardListBox.TabIndex = 18;
+			// 
+			// HotkeysForwardAddButton
+			// 
+			HotkeysForwardAddButton.Location = new Point(38, 47);
+			HotkeysForwardAddButton.Margin = new Padding(2);
+			HotkeysForwardAddButton.Name = "HotkeysForwardAddButton";
+			HotkeysForwardAddButton.Size = new Size(42, 22);
+			HotkeysForwardAddButton.TabIndex = 19;
+			HotkeysForwardAddButton.Text = "Add";
+			HotkeysForwardAddButton.Click += HotkeysForwardAddButton_Click;
+			// 
+			// HotkeysForwardRemoveButton
+			// 
+			HotkeysForwardRemoveButton.Location = new Point(78, 47);
+			HotkeysForwardRemoveButton.Margin = new Padding(2);
+			HotkeysForwardRemoveButton.Name = "HotkeysForwardRemoveButton";
+			HotkeysForwardRemoveButton.Size = new Size(42, 22);
+			HotkeysForwardRemoveButton.TabIndex = 20;
+			HotkeysForwardRemoveButton.Text = "Del";
+			HotkeysForwardRemoveButton.Click += HotkeysForwardRemoveButton_Click;
+			// 
+			// HotkeysBackwardLabel
+			// 
+			HotkeysBackwardLabel.AutoSize = true;
+			HotkeysBackwardLabel.Location = new Point(3, 138);
+			HotkeysBackwardLabel.Margin = new Padding(2, 0, 2, 0);
+			HotkeysBackwardLabel.Name = "HotkeysBackwardLabel";
+			HotkeysBackwardLabel.Size = new Size(31, 15);
+			HotkeysBackwardLabel.TabIndex = 21;
+			HotkeysBackwardLabel.Text = "<<<";
+			// 
+			// HotkeysBackwardListBox
+			// 
+			HotkeysBackwardListBox.ItemHeight = 15;
+			HotkeysBackwardListBox.Location = new Point(14, 160);
+			HotkeysBackwardListBox.Margin = new Padding(2);
+			HotkeysBackwardListBox.Name = "HotkeysBackwardListBox";
+			HotkeysBackwardListBox.Size = new Size(102, 64);
+			HotkeysBackwardListBox.TabIndex = 22;
+			// 
+			// HotkeysBackwardAddButton
+			// 
+			HotkeysBackwardAddButton.Location = new Point(38, 137);
+			HotkeysBackwardAddButton.Margin = new Padding(2);
+			HotkeysBackwardAddButton.Name = "HotkeysBackwardAddButton";
+			HotkeysBackwardAddButton.Size = new Size(42, 22);
+			HotkeysBackwardAddButton.TabIndex = 23;
+			HotkeysBackwardAddButton.Text = "Add";
+			HotkeysBackwardAddButton.Click += HotkeysBackwardAddButton_Click;
+			// 
+			// HotkeysBackwardRemoveButton
+			// 
+			HotkeysBackwardRemoveButton.Location = new Point(78, 137);
+			HotkeysBackwardRemoveButton.Margin = new Padding(2);
+			HotkeysBackwardRemoveButton.Name = "HotkeysBackwardRemoveButton";
+			HotkeysBackwardRemoveButton.Size = new Size(42, 22);
+			HotkeysBackwardRemoveButton.TabIndex = 24;
+			HotkeysBackwardRemoveButton.Text = "Del";
+			HotkeysBackwardRemoveButton.Click += HotkeysBackwardRemoveButton_Click;
+			// 
+			// HotkeysClientsList
+			// 
+			HotkeysClientsList.Location = new Point(124, 49);
+			HotkeysClientsList.Margin = new Padding(2);
+			HotkeysClientsList.Name = "HotkeysClientsList";
+			HotkeysClientsList.Size = new Size(192, 130);
+			HotkeysClientsList.TabIndex = 25;
+			// 
+			// HotkeysClientUpButton
+			// 
+			HotkeysClientUpButton.Location = new Point(316, 49);
+			HotkeysClientUpButton.Margin = new Padding(2);
+			HotkeysClientUpButton.Name = "HotkeysClientUpButton";
+			HotkeysClientUpButton.Size = new Size(46, 20);
+			HotkeysClientUpButton.TabIndex = 26;
+			HotkeysClientUpButton.Text = "Up";
+			HotkeysClientUpButton.Click += HotkeysClientUpButton_Click;
+			// 
+			// HotkeysClientDownButton
+			// 
+			HotkeysClientDownButton.Location = new Point(316, 79);
+			HotkeysClientDownButton.Margin = new Padding(2);
+			HotkeysClientDownButton.Name = "HotkeysClientDownButton";
+			HotkeysClientDownButton.Size = new Size(46, 20);
+			HotkeysClientDownButton.TabIndex = 27;
+			HotkeysClientDownButton.Text = "Down";
+			HotkeysClientDownButton.Click += HotkeysClientDownButton_Click;
+			// 
+			// HotkeyReadmeTextBox
+			// 
+			HotkeyReadmeTextBox.Location = new Point(111, 190);
+			HotkeyReadmeTextBox.Margin = new Padding(2);
+			HotkeyReadmeTextBox.Multiline = true;
+			HotkeyReadmeTextBox.Name = "HotkeyReadmeTextBox";
+			HotkeyReadmeTextBox.ReadOnly = true;
+			HotkeyReadmeTextBox.Size = new Size(259, 70);
+			HotkeyReadmeTextBox.TabIndex = 28;
+			// 
+			// HotkeySaveButton
+			// 
+			HotkeySaveButton.Location = new Point(25, 238);
+			HotkeySaveButton.Margin = new Padding(2);
+			HotkeySaveButton.Name = "HotkeySaveButton";
+			HotkeySaveButton.Size = new Size(83, 22);
+			HotkeySaveButton.TabIndex = 29;
+			HotkeySaveButton.Text = "Save";
+			HotkeySaveButton.Click += HotkeySaveButton_Click;
+			// 
+			// HotkeyCaptureTextBox
+			// 
+			HotkeyCaptureTextBox.Location = new Point(193, 7);
+			HotkeyCaptureTextBox.Margin = new Padding(2);
+			HotkeyCaptureTextBox.Name = "HotkeyCaptureTextBox";
+			HotkeyCaptureTextBox.Size = new Size(161, 23);
+			HotkeyCaptureTextBox.TabIndex = 14;
+			HotkeyCaptureTextBox.Enter += HotkeyCaptureTextBox_Enter;
+			HotkeyCaptureTextBox.KeyDown += HotkeyCaptureTextBox_KeyDown;
+			HotkeyCaptureTextBox.Leave += HotkeyCaptureTextBox_Leave;
+			HotkeyCaptureTextBox.MouseDown += HotkeyCaptureTextBox_MouseDown;
+			// 
+			// HotkeyCaptureButton
+			// 
+			HotkeyCaptureButton.Location = new Point(111, 7);
+			HotkeyCaptureButton.Margin = new Padding(0);
+			HotkeyCaptureButton.Name = "HotkeyCaptureButton";
+			HotkeyCaptureButton.Size = new Size(78, 22);
+			HotkeyCaptureButton.TabIndex = 15;
+			HotkeyCaptureButton.Text = "Capture";
+			HotkeyCaptureButton.Click += HotkeyCaptureButton_Click;
+			// 
 			// ClientsTabPage
 			// 
 			ClientsTabPage.BackColor = SystemColors.Control;
@@ -1245,7 +1462,7 @@ namespace EveOPreview.View
 			ClientsTabPage.Location = new Point(124, 4);
 			ClientsTabPage.Margin = new Padding(4);
 			ClientsTabPage.Name = "ClientsTabPage";
-			ClientsTabPage.Size = new Size(327, 243);
+			ClientsTabPage.Size = new Size(365, 280);
 			ClientsTabPage.TabIndex = 4;
 			ClientsTabPage.Text = "Active Clients";
 			// 
@@ -1258,7 +1475,7 @@ namespace EveOPreview.View
 			ClientsPanel.Location = new Point(0, 0);
 			ClientsPanel.Margin = new Padding(4);
 			ClientsPanel.Name = "ClientsPanel";
-			ClientsPanel.Size = new Size(327, 243);
+			ClientsPanel.Size = new Size(365, 280);
 			ClientsPanel.TabIndex = 32;
 			// 
 			// ThumbnailsList
@@ -1269,10 +1486,10 @@ namespace EveOPreview.View
 			ThumbnailsList.Dock = DockStyle.Bottom;
 			ThumbnailsList.FormattingEnabled = true;
 			ThumbnailsList.IntegralHeight = false;
-			ThumbnailsList.Location = new Point(0, 34);
+			ThumbnailsList.Location = new Point(0, 71);
 			ThumbnailsList.Margin = new Padding(4);
 			ThumbnailsList.Name = "ThumbnailsList";
-			ThumbnailsList.Size = new Size(325, 207);
+			ThumbnailsList.Size = new Size(363, 207);
 			ThumbnailsList.TabIndex = 34;
 			ThumbnailsList.ItemCheck += ThumbnailsList_ItemCheck_Handler;
 			// 
@@ -1293,7 +1510,7 @@ namespace EveOPreview.View
 			LanguageTabPage.Location = new Point(124, 4);
 			LanguageTabPage.Name = "LanguageTabPage";
 			LanguageTabPage.Padding = new Padding(3);
-			LanguageTabPage.Size = new Size(327, 243);
+			LanguageTabPage.Size = new Size(365, 280);
 			LanguageTabPage.TabIndex = 6;
 			LanguageTabPage.Text = "Language";
 			LanguageTabPage.UseVisualStyleBackColor = true;
@@ -1327,7 +1544,7 @@ namespace EveOPreview.View
 			AboutTabPage.Location = new Point(124, 4);
 			AboutTabPage.Margin = new Padding(4);
 			AboutTabPage.Name = "AboutTabPage";
-			AboutTabPage.Size = new Size(327, 243);
+			AboutTabPage.Size = new Size(365, 280);
 			AboutTabPage.TabIndex = 5;
 			AboutTabPage.Text = "About";
 			// 
@@ -1345,7 +1562,7 @@ namespace EveOPreview.View
 			AboutPanel.Location = new Point(0, 0);
 			AboutPanel.Margin = new Padding(4);
 			AboutPanel.Name = "AboutPanel";
-			AboutPanel.Size = new Size(327, 243);
+			AboutPanel.Size = new Size(365, 280);
 			AboutPanel.TabIndex = 2;
 			// 
 			// CreditMaintLabel
@@ -1435,7 +1652,7 @@ namespace EveOPreview.View
 			AutoScaleDimensions = new SizeF(7F, 15F);
 			AutoScaleMode = AutoScaleMode.Font;
 			BackColor = SystemColors.Control;
-			ClientSize = new Size(455, 251);
+			ClientSize = new Size(493, 288);
 			Controls.Add(ContentTabControl);
 			FormBorderStyle = FormBorderStyle.FixedSingle;
 			Icon = (Icon)resources.GetObject("$this.Icon");
@@ -1472,6 +1689,8 @@ namespace EveOPreview.View
 			panel2.PerformLayout();
 			panel1.ResumeLayout(false);
 			panel1.PerformLayout();
+			CycleGroupTabPage.ResumeLayout(false);
+			CycleGroupTabPage.PerformLayout();
 			ClientsTabPage.ResumeLayout(false);
 			ClientsPanel.ResumeLayout(false);
 			ClientsPanel.PerformLayout();
@@ -1559,5 +1778,22 @@ namespace EveOPreview.View
 		private TabPage LanguageTabPage;
 		private Label LanguageLabel;
 		private ComboBox LanguageCombo;
+		private TabPage CycleGroupTabPage;
+		private TextBox HotkeyCaptureTextBox;
+		private Button HotkeyCaptureButton;
+		private ComboBox CycleGroupSelectorComboBox;
+		private Label HotkeysForwardLabel;
+		private ListBox HotkeysForwardListBox;
+		private Button HotkeysForwardAddButton;
+		private Button HotkeysForwardRemoveButton;
+		private Label HotkeysBackwardLabel;
+		private ListBox HotkeysBackwardListBox;
+		private Button HotkeysBackwardAddButton;
+		private Button HotkeysBackwardRemoveButton;
+		private CheckedListBox HotkeysClientsList;
+		private Button HotkeysClientUpButton;
+		private Button HotkeysClientDownButton;
+		private TextBox HotkeyReadmeTextBox;
+		private Button HotkeySaveButton;
 	}
 }

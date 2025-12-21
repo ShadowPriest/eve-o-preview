@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Drawing;
 using EveOPreview.Configuration;
 using EveOPreview.Configuration.Implementation;
 using EveOPreview.Mediator.Messages;
-using EveOPreview.Properties;
 using EveOPreview.View;
 using MediatR;
 
@@ -25,6 +25,8 @@ namespace EveOPreview.Presenters
 		private bool _suppressSizeNotifications;
 
 		private bool _exitApplication;
+		private bool _isLoadingUi;
+		private int _currentGroup = 1;
 		#endregion
 
 		public MainFormPresenter(IApplicationController controller, IMainFormView view, IMediator mediator, IThumbnailConfiguration configuration, IConfigurationStorage configurationStorage)
@@ -103,6 +105,7 @@ namespace EveOPreview.Presenters
 		private void LoadApplicationSettings()
 		{
 			this._configurationStorage.Load();
+			this._isLoadingUi = true;
 
 			if (!string.IsNullOrEmpty(this._configuration.Language) && this._configuration.Language != "en-US")
 			{
@@ -149,10 +152,140 @@ namespace EveOPreview.Presenters
 			this.View.OverlayLabelFont = this._configuration.OverlayLabelFont;
 
 			this.View.IconName = this._configuration.IconName;
+
+			// Hotkeys tab: populate clients and default group
+			var configuredClients = this._configuration.GetAllKnownClients();
+			this.View.SetAvailableClients(configuredClients);
+			this._currentGroup = 1;
+			this.View.SelectedCycleGroup = this._currentGroup;
+			this.LoadGroupToView(this._currentGroup);
+
+			// Wire group changed handler
+			this.View.SelectedCycleGroupChanged = this.OnSelectedCycleGroupChanged;
+			this.View.EndUpdateUI();
+			this._isLoadingUi = false;
+		}
+
+		private void OnSelectedCycleGroupChanged()
+		{
+			if (this._isLoadingUi) return;
+			// Save current group's UI to config, then load new group's config into UI
+			this.SaveGroupFromView(this._currentGroup);
+			this._currentGroup = this.View.SelectedCycleGroup;
+			this.View.BeginUpdateUI();
+			this.LoadGroupToView(this._currentGroup);
+			this.View.EndUpdateUI();
+			this._configurationStorage.Save();
+		}
+
+		private void LoadGroupToView(int group)
+		{
+			// Set forward/backward hotkeys CSV
+			var fwd = GetForwardHotkeys(group) ?? new List<string>();
+			var bwd = GetBackwardHotkeys(group) ?? new List<string>();
+			this.View.CycleGroupForwardHotkeysText = string.Join(",", fwd);
+			this.View.CycleGroupBackwardHotkeysText = string.Join(",", bwd);
+			// Set clients order
+			var orderDict = GetClientsOrder(group) ?? new Dictionary<string, int>();
+			var ordered = orderDict.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToList();
+			this.View.SetSelectedClientsForCurrentGroup(ordered);
+		}
+
+		private void SaveGroupFromView(int group)
+		{
+			// Save forward/backward hotkeys
+			var fwdCsv = this.View.CycleGroupForwardHotkeysText ?? string.Empty;
+			var bwdCsv = this.View.CycleGroupBackwardHotkeysText ?? string.Empty;
+			SetForwardHotkeys(group, ParseCsv(fwdCsv));
+			SetBackwardHotkeys(group, ParseCsv(bwdCsv));
+			// Save clients order (only selected/checked ones, in current order)
+			var selected = this.View.GetSelectedClientsForCurrentGroup() ?? new List<string>();
+			var dict = new Dictionary<string, int>();
+			for (int i = 0; i < selected.Count; i++)
+			{
+				dict[selected[i]] = i + 1;
+			}
+			SetClientsOrder(group, dict);
+		}
+
+		private static List<string> ParseCsv(string csv)
+		{
+			var list = new List<string>();
+			if (!string.IsNullOrWhiteSpace(csv))
+			{
+				foreach (var part in csv.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+				{
+					var s = part.Trim();
+					if (!string.IsNullOrEmpty(s)) list.Add(s);
+				}
+			}
+			return list;
+		}
+
+		private List<string> GetForwardHotkeys(int g) => g switch
+		{
+			1 => this._configuration.CycleGroup1ForwardHotkeys,
+			2 => this._configuration.CycleGroup2ForwardHotkeys,
+			3 => this._configuration.CycleGroup3ForwardHotkeys,
+			4 => this._configuration.CycleGroup4ForwardHotkeys,
+			5 => this._configuration.CycleGroup5ForwardHotkeys,
+			_ => this._configuration.CycleGroup1ForwardHotkeys,
+		};
+		private List<string> GetBackwardHotkeys(int g) => g switch
+		{
+			1 => this._configuration.CycleGroup1BackwardHotkeys,
+			2 => this._configuration.CycleGroup2BackwardHotkeys,
+			3 => this._configuration.CycleGroup3BackwardHotkeys,
+			4 => this._configuration.CycleGroup4BackwardHotkeys,
+			5 => this._configuration.CycleGroup5BackwardHotkeys,
+			_ => this._configuration.CycleGroup1BackwardHotkeys,
+		};
+		private Dictionary<string, int> GetClientsOrder(int g) => g switch
+		{
+			1 => this._configuration.CycleGroup1ClientsOrder,
+			2 => this._configuration.CycleGroup2ClientsOrder,
+			3 => this._configuration.CycleGroup3ClientsOrder,
+			4 => this._configuration.CycleGroup4ClientsOrder,
+			5 => this._configuration.CycleGroup5ClientsOrder,
+			_ => this._configuration.CycleGroup1ClientsOrder,
+		};
+		private void SetForwardHotkeys(int g, List<string> v)
+		{
+			switch (g)
+			{
+				case 1: this._configuration.CycleGroup1ForwardHotkeys = v; break;
+				case 2: this._configuration.CycleGroup2ForwardHotkeys = v; break;
+				case 3: this._configuration.CycleGroup3ForwardHotkeys = v; break;
+				case 4: this._configuration.CycleGroup4ForwardHotkeys = v; break;
+				case 5: this._configuration.CycleGroup5ForwardHotkeys = v; break;
+			}
+		}
+		private void SetBackwardHotkeys(int g, List<string> v)
+		{
+			switch (g)
+			{
+				case 1: this._configuration.CycleGroup1BackwardHotkeys = v; break;
+				case 2: this._configuration.CycleGroup2BackwardHotkeys = v; break;
+				case 3: this._configuration.CycleGroup3BackwardHotkeys = v; break;
+				case 4: this._configuration.CycleGroup4BackwardHotkeys = v; break;
+				case 5: this._configuration.CycleGroup5BackwardHotkeys = v; break;
+			}
+		}
+		private void SetClientsOrder(int g, Dictionary<string, int> v)
+		{
+			switch (g)
+			{
+				case 1: this._configuration.CycleGroup1ClientsOrder = v; break;
+				case 2: this._configuration.CycleGroup2ClientsOrder = v; break;
+				case 3: this._configuration.CycleGroup3ClientsOrder = v; break;
+				case 4: this._configuration.CycleGroup4ClientsOrder = v; break;
+				case 5: this._configuration.CycleGroup5ClientsOrder = v; break;
+			}
 		}
 
 		private async void SaveApplicationSettings()
 		{
+			if (this._isLoadingUi) return;
 			this._configuration.MinimizeToTray = this.View.MinimizeToTray;
 
 			this._configuration.ThumbnailOpacity = (float)this.View.ThumbnailOpacity;
@@ -220,11 +353,11 @@ namespace EveOPreview.Presenters
 
 			this._configuration.IconName = this.View.IconName;
 
+			this.SaveGroupFromView(this._currentGroup);
 			this._configurationStorage.Save();
-
 			this.View.RefreshZoomSettings();
-
 			await this._mediator.Send(new SaveConfiguration());
+			await this._mediator.Publish(new HotkeysConfigurationUpdated());
 		}
 
 
@@ -320,6 +453,11 @@ namespace EveOPreview.Presenters
 		{
 			this._exitApplication = true;
 			this.View.Close();
+		}
+
+		public List<string> GetActiveClients()
+		{
+			return _descriptionsCache?.Select(x => x.Value.Title).ToList();
 		}
 	}
 }

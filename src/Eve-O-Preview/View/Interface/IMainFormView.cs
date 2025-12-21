@@ -50,6 +50,14 @@ namespace EveOPreview.View
 
 		string IconName { get; set; }
 
+		int SelectedCycleGroup { get; set; } // 1..5
+		string CycleGroupForwardHotkeysText { get; set; }
+		string CycleGroupBackwardHotkeysText { get; set; }
+
+		void SetAvailableClients(IList<string> clients);
+		IList<string> GetSelectedClientsForCurrentGroup();
+		void SetSelectedClientsForCurrentGroup(IList<string> orderedClients);
+
 		void SetDocumentationUrl(string url);
 		void SetVersionInfo(string version);
 		void SetThumbnailSizeLimitations(Size minimumSize, Size maximumSize);
@@ -69,5 +77,10 @@ namespace EveOPreview.View
 		Action<string> ThumbnailStateChanged { get; set; }
 		Action DocumentationLinkActivated { get; set; }
 		void InitializeLanguageControls();
+
+		Action SelectedCycleGroupChanged { get; set; }
+		void BeginUpdateUI();
+		void EndUpdateUI();
+
 	}
 }

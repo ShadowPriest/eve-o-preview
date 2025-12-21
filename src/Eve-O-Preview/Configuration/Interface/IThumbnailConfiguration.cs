@@ -104,5 +104,7 @@ namespace EveOPreview.Configuration
 		void ToggleThumbnail(string currentClient, bool isDisabled);
 
 		void ApplyRestrictions();
+
+		IList<string> GetAllKnownClients();
 	}
 }

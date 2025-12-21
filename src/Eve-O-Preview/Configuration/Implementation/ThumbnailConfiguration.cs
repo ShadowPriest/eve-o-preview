@@ -465,6 +465,11 @@ namespace EveOPreview.Configuration.Implementation
 			this.ThumbnailZoomFactor = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailZoomFactor, 2, 10);
 			this.ActiveClientHighlightThickness = ThumbnailConfiguration.ApplyRestrictions(this.ActiveClientHighlightThickness, 1, 6);
 		}
+		public IList<string> GetAllKnownClients()
+		{
+			// Prefer FlatLayout keys as the source of known clients
+			return this.FlatLayout?.Keys?.ToList() ?? new List<string>();
+		}
 
 		private static int ApplyRestrictions(int value, int minimum, int maximum)
 		{
