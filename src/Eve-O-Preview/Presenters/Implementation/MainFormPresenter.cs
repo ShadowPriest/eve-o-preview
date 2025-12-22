@@ -463,7 +463,11 @@ namespace EveOPreview.Presenters
 
 		public void LoadNewSettings(string filename)
 		{
-			this._configurationStorage.SetConfigurationFilename(filename);
+			if (filename != null && filename.Length > 0)
+			{
+				this._configurationStorage.SetConfigurationFilename(filename);
+			}
+
 			this.LoadApplicationSettings();
 
 			this._mediator.Publish(new ThumbnailFrameSettingsUpdated());

@@ -1031,7 +1031,13 @@ namespace EveOPreview.View
 		{
 
 			this.MenuConfigurationFile.DropDownItems.Clear();
-
+			this.MenuConfigurationFile.DropDownItems.Add(LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration"));
+			this.MenuConfigurationFile.DropDownItems.Add(
+				new ToolStripSeparator()
+				{
+				}
+				);
+			
 			foreach (var filename in Directory.GetFiles(".", "Eve-O-Preview*.json"))
 			{
 				string displayName = filename.Replace("./", "", StringComparison.OrdinalIgnoreCase);
@@ -1041,7 +1047,7 @@ namespace EveOPreview.View
 
 				if (displayName.Equals(ConfigurationStorage.CONFIGURATION_FILE_NAME, StringComparison.OrdinalIgnoreCase))
 				{
-					displayName = "*DEFAULT*";
+					displayName = LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.DEFALT", "*DEFAULT*");
 				}
 				else
 				{
@@ -1056,7 +1062,7 @@ namespace EveOPreview.View
 				var mi = new ToolStripMenuItem()
 				{
 					Text = displayName,
-					Checked = (displayName == "*DEFAULT*" ? true : false),
+					Checked = (displayName == LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.DEFALT", "*DEFAULT*") ? true : false),
 				};
 
 				this.MenuConfigurationFile.DropDownItems.Add(mi);
@@ -1067,12 +1073,30 @@ namespace EveOPreview.View
 
 		private void MenuConfigurationFile_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
 		{
-			var _configurationFilename = _configurationFilenames[e.ClickedItem.Text];
-			foreach(ToolStripMenuItem mi in this.MenuConfigurationFile.DropDownItems)
+			if ( e.ClickedItem.Text.Equals(LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration")))
 			{
-				mi.Checked = (mi.Text == e.ClickedItem.Text) ? true : false;
+				this.LoadNewSettings?.Invoke(null);
+				return;
 			}
-			this.LoadNewSettings?.Invoke(_configurationFilename);
+
+			if (_configurationFilenames.ContainsKey(e.ClickedItem.Text))
+			{
+				var _configurationFilename = _configurationFilenames[e.ClickedItem.Text];
+
+				foreach (var mi in this.MenuConfigurationFile.DropDownItems)
+				{
+
+					if ( mi.GetType()  == typeof(ToolStripMenuItem) )
+					{
+						ToolStripMenuItem menuItem = (ToolStripMenuItem)mi;
+						if (menuItem.Text.Length > 0 && menuItem.Text != LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration"))
+						{
+							menuItem.Checked = (menuItem.Text == e.ClickedItem.Text) ? true : false;
+						}
+					}
+				}
+				this.LoadNewSettings?.Invoke(_configurationFilename);
+			}
 		}
 	}
 }
