@@ -2,7 +2,8 @@
 {
 	public interface IConfigurationStorage
 	{
-		void Load();
+		void SetConfigurationFilename(string filename);
+	    void Load();
 		void Save();
 	}
 }

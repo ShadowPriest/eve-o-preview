@@ -1326,7 +1326,7 @@ The program does NOT
   <data name="IconPurple" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\..\Icons\EVE-O_Purple.ico;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="Iconurns" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="IconUrns" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\..\Icons\EVE-O_urns.ico;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>
