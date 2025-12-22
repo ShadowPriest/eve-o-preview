@@ -49,7 +49,7 @@ namespace EveOPreview.Presenters
 			this.View.ThumbnailStateChanged = this.UpdateThumbnailState;
 			this.View.DocumentationLinkActivated = this.OpenDocumentationLink;
 			this.View.ApplicationExitRequested = this.ExitApplication;
-
+			this.View.LoadNewSettings = this.LoadNewSettings;
 			this.View.IconName = this._configuration.IconName;
 		}
 
@@ -104,6 +104,7 @@ namespace EveOPreview.Presenters
 
 		private void LoadApplicationSettings()
 		{
+
 			this._configurationStorage.Load();
 			this._isLoadingUi = true;
 
@@ -458,6 +459,21 @@ namespace EveOPreview.Presenters
 		public List<string> GetActiveClients()
 		{
 			return _descriptionsCache?.Select(x => x.Value.Title).ToList();
+		}
+
+		public void LoadNewSettings(string filename)
+		{
+			if (filename != null && filename.Length > 0)
+			{
+				this._configurationStorage.SetConfigurationFilename(filename);
+			}
+
+			this.LoadApplicationSettings();
+
+			this._mediator.Publish(new ThumbnailFrameSettingsUpdated());
+			this._mediator.Publish(new ThumbnailCycleGroupIndicatorUpdated());
+			this.View.RefreshZoomSettings();
+			this._mediator.Publish(new HotkeysConfigurationUpdated());
 		}
 	}
 }

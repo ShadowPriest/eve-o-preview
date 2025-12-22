@@ -1,10 +1,12 @@
 using EveOPreview.Configuration;
 using EveOPreview.Configuration.Implementation;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
@@ -25,6 +27,7 @@ namespace EveOPreview.View
 		private Size _maximumSize;
 		private string _iconName;
 		private bool _hotkeyCaptureActive = false;
+		private Dictionary<string, string> _configurationFilenames = new Dictionary<string, string>();
 		#endregion
 
 		public MainForm(ApplicationContext context)
@@ -41,6 +44,8 @@ namespace EveOPreview.View
 			InitializeComponent();
 
 			this.ThumbnailsList.DisplayMember = "Title";
+
+			SetupConfigList();
 
 			this.InitZoomAnchorMap();
 			this.InitOverlayLabelMap();
@@ -413,7 +418,7 @@ namespace EveOPreview.View
 			{
 				this.ThumbnailsList.SetItemChecked(this.ThumbnailsList.Items.Add(view), view.IsDisabled);
 
-				if (! this.HotkeysClientsList.Items.Contains(view.Title))  this.HotkeysClientsList.Items.Add(view.Title, false);
+				if (!this.HotkeysClientsList.Items.Contains(view.Title)) this.HotkeysClientsList.Items.Add(view.Title, false);
 
 			}
 
@@ -440,6 +445,7 @@ namespace EveOPreview.View
 		}
 
 		public Action ApplicationExitRequested { get; set; }
+		public Action<string> LoadNewSettings { get; set; }
 
 		public Action FormActivated { get; set; }
 
@@ -698,7 +704,7 @@ namespace EveOPreview.View
 			// Filtering invalid values ??and modifying only keys
 			if (parsed == Keys.None || parsed == Keys.ControlKey || parsed == Keys.ShiftKey || parsed == Keys.Menu || parsed == Keys.ProcessKey)
 			{
-				MessageBox.Show(LocalizationExtensions.GetString("Messages.InvalidHotkey","Invalid hotkey"), LocalizationExtensions.GetString("Messages.Error","Error"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				MessageBox.Show(LocalizationExtensions.GetString("Messages.InvalidHotkey", "Invalid hotkey"), LocalizationExtensions.GetString("Messages.Error", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				return false;
 			}
 
@@ -1021,5 +1027,76 @@ namespace EveOPreview.View
 			this._suppressEvents = false;
 		}
 
+		public void SetupConfigList()
+		{
+
+			this.MenuConfigurationFile.DropDownItems.Clear();
+			this.MenuConfigurationFile.DropDownItems.Add(LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration"));
+			this.MenuConfigurationFile.DropDownItems.Add(
+				new ToolStripSeparator()
+				{
+				}
+				);
+			
+			foreach (var filename in Directory.GetFiles(".", "Eve-O-Preview*.json"))
+			{
+				string displayName = filename.Replace("./", "", StringComparison.OrdinalIgnoreCase);
+
+				displayName = displayName.Replace(".//", "", StringComparison.OrdinalIgnoreCase);
+				displayName = displayName.Replace(".\\", "", StringComparison.OrdinalIgnoreCase);
+
+				if (displayName.Equals(ConfigurationStorage.CONFIGURATION_FILE_NAME, StringComparison.OrdinalIgnoreCase))
+				{
+					displayName = LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.DEFALT", "*DEFAULT*");
+				}
+				else
+				{
+					if (! displayName.StartsWith("Eve-O-Preview-", StringComparison.OrdinalIgnoreCase))
+					{
+						continue;
+					}
+					displayName = displayName.Replace("Eve-O-Preview-", "", StringComparison.OrdinalIgnoreCase);
+					displayName = displayName.Replace(".json", "", StringComparison.OrdinalIgnoreCase);
+				}
+
+				var mi = new ToolStripMenuItem()
+				{
+					Text = displayName,
+					Checked = (displayName == LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.DEFALT", "*DEFAULT*") ? true : false),
+				};
+
+				this.MenuConfigurationFile.DropDownItems.Add(mi);
+				_configurationFilenames.Add(displayName, filename.Replace(".//","").Replace("./",""));
+			}
+
+		}
+
+		private void MenuConfigurationFile_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
+		{
+			if ( e.ClickedItem.Text.Equals(LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration")))
+			{
+				this.LoadNewSettings?.Invoke(null);
+				return;
+			}
+
+			if (_configurationFilenames.ContainsKey(e.ClickedItem.Text))
+			{
+				var _configurationFilename = _configurationFilenames[e.ClickedItem.Text];
+
+				foreach (var mi in this.MenuConfigurationFile.DropDownItems)
+				{
+
+					if ( mi.GetType()  == typeof(ToolStripMenuItem) )
+					{
+						ToolStripMenuItem menuItem = (ToolStripMenuItem)mi;
+						if (menuItem.Text.Length > 0 && menuItem.Text != LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration"))
+						{
+							menuItem.Checked = (menuItem.Text == e.ClickedItem.Text) ? true : false;
+						}
+					}
+				}
+				this.LoadNewSettings?.Invoke(_configurationFilename);
+			}
+		}
 	}
 }

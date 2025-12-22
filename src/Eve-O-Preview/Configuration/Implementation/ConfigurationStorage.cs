@@ -5,8 +5,7 @@ namespace EveOPreview.Configuration.Implementation
 {
 	class ConfigurationStorage : IConfigurationStorage
 	{
-		private const string CONFIGURATION_FILE_NAME = "EVE-O-Preview.json";
-
+		public const string CONFIGURATION_FILE_NAME = "EVE-O-Preview.json";
 		private readonly IAppConfig _appConfig;
 		private readonly IThumbnailConfiguration _thumbnailConfiguration;
 
@@ -14,6 +13,10 @@ namespace EveOPreview.Configuration.Implementation
 		{
 			this._appConfig = appConfig;
 			this._thumbnailConfiguration = thumbnailConfiguration;
+		}
+
+		public void SetConfigurationFilename(string filename) {
+			this._appConfig.ConfigFileName = filename;
 		}
 
 		public void Load()
