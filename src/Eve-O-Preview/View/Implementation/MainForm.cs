@@ -968,7 +968,7 @@ namespace EveOPreview.View
 			if (this.HotkeyCaptureButton != null)
 			{
 				// if you rename the object - adjust this string
-				this.HotkeyCaptureButton.Text = LocalizationExtensions.GetString("MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton_Press", "Press key...");
+				this.HotkeyCaptureButton.Text = LocalizationExtensions.GetString("MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton_PressKey", "Press key...");
 			}
 			if (this.HotkeyCaptureTextBox != null)
 			{
