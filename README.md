@@ -373,6 +373,13 @@ You should modify this entry with a list of each of your clients replacing "Exam
 
 If a client does not appear in this list, then it will use the actual toon name.
 
+### Multiple configuration files
+
+This is an often requested feature that has been implemented to allow quick switching of configuration files. By default Eve-O-Preview will load configuration from the json file Eve-O-Preview.json it will now also look for Eve-O-Preview-*.json. Additional files found will be added in the tray icon menu - allowing the user to select a different config file to use, or switch back to \*DEFAULT\* (Eve-O-Preview.json). 
+When selecting a differentt config - the current one is saved first. 
+There is also an additional option to reload the current configuration which can be used to load a changed config from disk (if edited outside of Eve-O-Preview) or just to reload the current config and re-setup the preview windows.
+
+
 ### Compatibility Mode
 
 This setting allows to enable an alternate thumbnail render. This render doesn't use advanced DWM API to create live previews. Instead it is a screenshot-based render with the following pros and cons:
