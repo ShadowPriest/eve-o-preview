@@ -974,9 +974,11 @@ namespace EveOPreview.Services
 			//			this._thumbnailViews.Clear();
 
 			this.EnableViewEvents();
-
-			this.ThumbnailActivated(activeClient.Id);
-			this.SwitchActiveClient(activeClient.Id, activeClient.Title);
+			if (activeClient != null)
+			{
+				this.ThumbnailActivated(activeClient.Id);
+				this.SwitchActiveClient(activeClient.Id, activeClient.Title);
+			}
 
 			this.Start();
 		}

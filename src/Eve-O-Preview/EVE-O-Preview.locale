@@ -62,8 +62,9 @@
     "MainForm.ContentTabControl.CycleGroupTabPage.HotkeySaveButton": "Save",
     "Messages.InvalidHotkey": "The hotkey cannot be recognized. Please try a different key combination (e.g., Control+F14).",
     "Messages.HotkeyAlreadyInUse": "Hotkey already in use - please choose another",
-    "Messages.Error": "Error!"
-  },
+    "Messages.Error": "Error!",
+    "MainForm.MenuConfigurationFile.Reload": "Reload current config",
+},
   "zh-CN": {
     "MainForm": "EVE-O-Preview zh-CN",
     "MainForm.ContentTabControl.GeneralTabPage": "通用",
