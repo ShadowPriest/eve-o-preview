@@ -446,6 +446,7 @@ namespace EveOPreview.View
 
 		public Action ApplicationExitRequested { get; set; }
 		public Action<string> LoadNewSettings { get; set; }
+		public Action SaveSettings { get; set; }
 
 		public Action FormActivated { get; set; }
 
@@ -1095,6 +1096,7 @@ namespace EveOPreview.View
 						}
 					}
 				}
+				this.SaveSettings?.Invoke();
 				this.LoadNewSettings?.Invoke(_configurationFilename);
 			}
 		}

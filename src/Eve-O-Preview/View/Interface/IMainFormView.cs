@@ -70,6 +70,8 @@ namespace EveOPreview.View
 
 		Action ApplicationExitRequested { get; set; }
 		Action<string> LoadNewSettings { get; set; }
+		Action SaveSettings { get; set; }
+
 		Action FormActivated { get; set; }
 		Action FormMinimized { get; set; }
 		Action<ViewCloseRequest> FormCloseRequested { get; set; }

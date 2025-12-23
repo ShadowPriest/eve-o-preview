@@ -50,6 +50,7 @@ namespace EveOPreview.Presenters
 			this.View.DocumentationLinkActivated = this.OpenDocumentationLink;
 			this.View.ApplicationExitRequested = this.ExitApplication;
 			this.View.LoadNewSettings = this.LoadNewSettings;
+			this.View.SaveSettings = this.SaveSettings;
 			this.View.IconName = this._configuration.IconName;
 		}
 
@@ -357,6 +358,7 @@ namespace EveOPreview.Presenters
 			this.SaveGroupFromView(this._currentGroup);
 			this._configurationStorage.Save();
 			this.View.RefreshZoomSettings();
+			await this._mediator.Publish(new ThumbnailUpdateClientsLayouts());
 			await this._mediator.Send(new SaveConfiguration());
 			await this._mediator.Publish(new HotkeysConfigurationUpdated());
 		}
@@ -471,9 +473,15 @@ namespace EveOPreview.Presenters
 			this.LoadApplicationSettings();
 
 			this._mediator.Publish(new ThumbnailFrameSettingsUpdated());
+			this._mediator.Publish(new ThumbnailApplyAllClientsLayouts());
 			this._mediator.Publish(new ThumbnailCycleGroupIndicatorUpdated());
 			this.View.RefreshZoomSettings();
 			this._mediator.Publish(new HotkeysConfigurationUpdated());
+		}
+
+		public void SaveSettings()
+		{
+			this.SaveApplicationSettings();
 		}
 	}
 }

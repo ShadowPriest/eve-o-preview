@@ -9,10 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
-using System.Net;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -114,6 +111,8 @@ namespace EveOPreview.Services
 		}
 		public void SetActive(KeyValuePair<IntPtr, IThumbnailView> newClient)
 		{
+			System.Diagnostics.Debug.WriteLine($"SetActive");
+
 			this.GetActiveClient()?.ClearBorder();
 #if LINUX
 			this._windowManager.ActivateWindow(newClient.Key, newClient.Value.Title);
@@ -133,6 +132,14 @@ namespace EveOPreview.Services
 				this._windowManager.MinimizeWindow(x.Value.Id, this._configuration.WindowsAnimationStyle, false);
 			}
 		}
+		public void ShowAllClients()
+		{
+			foreach (var x in _thumbnailViews.Reverse())
+			{
+				this._windowManager.ActivateWindow(x.Value.Id, this._configuration.WindowsAnimationStyle);
+			}
+		}
+
 		public void CycleNextClient(bool isForwards, Dictionary<string, int> cycleOrder)
 		{
 			IOrderedEnumerable<KeyValuePair<string, int>> clientOrder;
@@ -337,7 +344,7 @@ namespace EveOPreview.Services
 				view.RegisterHotkey(this._configuration.GetClientHotkey(view.Title));
 
 				this.ApplyClientLayout(view);
-				this.ApplyCaptionBar(view);
+				this.ApplyCaptionBar(view, false);
 
 				// TODO Add extension filter here later
 				if (view.Title != ThumbnailManager.DEFAULT_CLIENT_TITLE)
@@ -365,7 +372,7 @@ namespace EveOPreview.Services
 					view.RegisterHotkey(this._configuration.GetClientHotkey(process.Title));
 
 					this.ApplyClientLayout(view);
-					this.ApplyCaptionBar(view);
+					this.ApplyCaptionBar(view, false);
 				}
 			}
 
@@ -596,7 +603,7 @@ namespace EveOPreview.Services
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
 				entry.Value.SetFrames(this._configuration.ShowThumbnailFrames);
-				ApplyCaptionBar(entry.Value);
+				ApplyCaptionBar(entry.Value, false);
 				entry.Value.SetPreventPreviews();
 			}
 
@@ -620,6 +627,7 @@ namespace EveOPreview.Services
 			{
 				return;
 			}
+			System.Diagnostics.Debug.WriteLine($"SwitchActiveClient");
 
 			// Minimize the currently active client if needed
 			if (this._configuration.MinimizeInactiveClients && !this._configuration.IsPriorityClient(this._activeClient.Title))
@@ -690,7 +698,7 @@ namespace EveOPreview.Services
 				{
 					// This code should be executed on UI thread
 					this.SwitchActiveClient(view.Id, view.Title);
-					this.UpdateClientLayouts();
+					//this.UpdateClientLayouts();
 					this.RefreshThumbnails();
 				}, TaskScheduler.FromCurrentSynchronizationContext());
 		}
@@ -902,13 +910,13 @@ namespace EveOPreview.Services
 			}
 			return false;
 		}
-		private void ApplyCaptionBar(IThumbnailView view)
+		private void ApplyCaptionBar(IThumbnailView view, bool forceOn)
 
 		{
 			if (view.Title == ThumbnailManager.DEFAULT_CLIENT_TITLE) return;
 			if (this._configuration.CaptionOnClientsStyle == CaptionBarStyle.DoNothing) return;
 
-			bool enable = (this._configuration.CaptionOnClientsStyle == CaptionBarStyle.ForceNoCaptionBar ? true : false) ;
+			bool enable = (this._configuration.CaptionOnClientsStyle == CaptionBarStyle.ForceNoCaptionBar ? true : (forceOn == true ? true : false) );
 			bool changed = false;
 			changed = changed | SetWindowStyle(view, InteropConstants.WS_CAPTION, enable);
 			changed = changed | SetWindowStyle(view, InteropConstants.WS_THICKFRAME, enable);
@@ -938,6 +946,7 @@ namespace EveOPreview.Services
 
 			if (clientLayout.IsMaximized)
 			{
+				this._windowManager.MoveWindow(clientHandle, clientLayout.X, clientLayout.Y, clientLayout.Width, clientLayout.Height);
 				this._windowManager.MaximizeWindow(clientHandle);
 			}
 			else
@@ -946,8 +955,36 @@ namespace EveOPreview.Services
 			}
 		}
 
-		private void UpdateClientLayouts()
+		public void ApplyAllClientLayouts()
 		{
+			this.DisableViewEvents();
+			this.Stop();
+			//this._processMonitor.ClearAllProcesses();
+
+			var activeClient = this.GetActiveClient();
+
+			this.ShowAllClients();
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+//				entry.Value.Close();
+				//this.ThumbnailActivated(entry.Value.Id);
+				//this.SwitchActiveClient(entry.Value.Id, entry.Value.Title);
+				this.ApplyClientLayout(entry.Value);
+			}
+			//			this._thumbnailViews.Clear();
+
+			this.EnableViewEvents();
+
+			this.ThumbnailActivated(activeClient.Id);
+			this.SwitchActiveClient(activeClient.Id, activeClient.Title);
+
+			this.Start();
+		}
+
+		public void UpdateClientLayouts()
+		{
+			System.Diagnostics.Debug.WriteLine($"UpdateClientLayouts");
+
 			if (!this._configuration.EnableClientLayoutTracking)
 			{
 				return;
@@ -969,7 +1006,7 @@ namespace EveOPreview.Services
 
 				var isMaximized = this._windowManager.IsWindowMaximized(view.Id);
 
-				if (!(isMaximized || this.IsValidWindowPosition(position.Left, position.Top, width, height)))
+				if (  !(isMaximized || this.IsValidWindowPosition(position.Left, position.Top, width, height)) )
 				{
 					continue;
 				}

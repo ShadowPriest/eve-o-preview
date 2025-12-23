@@ -10,6 +10,8 @@ namespace EveOPreview.Services
 		void UpdateCycleGroupIndicator();
 		void UpdateThumbnailsSize();
 		void UpdateThumbnailFrames();
+		void ApplyAllClientLayouts();
+		void UpdateClientLayouts();
 
 		void ReloadCycleClientHotkeys();
 

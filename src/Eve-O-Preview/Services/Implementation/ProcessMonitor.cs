@@ -68,7 +68,10 @@ namespace EveOPreview.Services.Implementation
 
 			return result;
 		}
-
+		public void ClearAllProcesses()
+		{
+			this._processCache.Clear();
+		}
 		public void GetUpdatedProcesses(out ICollection<IProcessInfo> addedProcesses, out ICollection<IProcessInfo> updatedProcesses, out ICollection<IProcessInfo> removedProcesses)
 		{
 			addedProcesses = new List<IProcessInfo>(16);
