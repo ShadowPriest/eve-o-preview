@@ -136,7 +136,11 @@ namespace EveOPreview.Services
 		{
 			foreach (var x in _thumbnailViews.Reverse())
 			{
+#if LINUX
+			this._windowManager.ActivateWindow(x.Value.Id, x.Value.Title);
+#else
 				this._windowManager.ActivateWindow(x.Value.Id, this._configuration.WindowsAnimationStyle);
+#endif
 			}
 		}
 
