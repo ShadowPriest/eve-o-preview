@@ -957,6 +957,8 @@ namespace EveOPreview.Services
 			{
 				this._windowManager.MoveWindow(clientHandle, clientLayout.X, clientLayout.Y, clientLayout.Width, clientLayout.Height);
 			}
+
+			view.Title = clientTitle;
 		}
 
 		public void ApplyAllClientLayouts()
