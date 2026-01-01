@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -93,6 +95,7 @@ namespace EveOPreview.Services
 			RegisterCycleClientHotkey(this._configuration.CycleGroup5BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup5ClientsOrder);
 
 			RegisterMinimizeAllClientsHotkey(this._configuration.MinimizeAllClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
+			RegisterRefreshMinimizedClientsHotkey(this._configuration.RefreshMinimizedClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
 		}
 
 		public IThumbnailView GetClientByTitle(string title)
@@ -117,9 +120,9 @@ namespace EveOPreview.Services
 
 /*
 #if LINUX
-			this._windowManager.ActivateWindow(newClient.Key, newClient.Value.Title);
+			this._windowManager.ActivateWindow(newClient.Key, newClient.Value.Title, true);
 #else
-			this._windowManager.ActivateWindow(newClient.Key, this._configuration.WindowsAnimationStyle);
+			this._windowManager.ActivateWindow(newClient.Key, this._configuration.WindowsAnimationStyle, true);
 #endif
 */
 			this.SwitchActiveClient(newClient.Key, newClient.Value.Title);
@@ -135,14 +138,79 @@ namespace EveOPreview.Services
 				this._windowManager.MinimizeWindow(x.Value.Id, this._configuration.WindowsAnimationStyle, false);
 			}
 		}
+		public void RefreshMinimizedClients()
+		{
+			// refresh then minimize all clients if not priority clients and it minimize all setting set
+			if (this._configuration.MinimizeInactiveClients)
+			{
+
+
+				IntPtr foregroundWindowHandle = this._windowManager.GetForegroundWindowHandle();
+
+				// The foreground window can be NULL in certain circumstances, such as when a window is losing activation.
+				// It is safer to just skip this refresh round than to do something while the system state is undefined
+				if (foregroundWindowHandle == IntPtr.Zero)
+				{
+					return;
+				}
+
+				string foregroundWindowTitle = null;
+
+				// Check if the foreground window handle is one of the known handles for client windows or their thumbnails
+				bool isClientWindow = this.IsClientWindowActive(foregroundWindowHandle);
+				bool isMainWindowActive = this.IsMainWindowActive(foregroundWindowHandle);
+
+				if (foregroundWindowHandle == this._activeClient.Handle)
+				{
+					foregroundWindowTitle = this._activeClient.Title;
+				}
+				else if (this._thumbnailViews.TryGetValue(foregroundWindowHandle, out IThumbnailView foregroundView))
+				{
+					// This code will work only on Alt+Tab switch between clients
+					foregroundWindowTitle = foregroundView.Title;
+				}
+
+				foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+				{
+					IThumbnailView view = entry.Value;
+					if (view.Id != foregroundWindowHandle && !view.IsPreventPreviews() && !this._configuration.IsPriorityClient(view.Title) && this._windowManager.IsWindowMinimized(view.Id))
+					{
+#if LINUX
+   			    this._windowManager.ActivateWindow(view.Id, view.Title, false);
+   			    this._windowManager.ActivateWindow(foregroundWindowHandle, foregroundWindowTitle, false);
+#else
+						this._windowManager.ActivateWindow(view.Id, this._configuration.WindowsAnimationStyle, false);
+						this._windowManager.ActivateWindow(foregroundWindowHandle, this._configuration.WindowsAnimationStyle, true);
+#endif
+					}
+				}
+
+				foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+				{
+					IThumbnailView view = entry.Value;
+					// Minimize the currently active client if needed
+					if (!this._configuration.IsPriorityClient(view.Title))
+					{
+						System.Diagnostics.Debug.WriteLine($"Calling MinimizeWindow {view.Title}");
+						this._windowManager.MinimizeWindow(view.Id, this._configuration.WindowsAnimationStyle, false);
+					}
+				}
+#if LINUX
+   			    this._windowManager.ActivateWindow(foregroundWindowHandle, foregroundWindowTitle, true);
+#else
+				this._windowManager.ActivateWindow(foregroundWindowHandle, this._configuration.WindowsAnimationStyle, true);
+#endif
+			}
+
+		}
 		public void ShowAllClients()
 		{
 			foreach (var x in _thumbnailViews.Reverse())
 			{
 #if LINUX
-			this._windowManager.ActivateWindow(x.Value.Id, x.Value.Title);
+			this._windowManager.ActivateWindow(x.Value.Id, x.Value.Title, true);
 #else
-				this._windowManager.ActivateWindow(x.Value.Id, this._configuration.WindowsAnimationStyle);
+				this._windowManager.ActivateWindow(x.Value.Id, this._configuration.WindowsAnimationStyle, true);
 #endif
 			}
 		}
@@ -283,6 +351,26 @@ namespace EveOPreview.Services
 				newHandler.Pressed += (object s, HandledEventArgs e) =>
 				{
 					this.MinimizeAllClients();
+					e.Handled = true;
+				};
+
+				newHandler.Register();
+				this._cycleClientHotkeyHandlers.Add(newHandler);
+			}
+		}
+		public void RegisterRefreshMinimizedClientsHotkey(IEnumerable<Keys> keys)
+		{
+			foreach (var hotkey in keys)
+			{
+				if (hotkey == Keys.None)
+				{
+					return;
+				}
+
+				var newHandler = new HotkeyHandler(default(IntPtr), hotkey);
+				newHandler.Pressed += (object s, HandledEventArgs e) =>
+				{
+					this.RefreshMinimizedClients();
 					e.Handled = true;
 				};
 
@@ -565,6 +653,7 @@ namespace EveOPreview.Services
 				}
 			}
 
+
 			this.EnableViewEvents();
 		}
 
@@ -637,9 +726,9 @@ namespace EveOPreview.Services
 			System.Diagnostics.Debug.WriteLine($"SwitchActiveClient {foregroundClientTitle}");
 
 #if LINUX
-   			    this._windowManager.ActivateWindow(foregroundClientHandle, foregroundClientTitle);
+   			    this._windowManager.ActivateWindow(foregroundClientHandle, foregroundClientTitle, true);
 #else
-			this._windowManager.ActivateWindow(foregroundClientHandle, this._configuration.WindowsAnimationStyle);
+			this._windowManager.ActivateWindow(foregroundClientHandle, this._configuration.WindowsAnimationStyle, true);
 #endif
 
 			// Minimize the currently active client if needed
@@ -702,9 +791,9 @@ namespace EveOPreview.Services
 			Task.Run(() =>
 				{
 #if LINUX
-					this._windowManager.ActivateWindow(view.Id, view.Title);
+					this._windowManager.ActivateWindow(view.Id, view.Title, true);
 #else
-					this._windowManager.ActivateWindow(view.Id, this._configuration.WindowsAnimationStyle);
+					this._windowManager.ActivateWindow(view.Id, this._configuration.WindowsAnimationStyle, true);
 #endif
 				})
 				.ContinueWith((task) =>
@@ -723,9 +812,9 @@ namespace EveOPreview.Services
 			if (switchOut)
 			{
 #if LINUX
-				this._windowManager.ActivateWindow(this._externalApplication, null);
+				this._windowManager.ActivateWindow(this._externalApplication, null, true);
 #else
-				this._windowManager.ActivateWindow(this._externalApplication, this._configuration.WindowsAnimationStyle);
+				this._windowManager.ActivateWindow(this._externalApplication, this._configuration.WindowsAnimationStyle, true);
 #endif
 			}
 			else

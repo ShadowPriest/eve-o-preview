@@ -96,6 +96,7 @@ namespace EveOPreview.Configuration.Implementation
 			this.ClientLayout = new Dictionary<string, ClientLayout>();
 			this.ClientHotkey = new Dictionary<string, string>();
 			this.MinimizeAllClientsHotkeys = new List<string> { "Control+F22" };
+			this.RefreshMinimizedClientsHotkeys = new List<string> { "Control+F21" };
 			this.DisableThumbnail = new Dictionary<string, bool>();
 			this.PriorityClients = new List<string>();
 
@@ -325,6 +326,8 @@ namespace EveOPreview.Configuration.Implementation
 		private Dictionary<string, string> ClientHotkey { get; set; }
 		[JsonProperty]
 		public List<string> MinimizeAllClientsHotkeys { get; set; }
+		[JsonProperty]
+		public List<string> RefreshMinimizedClientsHotkeys { get; set; }
 		[JsonProperty]
 		private Dictionary<string, bool> DisableThumbnail { get; set; }
 		[JsonProperty]
