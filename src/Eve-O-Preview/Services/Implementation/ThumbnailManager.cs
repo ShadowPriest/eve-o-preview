@@ -1230,6 +1230,9 @@ namespace EveOPreview.Services
 			RegisterCycleClientHotkey(this._configuration.CycleGroup5ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup5ClientsOrder);
 			RegisterCycleClientHotkey(this._configuration.CycleGroup5BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup5ClientsOrder);
 
+			RegisterMinimizeAllClientsHotkey(this._configuration.MinimizeAllClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
+			RegisterRefreshMinimizedClientsHotkey(this._configuration.RefreshMinimizedClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
+
 			// Also hot-reload per-client individual hotkeys
 			foreach (var kv in this._thumbnailViews)
 			{
