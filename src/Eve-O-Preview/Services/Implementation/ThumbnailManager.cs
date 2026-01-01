@@ -111,14 +111,17 @@ namespace EveOPreview.Services
 		}
 		public void SetActive(KeyValuePair<IntPtr, IThumbnailView> newClient)
 		{
-			System.Diagnostics.Debug.WriteLine($"SetActive");
+			System.Diagnostics.Debug.WriteLine($"SetActive {newClient.Value.Title}");
 
 			this.GetActiveClient()?.ClearBorder();
+
+/*
 #if LINUX
 			this._windowManager.ActivateWindow(newClient.Key, newClient.Value.Title);
 #else
 			this._windowManager.ActivateWindow(newClient.Key, this._configuration.WindowsAnimationStyle);
 #endif
+*/
 			this.SwitchActiveClient(newClient.Key, newClient.Value.Title);
 
 			newClient.Value.SetHighlight();
@@ -631,17 +634,21 @@ namespace EveOPreview.Services
 			{
 				return;
 			}
-			System.Diagnostics.Debug.WriteLine($"SwitchActiveClient");
+			System.Diagnostics.Debug.WriteLine($"SwitchActiveClient {foregroundClientTitle}");
+
+#if LINUX
+   			    this._windowManager.ActivateWindow(foregroundClientHandle, foregroundClientTitle);
+#else
+			this._windowManager.ActivateWindow(foregroundClientHandle, this._configuration.WindowsAnimationStyle);
+#endif
 
 			// Minimize the currently active client if needed
 			if (this._configuration.MinimizeInactiveClients && !this._configuration.IsPriorityClient(this._activeClient.Title))
 			{
-				this._windowManager.MinimizeWindow(this._activeClient.Handle, this._configuration.WindowsAnimationStyle, false);
-#if LINUX
-   			    this._windowManager.ActivateWindow(foregroundClientHandle, foregroundClientTitle);
-#else
-				this._windowManager.ActivateWindow(foregroundClientHandle, this._configuration.WindowsAnimationStyle);
-#endif
+				System.Diagnostics.Debug.WriteLine($"Calling MinimizeWindow {this._activeClient.Title}");
+
+					System.Threading.Thread.Sleep(20);
+					this._windowManager.MinimizeWindow(this._activeClient.Handle, this._configuration.WindowsAnimationStyle, false);
 			}
 
 			this._activeClient = (foregroundClientHandle, foregroundClientTitle);
@@ -690,6 +697,8 @@ namespace EveOPreview.Services
 		{
 			IThumbnailView view = this._thumbnailViews[id];
 
+			System.Diagnostics.Debug.WriteLine($"ThumbnailActivated {view.Title}");
+
 			Task.Run(() =>
 				{
 #if LINUX
@@ -709,6 +718,8 @@ namespace EveOPreview.Services
 
 		private void ThumbnailDeactivated(IntPtr id, bool switchOut)
 		{
+			System.Diagnostics.Debug.WriteLine($"ThumbnailDeactivated");
+
 			if (switchOut)
 			{
 #if LINUX
