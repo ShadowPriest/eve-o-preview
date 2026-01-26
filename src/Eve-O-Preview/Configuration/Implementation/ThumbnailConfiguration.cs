@@ -153,6 +153,8 @@ namespace EveOPreview.Configuration.Implementation
 			this.ActiveClientHighlightThickness = 3;
 
 			this.OverlayLabelColor = Color.Orange;
+			this.OverlayLabelOutlineColor = Color.Black;
+			this.OverlayLabelOutlineSize = 1;
 			this.OverlayLabelFont = new Font(FontFamily.GenericSansSerif,10.0F, FontStyle.Bold);
 
 			this.IconName = "";
@@ -306,6 +308,8 @@ namespace EveOPreview.Configuration.Implementation
 		public Color ActiveClientHighlightColor { get; set; }
 		public Color PreventPreviewColor { get; set; }
 		public Color OverlayLabelColor { get; set; }
+		public Color OverlayLabelOutlineColor { get; set; }
+		public int OverlayLabelOutlineSize { get; set; }
 
 		[JsonProperty]
 		public Font OverlayLabelFont { get; set; }
@@ -466,6 +470,7 @@ namespace EveOPreview.Configuration.Implementation
 				ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailSize.Height, this.ThumbnailMinimumSize.Height, this.ThumbnailMaximumSize.Height));
 			this.ThumbnailOpacity = ThumbnailConfiguration.ApplyRestrictions((int)(this.ThumbnailOpacity * 100.00), 20, 100) / 100.00;
 			this.ThumbnailZoomFactor = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailZoomFactor, 2, 10);
+			this.OverlayLabelOutlineSize= ThumbnailConfiguration.ApplyRestrictions(this.OverlayLabelOutlineSize, 0, 10);
 			this.ActiveClientHighlightThickness = ThumbnailConfiguration.ApplyRestrictions(this.ActiveClientHighlightThickness, 1, 6);
 		}
 		public IList<string> GetAllKnownClients()

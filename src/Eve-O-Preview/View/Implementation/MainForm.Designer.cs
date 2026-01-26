@@ -51,6 +51,7 @@ namespace EveOPreview.View
 			Label ZoomAnchorLabel;
 			TabPage OverlayTabPage;
 			Panel OverlaySettingsPanel;
+			Label label1;
 			Label CycleGroupLabel;
 			TabPage ClientsTabPage;
 			Panel ClientsPanel;
@@ -96,6 +97,9 @@ namespace EveOPreview.View
 			ZoomAanchorSWRadioButton = new RadioButton();
 			EnableThumbnailZoomCheckBox = new CheckBox();
 			ThumbnailZoomFactorNumericEdit = new NumericUpDown();
+			OverlayLabelOutlineSizeNumericEdit = new NumericUpDown();
+			OverlayLabelOutlineColourLabel = new Label();
+			OverlayLabelOutlineColorButton = new Panel();
 			CycleGroupIndicatorPositionLabel = new Label();
 			panel2 = new Panel();
 			CycleGroupIndicatorNWRadioButton = new RadioButton();
@@ -153,8 +157,8 @@ namespace EveOPreview.View
 			NotifyIcon = new NotifyIcon(components);
 			TrayMenu = new ContextMenuStrip(components);
 			MenuConfigurationFile = new ToolStripMenuItem();
-			SeparatorMenuItem2 = new ToolStripSeparator();
 			defaultoolStripMenuItem = new ToolStripMenuItem();
+			SeparatorMenuItem2 = new ToolStripSeparator();
 			RestoreWindowMenuItem = new ToolStripMenuItem();
 			ExitMenuItem = new ToolStripMenuItem();
 			TitleMenuItem = new ToolStripMenuItem();
@@ -174,6 +178,7 @@ namespace EveOPreview.View
 			ZoomAnchorLabel = new Label();
 			OverlayTabPage = new TabPage();
 			OverlaySettingsPanel = new Panel();
+			label1 = new Label();
 			CycleGroupLabel = new Label();
 			ClientsTabPage = new TabPage();
 			ClientsPanel = new Panel();
@@ -200,6 +205,7 @@ namespace EveOPreview.View
 			((System.ComponentModel.ISupportInitialize)ThumbnailZoomFactorNumericEdit).BeginInit();
 			OverlayTabPage.SuspendLayout();
 			OverlaySettingsPanel.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)OverlayLabelOutlineSizeNumericEdit).BeginInit();
 			panel2.SuspendLayout();
 			panel1.SuspendLayout();
 			CycleGroupTabPage.SuspendLayout();
@@ -863,6 +869,10 @@ namespace EveOPreview.View
 			// OverlaySettingsPanel
 			// 
 			OverlaySettingsPanel.BorderStyle = BorderStyle.FixedSingle;
+			OverlaySettingsPanel.Controls.Add(label1);
+			OverlaySettingsPanel.Controls.Add(OverlayLabelOutlineSizeNumericEdit);
+			OverlaySettingsPanel.Controls.Add(OverlayLabelOutlineColourLabel);
+			OverlaySettingsPanel.Controls.Add(OverlayLabelOutlineColorButton);
 			OverlaySettingsPanel.Controls.Add(CycleGroupIndicatorPositionLabel);
 			OverlaySettingsPanel.Controls.Add(panel2);
 			OverlaySettingsPanel.Controls.Add(LabelOverlayLabelFont);
@@ -882,6 +892,49 @@ namespace EveOPreview.View
 			OverlaySettingsPanel.Name = "OverlaySettingsPanel";
 			OverlaySettingsPanel.Size = new Size(576, 472);
 			OverlaySettingsPanel.TabIndex = 25;
+			// 
+			// label1
+			// 
+			label1.AutoSize = true;
+			label1.Location = new Point(13, 416);
+			label1.Margin = new Padding(6, 0, 6, 0);
+			label1.Name = "label1";
+			label1.Size = new Size(105, 25);
+			label1.TabIndex = 51;
+			label1.Text = "Outline Size";
+			// 
+			// OverlayLabelOutlineSizeNumericEdit
+			// 
+			OverlayLabelOutlineSizeNumericEdit.BackColor = SystemColors.Window;
+			OverlayLabelOutlineSizeNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			OverlayLabelOutlineSizeNumericEdit.Location = new Point(199, 413);
+			OverlayLabelOutlineSizeNumericEdit.Margin = new Padding(6, 7, 6, 7);
+			OverlayLabelOutlineSizeNumericEdit.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
+			OverlayLabelOutlineSizeNumericEdit.Name = "OverlayLabelOutlineSizeNumericEdit";
+			OverlayLabelOutlineSizeNumericEdit.Size = new Size(63, 31);
+			OverlayLabelOutlineSizeNumericEdit.TabIndex = 50;
+			OverlayLabelOutlineSizeNumericEdit.Value = new decimal(new int[] { 2, 0, 0, 0 });
+			OverlayLabelOutlineSizeNumericEdit.ValueChanged += OptionChanged_Handler;
+			// 
+			// OverlayLabelOutlineColourLabel
+			// 
+			OverlayLabelOutlineColourLabel.AutoSize = true;
+			OverlayLabelOutlineColourLabel.Location = new Point(9, 379);
+			OverlayLabelOutlineColourLabel.Margin = new Padding(6, 0, 6, 0);
+			OverlayLabelOutlineColourLabel.Name = "OverlayLabelOutlineColourLabel";
+			OverlayLabelOutlineColourLabel.Size = new Size(117, 25);
+			OverlayLabelOutlineColourLabel.TabIndex = 49;
+			OverlayLabelOutlineColourLabel.Text = "Outline Color";
+			// 
+			// OverlayLabelOutlineColorButton
+			// 
+			OverlayLabelOutlineColorButton.BorderStyle = BorderStyle.FixedSingle;
+			OverlayLabelOutlineColorButton.Location = new Point(142, 377);
+			OverlayLabelOutlineColorButton.Margin = new Padding(6, 7, 6, 7);
+			OverlayLabelOutlineColorButton.Name = "OverlayLabelOutlineColorButton";
+			OverlayLabelOutlineColorButton.Size = new Size(121, 30);
+			OverlayLabelOutlineColorButton.TabIndex = 48;
+			OverlayLabelOutlineColorButton.Click += OverlayLabelOutlineColorButton_Click;
 			// 
 			// CycleGroupIndicatorPositionLabel
 			// 
@@ -1063,7 +1116,7 @@ namespace EveOPreview.View
 			// OverlayLabelColorButton
 			// 
 			OverlayLabelColorButton.BorderStyle = BorderStyle.FixedSingle;
-			OverlayLabelColorButton.Location = new Point(103, 343);
+			OverlayLabelColorButton.Location = new Point(142, 343);
 			OverlayLabelColorButton.Margin = new Padding(6, 7, 6, 7);
 			OverlayLabelColorButton.Name = "OverlayLabelColorButton";
 			OverlayLabelColorButton.Size = new Size(121, 30);
@@ -1644,16 +1697,16 @@ namespace EveOPreview.View
 			MenuConfigurationFile.Text = "Configuration File";
 			MenuConfigurationFile.DropDownItemClicked += MenuConfigurationFile_DropDownItemClicked;
 			// 
+			// defaultoolStripMenuItem
+			// 
+			defaultoolStripMenuItem.Name = "defaultoolStripMenuItem";
+			defaultoolStripMenuItem.Size = new Size(200, 34);
+			defaultoolStripMenuItem.Text = "*DEFAULT*";
+			// 
 			// SeparatorMenuItem2
 			// 
 			SeparatorMenuItem2.Name = "SeparatorMenuItem2";
 			SeparatorMenuItem2.Size = new Size(221, 6);
-			// 
-			// defaultoolStripMenuItem
-			// 
-			defaultoolStripMenuItem.Name = "defaultoolStripMenuItem";
-			defaultoolStripMenuItem.Size = new Size(270, 34);
-			defaultoolStripMenuItem.Text = "*DEFAULT*";
 			// 
 			// MainForm
 			// 
@@ -1693,6 +1746,7 @@ namespace EveOPreview.View
 			OverlayTabPage.ResumeLayout(false);
 			OverlaySettingsPanel.ResumeLayout(false);
 			OverlaySettingsPanel.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)OverlayLabelOutlineSizeNumericEdit).EndInit();
 			panel2.ResumeLayout(false);
 			panel2.PerformLayout();
 			panel1.ResumeLayout(false);
@@ -1806,5 +1860,8 @@ namespace EveOPreview.View
 		private ToolStripMenuItem MenuConfigurationFile;
 		private ToolStripSeparator SeparatorMenuItem2;
 		private ToolStripMenuItem defaultoolStripMenuItem;
+		private NumericUpDown OverlayLabelOutlineSizeNumericEdit;
+		private Label OverlayLabelOutlineColourLabel;
+		private Panel OverlayLabelOutlineColorButton;
 	}
 }

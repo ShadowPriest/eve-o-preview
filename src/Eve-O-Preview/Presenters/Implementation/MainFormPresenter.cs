@@ -152,6 +152,8 @@ namespace EveOPreview.Presenters
 
 			this.View.OverlayLabelColor = this._configuration.OverlayLabelColor;
 			this.View.OverlayLabelFont = this._configuration.OverlayLabelFont;
+			this.View.OverlayLabelOutlineColor = this._configuration.OverlayLabelOutlineColor;
+			this.View.OverlayLabelOutlineSize = this._configuration.OverlayLabelOutlineSize;
 
 			this.View.IconName = this._configuration.IconName;
 
@@ -352,6 +354,8 @@ namespace EveOPreview.Presenters
 
 			this._configuration.OverlayLabelColor = this.View.OverlayLabelColor;
 			this._configuration.OverlayLabelFont = this.View.OverlayLabelFont;
+			this._configuration.OverlayLabelOutlineColor = this.View.OverlayLabelOutlineColor;
+			this._configuration.OverlayLabelOutlineSize = this.View.OverlayLabelOutlineSize;
 
 			this._configuration.IconName = this.View.IconName;
 

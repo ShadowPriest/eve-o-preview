@@ -366,6 +366,22 @@ namespace EveOPreview.View
 		}
 		private Color _OverlayLabelColor;
 
+		public Color OverlayLabelOutlineColor
+		{
+			get => this._OverlayLabelOutlineColor;
+			set
+			{
+				this._OverlayLabelOutlineColor = value;
+				this.OverlayLabelOutlineColorButton.BackColor = value;
+			}
+		}
+		private Color _OverlayLabelOutlineColor;
+		public int OverlayLabelOutlineSize
+		{
+			get => (int)this.OverlayLabelOutlineSizeNumericEdit.Value;
+			set => this.OverlayLabelOutlineSizeNumericEdit.Value = value;
+		}
+
 		public Font OverlayLabelFont
 		{
 			get => (Font)this._OverlayLabelFont;
@@ -1038,7 +1054,7 @@ namespace EveOPreview.View
 				{
 				}
 				);
-			
+
 			foreach (var filename in Directory.GetFiles(".", "Eve-O-Preview*.json"))
 			{
 				string displayName = filename.Replace("./", "", StringComparison.OrdinalIgnoreCase);
@@ -1052,7 +1068,7 @@ namespace EveOPreview.View
 				}
 				else
 				{
-					if (! displayName.StartsWith("Eve-O-Preview-", StringComparison.OrdinalIgnoreCase))
+					if (!displayName.StartsWith("Eve-O-Preview-", StringComparison.OrdinalIgnoreCase))
 					{
 						continue;
 					}
@@ -1067,14 +1083,14 @@ namespace EveOPreview.View
 				};
 
 				this.MenuConfigurationFile.DropDownItems.Add(mi);
-				_configurationFilenames.Add(displayName, filename.Replace(".//","").Replace("./",""));
+				_configurationFilenames.Add(displayName, filename.Replace(".//", "").Replace("./", ""));
 			}
 
 		}
 
 		private void MenuConfigurationFile_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
 		{
-			if ( e.ClickedItem.Text.Equals(LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration")))
+			if (e.ClickedItem.Text.Equals(LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration")))
 			{
 				this.LoadNewSettings?.Invoke(null);
 				return;
@@ -1087,7 +1103,7 @@ namespace EveOPreview.View
 				foreach (var mi in this.MenuConfigurationFile.DropDownItems)
 				{
 
-					if ( mi.GetType()  == typeof(ToolStripMenuItem) )
+					if (mi.GetType() == typeof(ToolStripMenuItem))
 					{
 						ToolStripMenuItem menuItem = (ToolStripMenuItem)mi;
 						if (menuItem.Text.Length > 0 && menuItem.Text != LocalizationExtensions.GetString("MainForm.MenuConfigurationFile.Reload", "Reload Configuration"))
@@ -1099,6 +1115,23 @@ namespace EveOPreview.View
 				this.SaveSettings?.Invoke();
 				this.LoadNewSettings?.Invoke(_configurationFilename);
 			}
+		}
+
+		private void OverlayLabelOutlineColorButton_Click(object sender, EventArgs e)
+		{
+			using (ColorDialog dialog = new ColorDialog())
+			{
+				dialog.Color = this.OverlayLabelOutlineColor;
+
+				if (dialog.ShowDialog() != DialogResult.OK)
+				{
+					return;
+				}
+				this.OverlayLabelOutlineColor = dialog.Color;
+			}
+
+			this.OptionChanged_Handler(sender, e);
+
 		}
 	}
 }

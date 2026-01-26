@@ -79,6 +79,8 @@ namespace EveOPreview.Configuration
 		Color PreventPreviewColor { get; set; }
 		int ActiveClientHighlightThickness { get; set; }
 		Color OverlayLabelColor { get; set; }
+		Color OverlayLabelOutlineColor { get; set; }
+		int OverlayLabelOutlineSize { get; set; }
 		Font OverlayLabelFont { get; set; }
 
 		string IconName { get; set; }
