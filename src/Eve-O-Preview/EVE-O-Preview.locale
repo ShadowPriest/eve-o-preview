@@ -15,6 +15,7 @@
     "MainForm.ContentTabControl.ThumbnailTabPage.DoNotDisplayPreviewColour": "Color",
     "MainForm.ContentTabControl.ThumbnailTabPage.PreventPreviewsCheckBox": "Do not display previews",
     "MainForm.ContentTabControl.ThumbnailTabPage.ThumbnailSnapToGridCheckBox": "Thumbnail Snap to Grid",
+    "MainForm.ContentTabControl.ThumbnailTabPage.CoreAffinityCheckBox": "Force Core Affinity",
     "MainForm.ContentTabControl.ThumbnailTabPage.SnapYLabel": "Y",
     "MainForm.ContentTabControl.ThumbnailTabPage.SnapXLabel": "Snap X",
     "MainForm.ContentTabControl.ThumbnailTabPage.LockThumbnailLocationCheckbox": "Lock Thumbnail Location",
@@ -63,8 +64,8 @@
     "MainForm.MenuConfigurationFile": "Configuration file",
     "MainForm.MenuConfigurationFile.Reload": "Reload current config",
     "MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton": "Capture",
-    "MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton_PressKey": "Press Key",
-},
+    "MainForm.ContentTabControl.CycleGroupTabPage.HotkeyCaptureButton_PressKey": "Press Key"
+  },
   "zh-CN": {
     "MainForm": "EVE-O-Preview zh-CN",
     "MainForm.ContentTabControl.GeneralTabPage": "通用",

@@ -67,6 +67,11 @@ namespace EveOPreview.Configuration.Implementation
 				{"EVE - Example Toon 1", Color.Red},
 				{"EVE - Example Toon 2", Color.Green}
 			};
+			this.PerClientCoreAffinity = new Dictionary<string, string>
+			{
+				{"EVE - Example Toon 1", "110000000000"},
+				{"EVE - Example Toon 2", "001100000000"}
+			};
 			this.PerClientPreventPreviews = new Dictionary<string, bool>
 			{
 				{"EVE - Example Toon 1", false},
@@ -125,6 +130,7 @@ namespace EveOPreview.Configuration.Implementation
 
 			this.HideThumbnailsOnLostFocus = false;
 			this.PreventPreviews = false;
+			this.DefaultCoreAffinity = "11001100";
 			this.HideThumbnailsDelay = 2; // 2 thumbnails refresh cycles (1.0 sec)
 
 			this.ThumbnailSize = new Size(384, 216);
@@ -160,6 +166,8 @@ namespace EveOPreview.Configuration.Implementation
 			this.IconName = "";
 
 			this.LoginThumbnailLocation = new Point(5, 5);
+
+			this.CoreAffinity = true;
 		}
 
 
@@ -225,6 +233,8 @@ namespace EveOPreview.Configuration.Implementation
 
 		[JsonProperty("PerClientPreventPreviews")]
 		public Dictionary<string, bool> PerClientPreventPreviews { get; set; }
+		[JsonProperty("PerClientCoreAffinity")]
+		public Dictionary<string, string> PerClientCoreAffinity { get; set; }
 
 		[JsonProperty("PerClientAliases")]
 		public Dictionary<string, string> PerClientAliases { get; set; }
@@ -280,6 +290,7 @@ namespace EveOPreview.Configuration.Implementation
 		}
 
 		public bool PreventPreviews { get; set; }
+		public string DefaultCoreAffinity { get; set; }
 		public bool HideThumbnailsOnLostFocus { get; set; }
 		public int HideThumbnailsDelay { get; set; }
 
@@ -319,7 +330,8 @@ namespace EveOPreview.Configuration.Implementation
 
 		[JsonProperty("LoginThumbnailLocation")]
 		public Point LoginThumbnailLocation { get; set; }
-
+		[JsonProperty("CoreAfffinity")]
+		public bool CoreAffinity  { get; set; }
 		[JsonProperty]
 		private Dictionary<string, Dictionary<string, Point>> PerClientLayout { get; set; }
 		[JsonProperty]

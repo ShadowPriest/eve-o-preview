@@ -63,6 +63,7 @@ namespace EveOPreview.View
 			Label DescriptionLabel;
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			Label NameLabel;
+			CoreAffinityCheckBox = new CheckBox();
 			CaptionOnClientsStyleCombo = new ComboBox();
 			AnimationStyleCombo = new ComboBox();
 			MinimizeInactiveClientsCheckBox = new CheckBox();
@@ -282,6 +283,7 @@ namespace EveOPreview.View
 			// GeneralSettingsPanel
 			// 
 			GeneralSettingsPanel.BorderStyle = BorderStyle.FixedSingle;
+			GeneralSettingsPanel.Controls.Add(CoreAffinityCheckBox);
 			GeneralSettingsPanel.Controls.Add(captionBarStyleLabel);
 			GeneralSettingsPanel.Controls.Add(CaptionOnClientsStyleCombo);
 			GeneralSettingsPanel.Controls.Add(animationStyleLabel);
@@ -300,6 +302,20 @@ namespace EveOPreview.View
 			GeneralSettingsPanel.Size = new Size(564, 458);
 			GeneralSettingsPanel.TabIndex = 18;
 			GeneralSettingsPanel.Paint += GeneralSettingsPanel_Paint;
+			// 
+			// CoreAffinityCheckBox
+			// 
+			CoreAffinityCheckBox.AutoSize = true;
+			CoreAffinityCheckBox.Checked = true;
+			CoreAffinityCheckBox.CheckState = CheckState.Checked;
+			CoreAffinityCheckBox.Location = new Point(13, 342);
+			CoreAffinityCheckBox.Margin = new Padding(6, 7, 6, 7);
+			CoreAffinityCheckBox.Name = "CoreAffinityCheckBox";
+			CoreAffinityCheckBox.Size = new Size(201, 29);
+			CoreAffinityCheckBox.TabIndex = 31;
+			CoreAffinityCheckBox.Text = "Enforce Core Affinity";
+			CoreAffinityCheckBox.UseVisualStyleBackColor = true;
+			CoreAffinityCheckBox.CheckedChanged += OptionChanged_Handler;
 			// 
 			// captionBarStyleLabel
 			// 
@@ -1863,5 +1879,6 @@ namespace EveOPreview.View
 		private NumericUpDown OverlayLabelOutlineSizeNumericEdit;
 		private Label OverlayLabelOutlineColourLabel;
 		private Panel OverlayLabelOutlineColorButton;
+		private CheckBox CoreAffinityCheckBox;
 	}
 }

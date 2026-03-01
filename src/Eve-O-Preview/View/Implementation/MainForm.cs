@@ -316,6 +316,11 @@ namespace EveOPreview.View
 			get => this.ThumbnailSnapToGridCheckBox.Checked;
 			set => this.ThumbnailSnapToGridCheckBox.Checked = value;
 		}
+		public bool CoreAffinity
+		{
+			get => this.CoreAffinityCheckBox.Checked;
+			set => this.CoreAffinityCheckBox.Checked = value;
+		}
 		public int ThumbnailSnapToGridSizeX
 		{
 			get => (int)ThumbnailSnapToGridSizeXNumericEdit.Value;

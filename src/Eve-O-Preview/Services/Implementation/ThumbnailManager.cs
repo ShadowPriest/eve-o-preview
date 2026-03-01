@@ -11,8 +11,10 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace EveOPreview.Services
@@ -25,6 +27,7 @@ namespace EveOPreview.Services
 		private const int WINDOW_SIZE_THRESHOLD = 10;
 		private const int FORCED_REFRESH_CYCLE_THRESHOLD = 2;
 		private const int DEFAULT_LOCATION_CHANGE_NOTIFICATION_DELAY = 2;
+		private int ProcessorCount = Environment.ProcessorCount;
 
 		private const string DEFAULT_CLIENT_TITLE = "EVE";
 		#endregion
@@ -440,6 +443,7 @@ namespace EveOPreview.Services
 
 				this.ApplyClientLayout(view);
 				this.ApplyCaptionBar(view, false);
+				this.ApplyCoreAffinity(view, process);
 
 				// TODO Add extension filter here later
 				if (view.Title != ThumbnailManager.DEFAULT_CLIENT_TITLE)
@@ -468,6 +472,7 @@ namespace EveOPreview.Services
 
 					this.ApplyClientLayout(view);
 					this.ApplyCaptionBar(view, false);
+					this.ApplyCoreAffinity(view, process);
 				}
 			}
 
@@ -1025,6 +1030,47 @@ namespace EveOPreview.Services
 			changed = changed | SetWindowStyle(view, InteropConstants.WS_CAPTION, enable);
 			changed = changed | SetWindowStyle(view, InteropConstants.WS_THICKFRAME, enable);
 		}
+		private void ApplyCoreAffinity(IThumbnailView view, IProcessInfo proc)
+		{
+			IntPtr clientHandle = view.Id;
+			string clientTitle = view.Title;
+
+			if (!this._configuration.CoreAffinity)
+			{
+				return;
+			}
+
+			var coreAffinity = this._configuration.DefaultCoreAffinity;
+			if (this._configuration.PerClientCoreAffinity.Any(x => x.Key == view.Title))
+			{
+				coreAffinity = this._configuration.PerClientCoreAffinity[view.Title];
+			}
+
+			var affinityBits = "";
+			for (int i = 0; i < ProcessorCount; i++)
+			{
+				var bit = '1';
+				if ( i > coreAffinity.Length-1)
+				{
+					bit = '0';
+				} else
+				{
+					bit = coreAffinity.Substring(i, 1)[0];
+				}
+
+				if (i < ProcessorCount)
+				{
+					affinityBits += bit;
+				}
+			}
+			IntPtr affinity = new IntPtr(Convert.ToInt64(affinityBits.ToString(), 2));
+			var actualProcess = System.Diagnostics.Process.GetProcessById((int)proc.Id);
+			if (actualProcess.ProcessorAffinity != affinity)
+			{
+				actualProcess.ProcessorAffinity = affinity;
+			}
+		}
+
 		private void ApplyClientLayout(IThumbnailView view)
 		{
 			IntPtr clientHandle = view.Id;

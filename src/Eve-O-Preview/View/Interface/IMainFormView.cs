@@ -39,6 +39,7 @@ namespace EveOPreview.View
 
 		bool LockThumbnailLocation { get; set; }
 		bool ThumbnailSnapToGrid { get; set; }
+		bool CoreAffinity { get; set; }
 		int ThumbnailSnapToGridSizeX { get; set; }
 		int ThumbnailSnapToGridSizeY { get; set; }
 
