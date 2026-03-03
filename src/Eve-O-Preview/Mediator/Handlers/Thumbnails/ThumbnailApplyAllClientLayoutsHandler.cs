@@ -18,6 +18,7 @@ namespace EveOPreview.Mediator.Handlers.Thumbnails
 		public Task Handle(ThumbnailApplyAllClientsLayouts notification, CancellationToken cancellationToken)
 		{
 			this._manager.ApplyAllClientLayouts();
+			this._manager.ApplyAllCoreAffinities();
 			return Task.CompletedTask;
 		}
 	}

@@ -11,6 +11,7 @@ namespace EveOPreview.Services
 		void UpdateThumbnailsSize();
 		void UpdateThumbnailFrames();
 		void ApplyAllClientLayouts();
+		void ApplyAllCoreAffinities();
 		void UpdateClientLayouts();
 
 		void ReloadCycleClientHotkeys();
