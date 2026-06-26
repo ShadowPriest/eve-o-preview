@@ -20,5 +20,7 @@ namespace EveOPreview.Configuration
         bool DeleteProfile(string name);
         bool SwitchProfile(string name);
         void ResetActiveProfileToDefaults();
+        bool ExportProfile(string destinationPath);
+        string ImportProfile(string sourcePath);
     }
 }

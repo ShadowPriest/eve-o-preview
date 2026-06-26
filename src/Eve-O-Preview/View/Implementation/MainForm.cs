@@ -947,11 +947,19 @@ namespace EveOPreview.View
             Button resetButton = new Button { Text = "Reset to Defaults", Width = 120, Margin = new Padding(3) };
             resetButton.Click += (sender, e) => this.ProfileResetRequested?.Invoke();
 
+            Button exportButton = new Button { Text = "Export", Width = 70, Margin = new Padding(3) };
+            exportButton.Click += (sender, e) => this.ProfileExportRequested?.Invoke();
+
+            Button importButton = new Button { Text = "Import", Width = 70, Margin = new Padding(3) };
+            importButton.Click += (sender, e) => this.ProfileImportRequested?.Invoke();
+
             buttons.Controls.Add(activateButton);
             buttons.Controls.Add(newButton);
             buttons.Controls.Add(saveButton);
             buttons.Controls.Add(deleteButton);
             buttons.Controls.Add(resetButton);
+            buttons.Controls.Add(exportButton);
+            buttons.Controls.Add(importButton);
 
             TabPage profilesTab = new TabPage
             {
@@ -1122,6 +1130,28 @@ namespace EveOPreview.View
                 "Reset to Defaults", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes;
         }
 
+        public string PromptExportPath()
+        {
+            using (SaveFileDialog dialog = new SaveFileDialog())
+            {
+                dialog.Title = "Export Configuration";
+                dialog.Filter = "EVE-O Preview config (*.json)|*.json|All files (*.*)|*.*";
+                dialog.FileName = "eve-o-preview-config.json";
+                return (dialog.ShowDialog(this) == DialogResult.OK) ? dialog.FileName : null;
+            }
+        }
+
+        public string PromptImportPath()
+        {
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Import Configuration";
+                dialog.Filter = "EVE-O Preview config (*.json)|*.json|All files (*.*)|*.*";
+                dialog.CheckFileExists = true;
+                return (dialog.ShowDialog(this) == DialogResult.OK) ? dialog.FileName : null;
+            }
+        }
+
         // Minimal modal text-input dialog (WinForms has no built-in InputBox).
         private string ShowTextInputDialog(string prompt, string title)
         {
@@ -1229,6 +1259,8 @@ namespace EveOPreview.View
         public Action ProfileSaveRequested { get; set; }
         public Action<string> ProfileDeleteRequested { get; set; }
         public Action ProfileResetRequested { get; set; }
+        public Action ProfileExportRequested { get; set; }
+        public Action ProfileImportRequested { get; set; }
 
         #region UI events
         private void ContentTabControl_DrawItem(object sender, DrawItemEventArgs e)

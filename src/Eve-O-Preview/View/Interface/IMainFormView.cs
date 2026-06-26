@@ -92,6 +92,10 @@ namespace EveOPreview.View
         Action ProfileSaveRequested { get; set; }
         Action<string> ProfileDeleteRequested { get; set; }
         Action ProfileResetRequested { get; set; }
+        Action ProfileExportRequested { get; set; }
+        Action ProfileImportRequested { get; set; }
+        string PromptExportPath();
+        string PromptImportPath();
         Action<bool> ThemeChanged { get; set; }
         void ApplyTheme(bool dark);
 

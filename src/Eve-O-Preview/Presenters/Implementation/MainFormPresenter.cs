@@ -60,6 +60,8 @@ namespace EveOPreview.Presenters
             this.View.ProfileSaveRequested = this.SaveCurrentProfile;
             this.View.ProfileDeleteRequested = this.DeleteProfile;
             this.View.ProfileResetRequested = this.ResetProfileToDefaults;
+            this.View.ProfileExportRequested = this.ExportConfiguration;
+            this.View.ProfileImportRequested = this.ImportConfiguration;
             this.View.ThemeChanged = this.ChangeTheme;
 
             this.View.IconName = this._configuration.IconName;
@@ -559,6 +561,39 @@ namespace EveOPreview.Presenters
             this._configuration.DarkMode = dark;
             this._configurationStorage.Save();
             this.View.ApplyTheme(dark);
+        }
+
+        private void ExportConfiguration()
+        {
+            string path = this.View.PromptExportPath();
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            this.View.ShowMessage(this._configurationStorage.ExportProfile(path)
+                ? "Configuration exported."
+                : "Could not export the configuration.");
+        }
+
+        private void ImportConfiguration()
+        {
+            string path = this.View.PromptImportPath();
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            string name = this._configurationStorage.ImportProfile(path);
+            if (name != null)
+            {
+                this.RefreshProfilesView();
+                this.View.ShowMessage("Imported as profile \"" + name + "\". Select it in the list and click Activate to use it.");
+            }
+            else
+            {
+                this.View.ShowMessage("Could not import that file. Make sure it is a valid EVE-O Preview configuration.");
+            }
         }
 
         // Re-applies the whole live configuration to the UI after a profile switch.

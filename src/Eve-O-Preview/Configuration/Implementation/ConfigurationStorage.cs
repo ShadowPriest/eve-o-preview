@@ -222,6 +222,66 @@ namespace EveOPreview.Configuration.Implementation
             ApplyRawData(defaults);
             this.Save();
         }
+
+        // Writes the current live configuration to an arbitrary file the user picked.
+        public bool ExportProfile(string destinationPath)
+        {
+            string rawData = JsonConvert.SerializeObject(this._thumbnailConfiguration, Formatting.Indented);
+            try
+            {
+                File.WriteAllText(destinationPath, rawData);
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+        }
+
+        // Imports an external config file as a NEW profile (named from the file, de-duplicated).
+        // Returns the new profile name, or null on failure. Old-format files are accepted and
+        // migrate to the new schema when the profile is activated.
+        public string ImportProfile(string sourcePath)
+        {
+            string rawData;
+            try
+            {
+                rawData = File.ReadAllText(sourcePath);
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+
+            if (!IsValidConfig(rawData))
+            {
+                return null;
+            }
+
+            string baseName = Path.GetFileNameWithoutExtension(sourcePath);
+            if (!IsValidProfileName(baseName))
+            {
+                baseName = "Imported";
+            }
+
+            string name = baseName;
+            int suffix = 2;
+            while (File.Exists(this.GetProfilePath(name)))
+            {
+                name = baseName + " (" + suffix + ")";
+                suffix++;
+            }
+
+            try
+            {
+                File.WriteAllText(this.GetProfilePath(name), rawData);
+                return name;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+        }
         #endregion
 
         #region Hot reload (issue #94)
