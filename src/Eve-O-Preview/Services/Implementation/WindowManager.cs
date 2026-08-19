@@ -272,21 +272,28 @@ namespace EveOPreview.Services.Implementation
 				return;
 			}
 
-			// The cheap path first: it works whenever this process is allowed to set
-			// the foreground window (f.e. right after handling its own global hotkey)
-			User32NativeMethods.BringWindowToTop(handle);
-			User32NativeMethods.SetForegroundWindow(handle);
+			uint foregroundProcessId = 0;
+			uint foregroundThreadId = foregroundWindow != IntPtr.Zero
+										? User32NativeMethods.GetWindowThreadProcessId(foregroundWindow, out foregroundProcessId)
+										: 0;
 
-			if (User32NativeMethods.GetForegroundWindow() == handle)
+			// The cheap path is taken only when this process is guaranteed to be allowed
+			// to set the foreground window. A refused SetForegroundWindow call is not just
+			// a no-op: Windows flashes the taskbar button of the target window instead
+			// (the yellow highlight), so blind attempts are avoided
+			if ((foregroundWindow == IntPtr.Zero) || (foregroundProcessId == (uint)Environment.ProcessId))
 			{
-				User32NativeMethods.SetFocus(handle);
-				return;
+				User32NativeMethods.BringWindowToTop(handle);
+				User32NativeMethods.SetForegroundWindow(handle);
+
+				if (User32NativeMethods.GetForegroundWindow() == handle)
+				{
+					User32NativeMethods.SetFocus(handle);
+					return;
+				}
 			}
 
 			uint currentThreadId = User32NativeMethods.GetCurrentThreadId();
-			uint foregroundThreadId = foregroundWindow != IntPtr.Zero
-										? User32NativeMethods.GetWindowThreadProcessId(foregroundWindow, out _)
-										: 0;
 			uint targetThreadId = User32NativeMethods.GetWindowThreadProcessId(handle, out _);
 
 			bool attachedToForeground = (foregroundThreadId != 0) && (foregroundThreadId != currentThreadId)
@@ -311,6 +318,14 @@ namespace EveOPreview.Services.Implementation
 				{
 					User32NativeMethods.AttachThreadInput(currentThreadId, foregroundThreadId, false);
 				}
+			}
+
+			// If the activation was still refused then Windows has already started
+			// flashing the target's taskbar button - stop it, the switch was intentional
+			// and the leftover highlight only confuses the user
+			if (User32NativeMethods.GetForegroundWindow() != handle)
+			{
+				User32NativeMethods.StopWindowFlashing(handle);
 			}
 		}
 

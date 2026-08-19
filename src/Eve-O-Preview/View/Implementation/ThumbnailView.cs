@@ -127,6 +127,14 @@ namespace EveOPreview.View
 			this._overlay.SetPropertiesOverlayLabel(this._config.OverlayLabelFont, this._config.OverlayLabelColor, this._config.OverlayLabelAnchor);
 			this._overlay.EnableFakePreview(this._preventPreviews.Value, false, 0, SystemColors.Control);
 			this._overlay.SetCycleGroupIndicator(this.IsExcludedFromCycleGroup, this._config.CycleGroupIndicatorAnchor);
+
+			// The group name might have been cached before the overlay existed
+			// (SetCycleGroupName is called earlier in the refresh cycle than the lazy
+			// overlay creation), so the freshly created overlay has to catch up with it
+			if (!string.IsNullOrEmpty(this._cycleGroupName))
+			{
+				this._overlay.SetCycleGroupName(this._cycleGroupName, this._cycleGroupNameAnchor, this._cycleGroupNameFont, this._cycleGroupNameColor);
+			}
 		}
 
 		private void ReleaseOverlay()
@@ -559,6 +567,7 @@ namespace EveOPreview.View
 				return;
 			}
 
+			bool stateChanged = this._isHighlightEnabled != this._isHighlightRequested;
 			this._isHighlightEnabled = this._isHighlightRequested;
 
 			int baseWidth = this.ClientSize.Width;
@@ -569,6 +578,7 @@ namespace EveOPreview.View
 				//No highlighting enabled, so no math required
 				this.ResizeThumbnail(baseWidth, baseHeight, 0, 0, 0, 0);
 				this._overlay?.EnableFakePreview(this._preventPreviews.Value, false, 0, this._preventPreviewColor.Value);
+				this.ForceRepaintOnHighlightChange(stateChanged);
 				return;
 			}
 
@@ -582,6 +592,21 @@ namespace EveOPreview.View
 
 			this._overlay?.EnableFakePreview(this._preventPreviews.Value, true, this._highlightWidth, this._preventPreviewColor.Value);
 			this.ResizeThumbnail(this.ClientSize.Width, this.ClientSize.Height, this._highlightWidth, highlightWidthRight, this._highlightWidth, highlightWidthLeft);
+			this.ForceRepaintOnHighlightChange(stateChanged);
+		}
+
+		// The border is just the form background revealed by the shrunken DWM thumbnail,
+		// and background painting relies on WM_PAINT - the lowest-priority message.
+		// During rapid switching (wheel cycling through the low-level mouse hook, held-down
+		// hotkeys) the message queue never gets empty, so the queued repaints would all
+		// collapse into a single one drawn only after the input stops. Painting is forced
+		// synchronously instead, so every intermediate client shows its border immediately
+		private void ForceRepaintOnHighlightChange(bool stateChanged)
+		{
+			if (stateChanged)
+			{
+				this.Update();
+			}
 		}
 
 		private void RefreshOverlay(bool forceRefresh)
@@ -604,7 +629,10 @@ namespace EveOPreview.View
 			// Only show overlay if enabled AND thumbnail is active/visible.
 			overlay.EnableOverlayLabel(this.IsOverlayEnabled && this.Visible && this._config.ShowClientName);
 
-			if (!this._isOverlayVisible && !_config.IsThumbnailDisabled(this.Title))
+			// The overlay strictly follows its thumbnail: a forced refresh of a hidden
+			// thumbnail (f.e. a highlight update while all previews are toggled off)
+			// must never resurrect the overlay window on an empty spot
+			if (!this._isOverlayVisible && this.Visible && !_config.IsThumbnailDisabled(this.Title))
 			{
 				// One-time action to show the Overlay before it is set up
 				// Otherwise its position won't be set
@@ -714,8 +742,23 @@ namespace EveOPreview.View
 
 		private void HotkeyPressed_Handler(object sender, HandledEventArgs e)
 		{
-			this.SetHighlight();
+			// Same immediate border redraw as the thumbnail click path (MouseDownEventHandler):
+			// without the explicit Refresh the border would wait for the async activation
+			// to complete and the next full refresh pass.
+			// A hidden thumbnail (f.e. all previews toggled off) draws nothing at all
+			var oldWindow = this._thumbnailManager.GetActiveClient();
 			this.ThumbnailActivated?.Invoke(this.Id);
+
+			if (this.IsActive)
+			{
+				this.SetHighlight();
+				this.Refresh(true);
+
+				if (!object.ReferenceEquals(oldWindow, this))
+				{
+					oldWindow?.ClearBorder();
+				}
+			}
 
 			e.Handled = true;
 		}
@@ -801,7 +844,10 @@ namespace EveOPreview.View
 					this.SetHighlight();
 					this.Refresh(true);
 
-					oldWindow?.ClearBorder();
+					if (!object.ReferenceEquals(oldWindow, this))
+					{
+						oldWindow?.ClearBorder();
+					}
 					break;
 				case MouseButtons.Right:
 				case MouseButtons.Left | MouseButtons.Right:

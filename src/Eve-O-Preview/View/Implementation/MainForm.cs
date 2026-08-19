@@ -890,6 +890,22 @@ namespace EveOPreview.View
 			this.BringToFront();
 		}
 
+		// A second app instance broadcasts this message before quitting (see Program.Main),
+		// the running instance responds by restoring its main window from the tray
+		private static readonly uint RESTORE_INSTANCE_MESSAGE =
+			Services.Interop.User32NativeMethods.RegisterWindowMessage(Program.RESTORE_INSTANCE_MESSAGE_NAME);
+
+		protected override void WndProc(ref Message m)
+		{
+			if ((MainForm.RESTORE_INSTANCE_MESSAGE != 0) && (m.Msg == MainForm.RESTORE_INSTANCE_MESSAGE))
+			{
+				this.RestoreMainForm_Handler(this, EventArgs.Empty);
+				return;
+			}
+
+			base.WndProc(ref m);
+		}
+
 		private void ExitMenuItemClick_Handler(object sender, EventArgs e)
 		{
 			this.ApplicationExitRequested?.Invoke();

@@ -91,7 +91,57 @@ namespace EveOPreview.Services.Interop
 		[DllImport("user32.dll")]
 		public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
 
+		[DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		public static extern uint RegisterWindowMessage(string message);
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+		[StructLayout(LayoutKind.Sequential)]
+		private struct FLASHWINFO
+		{
+			public uint cbSize;
+			public IntPtr hwnd;
+			public uint dwFlags;
+			public uint uCount;
+			public uint dwTimeout;
+		}
+
+		[DllImport("user32.dll")]
+		private static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
+
+		private const uint FLASHW_STOP = 0;
+
+		/// <summary>Cancels the taskbar-button flashing (yellow highlight) of a window</summary>
+		public static void StopWindowFlashing(IntPtr hWnd)
+		{
+			FLASHWINFO info = new FLASHWINFO
+			{
+				cbSize = (uint)Marshal.SizeOf(typeof(FLASHWINFO)),
+				hwnd = hWnd,
+				dwFlags = User32NativeMethods.FLASHW_STOP,
+				uCount = 0,
+				dwTimeout = 0
+			};
+
+			User32NativeMethods.FlashWindowEx(ref info);
+		}
+
+		public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+
+		[DllImport("user32.dll")]
+		public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventDelegate pfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
+
+		[DllImport("user32.dll")]
+		public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+		public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+		public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
+		public const int OBJID_WINDOW = 0;
+
 		public const uint GW_HWNDNEXT = 2;
+
+		public static readonly IntPtr HWND_BROADCAST = new IntPtr(0xFFFF);
 
 		public static readonly IntPtr HWND_TOP = new IntPtr(0);
 		public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);

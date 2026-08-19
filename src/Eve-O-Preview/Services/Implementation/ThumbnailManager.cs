@@ -55,6 +55,19 @@ namespace EveOPreview.Services
 		private readonly IMouseHookService _mouseHook;
 		private bool _areHotkeysSuspended;
 		private bool _areAllPreviewsHidden;
+
+		// The delegate is stored in a field so that GC does not collect it while the hook is set
+		private User32NativeMethods.WinEventDelegate _foregroundHookCallback;
+		private IntPtr _foregroundHook;
+
+		// Activating / minimizing a client window (AttachThreadInput, SetForegroundWindow,
+		// WM_SYSCOMMAND) is synchronous with the input thread of the target process and can
+		// block for a long time on a busy client. All such calls are executed on a worker
+		// task with 'latest activation wins' coalescing, so rapid cycling stays responsive
+		private readonly object _activationSyncRoot = new object();
+		private readonly HashSet<IntPtr> _pendingMinimizeHandles = new HashSet<IntPtr>();
+		private (IntPtr Handle, string Title) _pendingActivation;
+		private bool _isActivationWorkerRunning;
 		#endregion
 
 		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory, IMouseHookService mouseHook)
@@ -126,6 +139,18 @@ namespace EveOPreview.Services
 		private void ToggleAllPreviews()
 		{
 			this._areAllPreviewsHidden = !this._areAllPreviewsHidden;
+
+			if (!this._areAllPreviewsHidden)
+			{
+				// Client switches made while the previews were hidden are only coarsely
+				// tracked, so on unhide the active client is re-synced with the actual
+				// foreground window and the highlight is drawn on it right away
+				IntPtr foreground = this._windowManager.GetForegroundWindowHandle();
+				if ((foreground != IntPtr.Zero) && this._thumbnailViews.TryGetValue(foreground, out IThumbnailView foregroundView))
+				{
+					this.SwitchActiveClient(foreground, foregroundView.Title);
+				}
+			}
 
 			this.RefreshThumbnails();
 		}
@@ -274,23 +299,119 @@ namespace EveOPreview.Services
 
 		public void SetActive(KeyValuePair<IntPtr, IThumbnailView> newClient)
 		{
-			this.GetActiveClient()?.ClearBorder();
-#if LINUX
-			this._windowManager.ActivateWindow(newClient.Key, newClient.Value.Title);
-#else
-			this._windowManager.ActivateWindow(newClient.Key, this._configuration.WindowsAnimationStyle);
-#endif
-			this.SwitchActiveClient(newClient.Key, newClient.Value.Title);
+			// The border is moved BEFORE the window activation: the visual feedback
+			// has to be instant, the actual focus switch catches up on the worker task.
+			// With the previews hidden there is nothing to draw at all
+			if (!this._areAllPreviewsHidden)
+			{
+				this.GetActiveClient()?.ClearBorder();
+				newClient.Value.SetHighlight();
+				newClient.Value.Refresh(true);
+			}
 
-			newClient.Value.SetHighlight();
-			newClient.Value.Refresh(true);
+			this.SwitchActiveClient(newClient.Key, newClient.Value.Title);
+			this.QueueClientWindowActivation(newClient.Key, newClient.Value.Title, IntPtr.Zero);
+		}
+
+		/// <summary>
+		/// Enqueues a client window activation (and optionally a minimization of another window)
+		/// for the background worker. Only the latest requested activation is executed - during
+		/// rapid cycling the focus jumps straight to the final client instead of walking
+		/// through every intermediate one
+		/// </summary>
+		private void QueueClientWindowActivation(IntPtr activateHandle, string activateTitle, IntPtr minimizeHandle)
+		{
+			bool startWorker;
+
+			lock (this._activationSyncRoot)
+			{
+				if (minimizeHandle != IntPtr.Zero)
+				{
+					this._pendingMinimizeHandles.Add(minimizeHandle);
+				}
+
+				if (activateHandle != IntPtr.Zero)
+				{
+					// The window that is about to be activated must not be minimized
+					// by an earlier queued request
+					this._pendingMinimizeHandles.Remove(activateHandle);
+					this._pendingActivation = (activateHandle, activateTitle);
+				}
+
+				startWorker = !this._isActivationWorkerRunning;
+				this._isActivationWorkerRunning = true;
+			}
+
+			if (startWorker)
+			{
+				Task.Run(this.ProcessPendingActivations);
+			}
+		}
+
+		private void ProcessPendingActivations()
+		{
+			while (true)
+			{
+				IntPtr[] minimizeHandles;
+				(IntPtr Handle, string Title) activation;
+
+				lock (this._activationSyncRoot)
+				{
+					if ((this._pendingActivation.Handle == IntPtr.Zero) && (this._pendingMinimizeHandles.Count == 0))
+					{
+						this._isActivationWorkerRunning = false;
+						return;
+					}
+
+					minimizeHandles = this._pendingMinimizeHandles.ToArray();
+					this._pendingMinimizeHandles.Clear();
+
+					activation = this._pendingActivation;
+					this._pendingActivation = (IntPtr.Zero, null);
+				}
+
+				try
+				{
+					foreach (IntPtr handle in minimizeHandles)
+					{
+						this._windowManager.MinimizeWindow(handle, this._configuration.WindowsAnimationStyle, false);
+					}
+
+					if (activation.Handle != IntPtr.Zero)
+					{
+#if LINUX
+						this._windowManager.ActivateWindow(activation.Handle, activation.Title);
+#else
+						this._windowManager.ActivateWindow(activation.Handle, this._configuration.WindowsAnimationStyle);
+#endif
+					}
+				}
+				catch (Exception)
+				{
+					// A failed window operation (f.e. the window was closed in the meantime)
+					// must not kill the worker loop
+				}
+			}
+		}
+
+		// While a queued activation has not been executed yet the real foreground window
+		// lags behind this._activeClient, so the poll / WinEvent hook must not treat that
+		// stale foreground as a user-made switch
+		private bool IsActivationInFlight()
+		{
+			lock (this._activationSyncRoot)
+			{
+				return this._isActivationWorkerRunning;
+			}
 		}
 
 		public void MinimizeAllClients()
 		{
+			// Queued to the worker task: minimizing is synchronous with the target window's
+			// input thread, doing it inline for every client would freeze the UI thread
 			foreach (var x in _thumbnailViews.Reverse())
 			{
-				this._windowManager.MinimizeWindow(x.Value.Id, this._configuration.WindowsAnimationStyle, false);
+				this.QueueClientWindowActivation(IntPtr.Zero, null, x.Value.Id);
 			}
 		}
 		public void CycleNextClient(bool isForwards, Dictionary<string, int> cycleOrder)
@@ -439,12 +560,86 @@ namespace EveOPreview.Services
 		{
 			this._thumbnailUpdateTimer.Start();
 
+			// The refresh timer only polls the foreground window every ThumbnailRefreshPeriod ms,
+			// which makes the active client highlight lag on Alt+Tab / direct window clicks.
+			// A WinEvent hook delivers the foreground change instantly instead
+			// (WINEVENT_OUTOFCONTEXT: the callback is posted to this thread's message loop)
+			if (this._foregroundHook == IntPtr.Zero)
+			{
+				this._foregroundHookCallback = this.ForegroundWindowChangedHook;
+				this._foregroundHook = User32NativeMethods.SetWinEventHook(
+					User32NativeMethods.EVENT_SYSTEM_FOREGROUND, User32NativeMethods.EVENT_SYSTEM_FOREGROUND,
+					IntPtr.Zero, this._foregroundHookCallback, 0, 0, User32NativeMethods.WINEVENT_OUTOFCONTEXT);
+			}
+
 			this.RefreshThumbnails();
 		}
 
 		public void Stop()
 		{
 			this._thumbnailUpdateTimer.Stop();
+
+			if (this._foregroundHook != IntPtr.Zero)
+			{
+				User32NativeMethods.UnhookWinEvent(this._foregroundHook);
+				this._foregroundHook = IntPtr.Zero;
+				this._foregroundHookCallback = null;
+			}
+		}
+
+		private void ForegroundWindowChangedHook(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint eventThread, uint eventTime)
+		{
+			if (idObject != User32NativeMethods.OBJID_WINDOW)
+			{
+				return;
+			}
+
+			this.RefreshActiveClientHighlight(hwnd);
+		}
+
+		// A lightweight subset of RefreshThumbnails: only tracks the active client change
+		// and moves the highlight border, everything else stays on the timer cadence
+		private void RefreshActiveClientHighlight(IntPtr foregroundWindowHandle)
+		{
+			// Hidden previews are a fully blocking state: nothing to draw, and the active
+			// client is re-synced with the foreground window when the previews are unhidden
+			if (this._areAllPreviewsHidden)
+			{
+				return;
+			}
+
+			if ((foregroundWindowHandle == IntPtr.Zero) || (foregroundWindowHandle == this._activeClient.Handle))
+			{
+				return;
+			}
+
+			// Foreground changes caused by a queued activation still in flight are not
+			// user-made switches and must not move the highlight around
+			if (this.IsActivationInFlight())
+			{
+				return;
+			}
+
+			// Only direct client window activations are of interest here: thumbnail clicks and
+			// hotkeys go through SetActive, and transient windows (f.e. the Alt+Tab task switcher
+			// itself) must not be recorded as the active client or the external application
+			if (!this._thumbnailViews.TryGetValue(foregroundWindowHandle, out IThumbnailView newActiveView))
+			{
+				return;
+			}
+
+			IntPtr previousActiveHandle = this._activeClient.Handle;
+
+			this.SwitchActiveClient(foregroundWindowHandle, newActiveView.Title);
+
+			if (this._thumbnailViews.TryGetValue(previousActiveHandle, out IThumbnailView previousActiveView))
+			{
+				previousActiveView.SetHighlight(false, this._configuration.ActiveClientHighlightThickness);
+				previousActiveView.Refresh(false);
+			}
+
+			newActiveView.SetHighlight(this._configuration.EnableActiveClientHighlight, this._configuration.ActiveClientHighlightThickness);
+			newActiveView.Refresh(false);
 		}
 
 		private void ThumbnailUpdateTimerTick(object sender, EventArgs e)
@@ -591,7 +786,9 @@ namespace EveOPreview.Services
 			}
 
 			// No need to minimize EVE clients when switching out to non-EVE window (like thumbnail)
-			if (!string.IsNullOrEmpty(foregroundWindowTitle))
+			// While a queued activation is still in flight the foreground window is stale
+			// and must not override the just-selected active client
+			if (!string.IsNullOrEmpty(foregroundWindowTitle) && !this.IsActivationInFlight())
 			{
 				this.SwitchActiveClient(foregroundWindowHandle, foregroundWindowTitle);
 			}
@@ -788,15 +985,14 @@ namespace EveOPreview.Services
 				return;
 			}
 
-			// Minimize the currently active client if needed
-			if (this._configuration.MinimizeInactiveClients && !this._configuration.IsPriorityClient(this._activeClient.Title))
+			// Minimize the currently active client if needed. Minimizing the foreground
+			// window makes Windows activate some other window, so the new client is
+			// re-activated right after it (both operations run on the worker task)
+			if (this._configuration.MinimizeInactiveClients
+				&& (this._activeClient.Handle != IntPtr.Zero)
+				&& !this._configuration.IsPriorityClient(this._activeClient.Title))
 			{
-				this._windowManager.MinimizeWindow(this._activeClient.Handle, this._configuration.WindowsAnimationStyle, false);
-#if LINUX
-   			    this._windowManager.ActivateWindow(foregroundClientHandle, foregroundClientTitle);
-#else
-				this._windowManager.ActivateWindow(foregroundClientHandle, this._configuration.WindowsAnimationStyle);
-#endif
+				this.QueueClientWindowActivation(foregroundClientHandle, foregroundClientTitle, this._activeClient.Handle);
 			}
 
 			this._activeClient = (foregroundClientHandle, foregroundClientTitle);
@@ -845,32 +1041,18 @@ namespace EveOPreview.Services
 		{
 			IThumbnailView view = this._thumbnailViews[id];
 
-			Task.Run(() =>
-				{
-#if LINUX
-					this._windowManager.ActivateWindow(view.Id, view.Title);
-#else
-					this._windowManager.ActivateWindow(view.Id, this._configuration.WindowsAnimationStyle);
-#endif
-				})
-				.ContinueWith((task) =>
-				{
-					// This code should be executed on UI thread
-					this.SwitchActiveClient(view.Id, view.Title);
-					this.UpdateClientLayouts();
-					this.RefreshThumbnails();
-				}, TaskScheduler.FromCurrentSynchronizationContext());
+			this.SwitchActiveClient(view.Id, view.Title);
+			this.QueueClientWindowActivation(view.Id, view.Title, IntPtr.Zero);
+
+			this.UpdateClientLayouts();
+			this.RefreshThumbnails();
 		}
 
 		private void ThumbnailDeactivated(IntPtr id, bool switchOut)
 		{
 			if (switchOut)
 			{
-#if LINUX
-				this._windowManager.ActivateWindow(this._externalApplication, null);
-#else
-				this._windowManager.ActivateWindow(this._externalApplication, this._configuration.WindowsAnimationStyle);
-#endif
+				this.QueueClientWindowActivation(this._externalApplication, null, IntPtr.Zero);
 			}
 			else
 			{
