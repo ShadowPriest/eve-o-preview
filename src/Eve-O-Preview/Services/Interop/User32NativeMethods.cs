@@ -69,5 +69,36 @@ namespace EveOPreview.Services.Interop
 
 		[DllImport("user32.dll")]
 		public static extern long SystemParametersInfo(long uAction, int lpvParam, ref ANIMATIONINFO uParam, int fuWinIni);
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+		[DllImport("user32.dll")]
+		public static extern bool AttachThreadInput(uint attachTo, uint attachFrom, bool attach);
+
+		[DllImport("user32.dll")]
+		public static extern bool BringWindowToTop(IntPtr hWnd);
+
+		[DllImport("user32.dll")]
+		public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+		[DllImport("kernel32.dll")]
+		public static extern uint GetCurrentThreadId();
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+		[DllImport("user32.dll")]
+		public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+		public const uint GW_HWNDNEXT = 2;
+
+		public static readonly IntPtr HWND_TOP = new IntPtr(0);
+		public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+
+		public const uint SWP_NOSIZE = 0x0001;
+		public const uint SWP_NOMOVE = 0x0002;
+		public const uint SWP_NOACTIVATE = 0x0010;
+		public const uint SWP_SHOWWINDOW = 0x0040;
 	}
 }

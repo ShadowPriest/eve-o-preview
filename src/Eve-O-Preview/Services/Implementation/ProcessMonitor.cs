@@ -78,38 +78,43 @@ namespace EveOPreview.Services.Implementation
 			IList<IntPtr> knownProcesses = new List<IntPtr>(this._processCache.Keys);
 			foreach (Process process in Process.GetProcesses())
 			{
-				string processName = process.ProcessName;
-
-				if (!this.IsMonitoredProcess(processName))
+				// Process instances hold system handles; this method runs on a timer
+				// so they have to be released deterministically
+				using (process)
 				{
-					continue;
-				}
+					string processName = process.ProcessName;
 
-				IntPtr mainWindowHandle = process.MainWindowHandle;
-				if (mainWindowHandle == IntPtr.Zero)
-				{
-					continue; // No need to monitor non-visual processes
-				}
-
-				string mainWindowTitle = process.MainWindowTitle.Replace("—", "-");
-				this._processCache.TryGetValue(mainWindowHandle, out string cachedTitle);
-
-				if (cachedTitle == null)
-				{
-					// This is a new process in the list
-					this._processCache.Add(mainWindowHandle, mainWindowTitle);
-					addedProcesses.Add(new ProcessInfo(mainWindowHandle, mainWindowTitle));
-				}
-				else
-				{
-					// This is an already known process
-					if (cachedTitle != mainWindowTitle)
+					if (!this.IsMonitoredProcess(processName))
 					{
-						this._processCache[mainWindowHandle] = mainWindowTitle;
-						updatedProcesses.Add(new ProcessInfo(mainWindowHandle, mainWindowTitle));
+						continue;
 					}
 
-					knownProcesses.Remove(mainWindowHandle);
+					IntPtr mainWindowHandle = process.MainWindowHandle;
+					if (mainWindowHandle == IntPtr.Zero)
+					{
+						continue; // No need to monitor non-visual processes
+					}
+
+					string mainWindowTitle = process.MainWindowTitle.Replace("—", "-");
+					this._processCache.TryGetValue(mainWindowHandle, out string cachedTitle);
+
+					if (cachedTitle == null)
+					{
+						// This is a new process in the list
+						this._processCache.Add(mainWindowHandle, mainWindowTitle);
+						addedProcesses.Add(new ProcessInfo(mainWindowHandle, mainWindowTitle));
+					}
+					else
+					{
+						// This is an already known process
+						if (cachedTitle != mainWindowTitle)
+						{
+							this._processCache[mainWindowHandle] = mainWindowTitle;
+							updatedProcesses.Add(new ProcessInfo(mainWindowHandle, mainWindowTitle));
+						}
+
+						knownProcesses.Remove(mainWindowHandle);
+					}
 				}
 			}
 

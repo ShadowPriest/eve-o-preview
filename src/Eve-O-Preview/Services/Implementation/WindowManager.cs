@@ -112,15 +112,14 @@ namespace EveOPreview.Services.Implementation
 #if LINUX
 		private void WindowsActivateWindow(IntPtr handle)
 		{
-			User32NativeMethods.SetForegroundWindow(handle);
-			User32NativeMethods.SetFocus(handle);
-
 			uint style = User32NativeMethods.GetWindowLong(handle, InteropConstants.GWL_STYLE);
 
 			if ((style & InteropConstants.WS_MINIMIZE) == InteropConstants.WS_MINIMIZE)
 			{
 				User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_RESTORE);
 			}
+
+			WindowManager.ForceForegroundWindow(handle);
 		}
 
 		private void WineActivateWindow(string windowName)
@@ -199,12 +198,11 @@ namespace EveOPreview.Services.Implementation
 #if WINDOWS
 		public void ActivateWindow(IntPtr handle, AnimationStyle animation)
 		{
-			User32NativeMethods.SetForegroundWindow(handle);
-			User32NativeMethods.SetFocus(handle);
-
 			uint style = User32NativeMethods.GetWindowLong(handle, InteropConstants.GWL_STYLE);
+			bool isMinimized = (style & InteropConstants.WS_MINIMIZE) == InteropConstants.WS_MINIMIZE;
 
-			if ((style & InteropConstants.WS_MINIMIZE) == InteropConstants.WS_MINIMIZE)
+			// A minimized window has to be restored before it can be brought to the foreground
+			if (isMinimized)
 			{
 				switch (animation)
 				{
@@ -218,6 +216,8 @@ namespace EveOPreview.Services.Implementation
 						break;
 				}
 			}
+
+			WindowManager.ForceForegroundWindow(handle);
 		}
 
 		public void MinimizeWindow(IntPtr handle, AnimationStyle animation, bool enableAnimation)
@@ -256,6 +256,63 @@ namespace EveOPreview.Services.Implementation
 			}
 		}
 #endif
+
+		/// <summary>
+		/// Windows refuses SetForegroundWindow calls made by a process that does not own
+		/// the foreground window - which is exactly the case when a global hotkey is pressed
+		/// while an EVE client is active. Attaching to the foreground thread's input queue
+		/// lifts that restriction for the duration of the call.
+		/// </summary>
+		private static void ForceForegroundWindow(IntPtr handle)
+		{
+			IntPtr foregroundWindow = User32NativeMethods.GetForegroundWindow();
+
+			if (foregroundWindow == handle)
+			{
+				return;
+			}
+
+			// The cheap path first: it works whenever this process is allowed to set
+			// the foreground window (f.e. right after handling its own global hotkey)
+			User32NativeMethods.BringWindowToTop(handle);
+			User32NativeMethods.SetForegroundWindow(handle);
+
+			if (User32NativeMethods.GetForegroundWindow() == handle)
+			{
+				User32NativeMethods.SetFocus(handle);
+				return;
+			}
+
+			uint currentThreadId = User32NativeMethods.GetCurrentThreadId();
+			uint foregroundThreadId = foregroundWindow != IntPtr.Zero
+										? User32NativeMethods.GetWindowThreadProcessId(foregroundWindow, out _)
+										: 0;
+			uint targetThreadId = User32NativeMethods.GetWindowThreadProcessId(handle, out _);
+
+			bool attachedToForeground = (foregroundThreadId != 0) && (foregroundThreadId != currentThreadId)
+										&& User32NativeMethods.AttachThreadInput(currentThreadId, foregroundThreadId, true);
+			bool attachedToTarget = (targetThreadId != 0) && (targetThreadId != currentThreadId) && (targetThreadId != foregroundThreadId)
+										&& User32NativeMethods.AttachThreadInput(currentThreadId, targetThreadId, true);
+
+			try
+			{
+				User32NativeMethods.BringWindowToTop(handle);
+				User32NativeMethods.SetForegroundWindow(handle);
+				User32NativeMethods.SetFocus(handle);
+			}
+			finally
+			{
+				if (attachedToTarget)
+				{
+					User32NativeMethods.AttachThreadInput(currentThreadId, targetThreadId, false);
+				}
+
+				if (attachedToForeground)
+				{
+					User32NativeMethods.AttachThreadInput(currentThreadId, foregroundThreadId, false);
+				}
+			}
+		}
 
 		public void MoveWindow(IntPtr handle, int left, int top, int width, int height)
 		{

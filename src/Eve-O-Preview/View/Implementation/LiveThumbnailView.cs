@@ -7,11 +7,19 @@ namespace EveOPreview.View
 {
 	sealed class LiveThumbnailView : ThumbnailView
 	{
+		#region Private constants
+		// Re-creating a DWM thumbnail is expensive and briefly renders black.
+		// Under rapid client switching (f.e. cycling with the mouse wheel) forced
+		// re-registrations are throttled down to a cheap properties update
+		private const int FORCED_REFRESH_THROTTLE_MS = 500;
+		#endregion
+
 		#region Private fields
 		private IDwmThumbnail _thumbnail;
 		private Point _startLocation;
 		private Point _endLocation;
 		private IThumbnailConfiguration _config;
+		private DateTime _lastRegistrationTimestamp = DateTime.MinValue;
 		#endregion
 
 		public LiveThumbnailView(IWindowManager windowManager, IThumbnailConfiguration config, IThumbnailManager thumbnailManager)
@@ -24,15 +32,27 @@ namespace EveOPreview.View
 
 		protected override void RefreshThumbnail(bool forceRefresh)
 		{
-			// To prevent flickering the old broken thumbnail is removed AFTER the new shiny one is created
-			IDwmThumbnail obsoleteThumbnail = forceRefresh ? this._thumbnail : null;
-
-			if ((this._thumbnail == null) || forceRefresh && ! this.IsPreventPreviews() )
+			if (this._thumbnail == null)
 			{
 				this.RegisterThumbnail();
+				return;
 			}
-			
-			obsoleteThumbnail?.Unregister();
+
+			if (!forceRefresh || this.IsPreventPreviews())
+			{
+				return;
+			}
+
+			if ((DateTime.UtcNow - this._lastRegistrationTimestamp).TotalMilliseconds < LiveThumbnailView.FORCED_REFRESH_THROTTLE_MS)
+			{
+				this._thumbnail.Update();
+				return;
+			}
+
+			// To prevent flickering the old broken thumbnail is removed AFTER the new shiny one is created
+			IDwmThumbnail obsoleteThumbnail = this._thumbnail;
+			this.RegisterThumbnail();
+			obsoleteThumbnail.Unregister();
 		}
 
 		protected override void ResizeThumbnail(int baseWidth, int baseHeight, int highlightWidthTop, int highlightWidthRight, int highlightWidthBottom, int highlightWidthLeft)
@@ -58,6 +78,8 @@ namespace EveOPreview.View
 			this._thumbnail = this.WindowManager.GetLiveThumbnail(this.Handle, this.Id);
 			this._thumbnail.Move(this._startLocation.X, this._startLocation.Y, this._endLocation.X, this._endLocation.Y);
 			this._thumbnail.Update();
+
+			this._lastRegistrationTimestamp = DateTime.UtcNow;
 		}
 	}
 }

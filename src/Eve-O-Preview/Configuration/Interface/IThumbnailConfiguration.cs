@@ -6,25 +6,7 @@ namespace EveOPreview.Configuration
 {
 	public interface IThumbnailConfiguration
 	{
-		List<string> CycleGroup1ForwardHotkeys { get; set; }
-		List<string> CycleGroup1BackwardHotkeys { get; set; }
-		Dictionary<string, int> CycleGroup1ClientsOrder { get; set; }
-
-		List<string> CycleGroup2ForwardHotkeys { get; set; }
-		List<string> CycleGroup2BackwardHotkeys { get; set; }
-		Dictionary<string, int> CycleGroup2ClientsOrder { get; set; }
-
-		List<string> CycleGroup3ForwardHotkeys { get; set; }
-		List<string> CycleGroup3BackwardHotkeys { get; set; }
-		Dictionary<string, int> CycleGroup3ClientsOrder { get; set; }
-
-		List<string> CycleGroup4ForwardHotkeys { get; set; }
-		List<string> CycleGroup4BackwardHotkeys { get; set; }
-		Dictionary<string, int> CycleGroup4ClientsOrder { get; set; }
-
-		List<string> CycleGroup5ForwardHotkeys { get; set; }
-		List<string> CycleGroup5BackwardHotkeys { get; set; }
-		Dictionary<string, int> CycleGroup5ClientsOrder { get; set; }
+		List<CycleGroup> CycleGroups { get; set; }
 
 		Dictionary<string, Color> PerClientActiveClientHighlightColor { get; set; }
 		Dictionary<string, Color> PerClientPreventPreviewColor { get; set; }
@@ -65,7 +47,13 @@ namespace EveOPreview.Configuration
 		ZoomAnchor CycleGroupIndicatorAnchor { get; set; }
 
 		bool ShowThumbnailOverlays { get; set; }
+		bool ShowClientName { get; set; }
+		bool ShowCycleGroupName { get; set; }
+		bool OverlayAlwaysOnTop { get; set; }
 		bool ShowThumbnailFrames { get; set; }
+
+		Color CycleGroupNameColor { get; set; }
+		Font CycleGroupNameFont { get; set; }
 		bool LockThumbnailLocation { get; set; }
 		bool ThumbnailSnapToGrid {  get; set; }
 		int ThumbnailSnapToGridSizeX { get; set; }
@@ -80,8 +68,10 @@ namespace EveOPreview.Configuration
 
 		string IconName { get; set; }
 		List<string> MinimizeAllClientsHotkeys { get; set; }
+		List<string> ToggleAllPreviewsHotkeys { get; set; }
 
 		Point LoginThumbnailLocation { get; set; }
+		Size MainWindowSize { get; set; }
 
 		Point GetThumbnailLocation(string currentClient, string activeClient, Point defaultLocation);
 		Size GetThumbnailSize(string currentClient, string activeClient, Size defaultSize);
@@ -92,7 +82,11 @@ namespace EveOPreview.Configuration
 		void SetClientLayout(string currentClient, ClientLayout layout);
 
 		Keys GetClientHotkey(string currentClient);
+		string GetClientHotkeyString(string currentClient);
 		void SetClientHotkey(string currentClient, Keys hotkey);
+		void SetClientHotkey(string currentClient, string hotkey);
+		IReadOnlyDictionary<string, string> GetClientHotkeys();
+		void RemoveClientHotkey(string currentClient);
 		Keys StringToKey(string hotkey);
 		bool IsPriorityClient(string currentClient);
 		bool IsExecutableToPreview(string processName);

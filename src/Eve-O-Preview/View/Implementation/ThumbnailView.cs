@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using EveOPreview.Configuration;
 using EveOPreview.Services;
+using EveOPreview.Services.Interop;
 using EveOPreview.UI.Hotkeys;
 
 namespace EveOPreview.View
@@ -17,7 +18,7 @@ namespace EveOPreview.View
 		#endregion
 
 		#region Private fields
-		private readonly ThumbnailOverlay _overlay;
+		private ThumbnailOverlay _overlay;
 
 		// Part of the logic (namely current size / position management)
 		// was moved to the view due to the performance reasons
@@ -75,18 +76,77 @@ namespace EveOPreview.View
 
 			InitializeComponent();
 
-			this._overlay = new ThumbnailOverlay(this,
-				this.MouseEnter_Handler,
-				this.MouseLeave_Handler,
-				this.MouseDown_Handler,
-				this.MouseUp_Handler,
-				this.MouseMove_Handler
-				);
-
 			SetDefaultBorderColor();
 			SetPreventPreviews();
-			this._overlay.EnableFakePreview(this._preventPreviews.Value, false, 0, SystemColors.Control);
 			this._thumbnailManager = thumbnailManager;
+		}
+
+		// The overlay window is only created when it has something to display and
+		// is released as soon as it is not needed, so a disabled overlay costs no memory
+		private ThumbnailOverlay Overlay
+		{
+			get
+			{
+				if (this._overlay == null)
+				{
+					this._overlay = new ThumbnailOverlay(this,
+						this.MouseEnter_Handler,
+						this.MouseLeave_Handler,
+						this.MouseDown_Handler,
+						this.MouseUp_Handler,
+						this.MouseMove_Handler
+						);
+
+					this.ApplyOverlayState();
+				}
+
+				return this._overlay;
+			}
+		}
+
+		// Deliberately not tied to the current window visibility: the overlay window is
+		// hidden and shown along with the thumbnail, it is only unloaded when the whole
+		// overlay feature is switched off
+		private bool IsOverlayRequired => this.IsOverlayEnabled || this.IsPreventPreviews();
+
+		private void ApplyOverlayState()
+		{
+			if (this._overlay == null)
+			{
+				return;
+			}
+
+			string title = this.Text ?? string.Empty;
+
+			// The overlay is created lazily, so it has to catch up with the current
+			// topmost state. Otherwise placing the thumbnail below a non-topmost overlay
+			// would strip the topmost flag off the thumbnail itself
+			this._overlay.TopMost = this._isTopMost;
+
+			this._overlay.SetOverlayLabel(title.Replace("EVE - ", "").Replace("EVE Frontier - ", "*"));
+			this._overlay.SetPropertiesOverlayLabel(this._config.OverlayLabelFont, this._config.OverlayLabelColor, this._config.OverlayLabelAnchor);
+			this._overlay.EnableFakePreview(this._preventPreviews.Value, false, 0, SystemColors.Control);
+			this._overlay.SetCycleGroupIndicator(this.IsExcludedFromCycleGroup, this._config.CycleGroupIndicatorAnchor);
+		}
+
+		private void ReleaseOverlay()
+		{
+			if (this._overlay == null)
+			{
+				return;
+			}
+
+			ThumbnailOverlay overlay = this._overlay;
+			this._overlay = null;
+			this._isOverlayVisible = false;
+
+			// A re-created overlay starts empty, so the cached label state is stale
+			this._cycleGroupName = null;
+			this._cycleGroupNameFont = null;
+
+			overlay.Hide();
+			overlay.Close();
+			overlay.Dispose();
 		}
 
 		public IWindowManager WindowManager { get; }
@@ -99,12 +159,9 @@ namespace EveOPreview.View
 			set
 			{
 				this.Text = value;
-				this._overlay.SetOverlayLabel(value.Replace("EVE - ", "").Replace("EVE Frontier - ", "*"));
-				this._overlay.SetPropertiesOverlayLabel(_config.OverlayLabelFont, _config.OverlayLabelColor, _config.OverlayLabelAnchor);
 				SetDefaultBorderColor();
 				SetPreventPreviews();
-				this._overlay.EnableFakePreview(this._preventPreviews.Value, false, 0, SystemColors.Control);
-				this._overlay.SetCycleGroupIndicator(this.IsExcludedFromCycleGroup , _config.CycleGroupIndicatorAnchor);
+				this.ApplyOverlayState();
 			}
 		}
 
@@ -213,7 +270,7 @@ namespace EveOPreview.View
 			this.IsActive = false;
 
 			this._isOverlayVisible = false;
-			this._overlay.Hide();
+			this._overlay?.Hide();
 			base.Hide();
 		}
 
@@ -222,14 +279,14 @@ namespace EveOPreview.View
 			this.SuppressResizeEvent();
 
 			this.IsActive = false;
-			this._overlay.Close();
+			this.ReleaseOverlay();
 			base.Close();
 		}
 
 		// This method is used to determine if the provided Handle is related to client or its thumbnail
 		public bool IsKnownHandle(IntPtr handle)
 		{
-			return (this.Id == handle) || (this.Handle == handle) || (this._overlay.Handle == handle);
+			return (this.Id == handle) || (this.Handle == handle) || ((this._overlay != null) && (this._overlay.Handle == handle));
 		}
 
 		public void SetSizeLimitations(Size minimumSize, Size maximumSize)
@@ -258,7 +315,7 @@ namespace EveOPreview.View
 				// Of the thumbnail's opacity is almost full then set the overlay's one to
 				// full. Otherwise set it to half of the thumbnail opacity
 				// Opacity value is stored even if the overlay is not displayed atm
-				this._overlay.Opacity = opacity > 0.8 ? 1.0 : 1.0 - (1.0 - opacity) / 2;
+				if (this._overlay != null) { this._overlay.Opacity = opacity > 0.8 ? 1.0 : 1.0 - (1.0 - opacity) / 2; }
 
 				this._opacity = opacity;
 			}
@@ -288,8 +345,33 @@ namespace EveOPreview.View
 		}
 		public void SetCycleGroupIndicator(bool displayCycleGroup, ZoomAnchor anchor)
 		{
-			this._overlay.SetCycleGroupIndicator(displayCycleGroup, anchor);
+			this._overlay?.SetCycleGroupIndicator(displayCycleGroup, anchor);
 		}
+
+		public void SetCycleGroupName(string groupName)
+		{
+			// Called on every refresh cycle: the overlay relayouts the label (incl. text
+			// measurement) on each call, so unchanged values are filtered out here
+			if ((this._overlay != null)
+				&& (this._cycleGroupName == groupName)
+				&& (this._cycleGroupNameFont == this._config.CycleGroupNameFont)
+				&& (this._cycleGroupNameColor == this._config.CycleGroupNameColor)
+				&& (this._cycleGroupNameAnchor == this._config.CycleGroupIndicatorAnchor))
+			{
+				return;
+			}
+
+			this._cycleGroupName = groupName;
+			this._cycleGroupNameFont = this._config.CycleGroupNameFont;
+			this._cycleGroupNameColor = this._config.CycleGroupNameColor;
+			this._cycleGroupNameAnchor = this._config.CycleGroupIndicatorAnchor;
+
+			this._overlay?.SetCycleGroupName(groupName, _config.CycleGroupIndicatorAnchor, _config.CycleGroupNameFont, _config.CycleGroupNameColor);
+		}
+		private string _cycleGroupName;
+		private Font _cycleGroupNameFont;
+		private Color _cycleGroupNameColor;
+		private ZoomAnchor _cycleGroupNameAnchor;
 
 		public void SetTopMost(bool enableTopmost)
 		{
@@ -298,10 +380,42 @@ namespace EveOPreview.View
 				return;
 			}
 
-			this._overlay.TopMost = enableTopmost;
+			if (this._overlay != null) { this._overlay.TopMost = enableTopmost; }
 			this.TopMost = enableTopmost;
 
 			this._isTopMost = enableTopmost;
+
+			this.RaiseOverlayAboveThumbnail();
+		}
+
+		/// <summary>
+		/// Keeps the overlay window above its thumbnail. Hovering or activating the
+		/// thumbnail raises it in the z-order, which would otherwise cover the overlay
+		/// </summary>
+		private void RaiseOverlayAboveThumbnail()
+		{
+			if ((this._overlay == null) || !this._config.OverlayAlwaysOnTop || !this._isOverlayVisible)
+			{
+				return;
+			}
+
+			// Skip the SetWindowPos call when the thumbnail already sits right below its overlay
+			if (User32NativeMethods.GetWindow(this._overlay.Handle, User32NativeMethods.GW_HWNDNEXT) == this.Handle)
+			{
+				return;
+			}
+
+			// Both windows must share the topmost state: inserting a window after one
+			// from the other z-order band makes Windows change the window's topmost flag
+			if (this._overlay.TopMost != this._isTopMost)
+			{
+				this._overlay.TopMost = this._isTopMost;
+			}
+
+			// hWndInsertAfter names the window that ends up ABOVE the positioned one,
+			// so the thumbnail is placed directly below its overlay
+			User32NativeMethods.SetWindowPos(this.Handle, this._overlay.Handle, 0, 0, 0, 0,
+				User32NativeMethods.SWP_NOMOVE | User32NativeMethods.SWP_NOSIZE | User32NativeMethods.SWP_NOACTIVATE);
 		}
 
 		public void SetHighlight()
@@ -311,22 +425,18 @@ namespace EveOPreview.View
 
 		public void SetHighlight(bool enabled, int width)
 		{
-			if (this._isHighlightRequested == enabled)
+			// Color and thickness are re-read on every call so that settings changes
+			// are reflected on already highlighted thumbnails right away
+			Color borderColor = enabled ? this._myBorderColor.Value : Color.Black;
+
+			if ((this._isHighlightRequested == enabled) && (this._highlightWidth == width) && (this.BackColor == borderColor))
 			{
 				return;
 			}
 
-			if (enabled)
-			{
-				this._isHighlightRequested = true;
-				this._highlightWidth = width;
-				this.BackColor = _myBorderColor.Value;
-			}
-			else
-			{
-				this._isHighlightRequested = false;
-				this.BackColor = Color.Black;
-			}
+			this._isHighlightRequested = enabled;
+			this._highlightWidth = enabled ? width : this._highlightWidth;
+			this.BackColor = borderColor;
 
 			this._isSizeChanged = true;
 		}
@@ -431,6 +541,10 @@ namespace EveOPreview.View
 			this.RefreshOverlay(forceRefresh || this._isSizeChanged || this._isLocationChanged);
 
 			this._isSizeChanged = false;
+
+			// Hovering or activating a thumbnail raises it above the overlay,
+			// so the overlay is put back on top on every refresh
+			this.RaiseOverlayAboveThumbnail();
 		}
 
 		protected abstract void RefreshThumbnail(bool forceRefresh);
@@ -454,7 +568,7 @@ namespace EveOPreview.View
 			{
 				//No highlighting enabled, so no math required
 				this.ResizeThumbnail(baseWidth, baseHeight, 0, 0, 0, 0);
-				this._overlay.EnableFakePreview(this._preventPreviews.Value,false, 0, this._preventPreviewColor.Value);
+				this._overlay?.EnableFakePreview(this._preventPreviews.Value, false, 0, this._preventPreviewColor.Value);
 				return;
 			}
 
@@ -466,7 +580,7 @@ namespace EveOPreview.View
 			int highlightWidthLeft = (baseWidth - actualWidth) / 2;
 			int highlightWidthRight = baseWidth - actualWidth - highlightWidthLeft;
 
-			this._overlay.EnableFakePreview(this._preventPreviews.Value, true, this._highlightWidth, this._preventPreviewColor.Value);
+			this._overlay?.EnableFakePreview(this._preventPreviews.Value, true, this._highlightWidth, this._preventPreviewColor.Value);
 			this.ResizeThumbnail(this.ClientSize.Width, this.ClientSize.Height, this._highlightWidth, highlightWidthRight, this._highlightWidth, highlightWidthLeft);
 		}
 
@@ -478,14 +592,23 @@ namespace EveOPreview.View
 				return;
 			}
 
-			// Only show overlay if enabled AND thumbnail is active/visible.
-			this._overlay.EnableOverlayLabel(this.IsOverlayEnabled && this.Visible);
+			// A disabled overlay is unloaded rather than just hidden
+			if (!this.IsOverlayRequired)
+			{
+				this.ReleaseOverlay();
+				return;
+			}
 
-			if (!this._isOverlayVisible && ((this.IsOverlayEnabled && this.Visible) || this.IsPreventPreviews() ) && !_config.IsThumbnailDisabled(this.Title) )
+			ThumbnailOverlay overlay = this.Overlay;
+
+			// Only show overlay if enabled AND thumbnail is active/visible.
+			overlay.EnableOverlayLabel(this.IsOverlayEnabled && this.Visible && this._config.ShowClientName);
+
+			if (!this._isOverlayVisible && !_config.IsThumbnailDisabled(this.Title))
 			{
 				// One-time action to show the Overlay before it is set up
 				// Otherwise its position won't be set
-				this._overlay.Show();
+				overlay.Show();
 				this._isOverlayVisible = true;
 			}
 
@@ -497,12 +620,14 @@ namespace EveOPreview.View
 			overlayLocation.Y += (this.Size.Height - this.ClientSize.Height) - borderWidth;
 
 			this._isLocationChanged = false;
-			this._overlay.Size = overlaySize;
+			overlay.Size = overlaySize;
 
-			this._overlay.SetPropertiesOverlayLabel(_config.OverlayLabelFont, _config.OverlayLabelColor, _config.OverlayLabelAnchor);
+			overlay.SetPropertiesOverlayLabel(_config.OverlayLabelFont, _config.OverlayLabelColor, _config.OverlayLabelAnchor);
 
-			this._overlay.Location = overlayLocation;
-			this._overlay.Refresh();
+			overlay.Location = overlayLocation;
+			overlay.Refresh();
+
+			this.RaiseOverlayAboveThumbnail();
 		}
 
 		private void SuppressResizeEvent()

@@ -18,6 +18,7 @@ namespace EveOPreview.View
 		private readonly Action<object, MouseEventArgs> _areaMouseUpAction;
 		private readonly Action<object, MouseEventArgs> _areaMouseMoveAction;
 		private bool _showOverlayText = true;
+		private bool _showCycleGroupName;
 		#endregion
 
 		public ThumbnailOverlay(Form owner,
@@ -122,6 +123,82 @@ namespace EveOPreview.View
 			else
 			{
 				this.CycleGroupIndicator.Visible = false;
+			}
+		}
+
+		/// <summary>Displays the cycle group name(s) the client belongs to, anchored the same way as the cycle group indicator</summary>
+		public void SetCycleGroupName(string groupName, ZoomAnchor anchor, Font font, System.Drawing.Color color)
+		{
+			this._showCycleGroupName = !string.IsNullOrEmpty(groupName);
+			this.CycleGroupNameLabel.Text = groupName ?? string.Empty;
+
+			if (!this._showCycleGroupName)
+			{
+				return;
+			}
+
+			if (this.CycleGroupNameLabel.Font.Size != font.Size || this.CycleGroupNameLabel.Font.FontFamily != font.FontFamily)
+			{
+				this.CycleGroupNameLabel.Font = font;
+			}
+
+			this.CycleGroupNameLabel.ForeColor = color;
+
+			// The label is not rendered by WinForms itself (see OverlayAreaPictureBox_Paint),
+			// so the size has to be measured explicitly to place it correctly
+			Size textSize = TextRenderer.MeasureText(this.CycleGroupNameLabel.Text, this.CycleGroupNameLabel.Font);
+			this.CycleGroupNameLabel.Width = textSize.Width;
+			this.CycleGroupNameLabel.Height = textSize.Height;
+
+			int margin = 5;
+
+			switch (anchor)
+			{
+				case ZoomAnchor.NW:
+					this.CycleGroupNameLabel.Left = margin;
+					this.CycleGroupNameLabel.Top = margin;
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.TopLeft;
+					break;
+				case ZoomAnchor.N:
+					this.CycleGroupNameLabel.Left = (this.Width / 2) - (this.CycleGroupNameLabel.Width / 2);
+					this.CycleGroupNameLabel.Top = margin;
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.TopCenter;
+					break;
+				case ZoomAnchor.NE:
+					this.CycleGroupNameLabel.Left = this.Width - this.CycleGroupNameLabel.Width - margin;
+					this.CycleGroupNameLabel.Top = margin;
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.TopRight;
+					break;
+				case ZoomAnchor.W:
+					this.CycleGroupNameLabel.Left = margin;
+					this.CycleGroupNameLabel.Top = (this.Height / 2) - (this.CycleGroupNameLabel.Height / 2);
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.MiddleLeft;
+					break;
+				case ZoomAnchor.C:
+					this.CycleGroupNameLabel.Left = (this.Width / 2) - (this.CycleGroupNameLabel.Width / 2);
+					this.CycleGroupNameLabel.Top = (this.Height / 2) - (this.CycleGroupNameLabel.Height / 2);
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.MiddleCenter;
+					break;
+				case ZoomAnchor.E:
+					this.CycleGroupNameLabel.Left = this.Width - this.CycleGroupNameLabel.Width - margin;
+					this.CycleGroupNameLabel.Top = (this.Height / 2) - (this.CycleGroupNameLabel.Height / 2);
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.MiddleRight;
+					break;
+				case ZoomAnchor.SW:
+					this.CycleGroupNameLabel.Left = margin;
+					this.CycleGroupNameLabel.Top = this.Height - this.CycleGroupNameLabel.Height - margin;
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.BottomLeft;
+					break;
+				case ZoomAnchor.S:
+					this.CycleGroupNameLabel.Left = (this.Width / 2) - (this.CycleGroupNameLabel.Width / 2);
+					this.CycleGroupNameLabel.Top = this.Height - this.CycleGroupNameLabel.Height - margin;
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.BottomCenter;
+					break;
+				case ZoomAnchor.SE:
+					this.CycleGroupNameLabel.Left = this.Width - this.CycleGroupNameLabel.Width - margin;
+					this.CycleGroupNameLabel.Top = this.Height - this.CycleGroupNameLabel.Height - margin;
+					this.CycleGroupNameLabel.TextAlign = ContentAlignment.BottomRight;
+					break;
 			}
 		}
 
@@ -249,6 +326,7 @@ namespace EveOPreview.View
 		private void OverlayAreaPictureBox_Paint(object sender, PaintEventArgs e)
 		{
 			if (this._showOverlayText) PaintDrawText(e, OverlayLabel);
+			if (this._showCycleGroupName) PaintDrawText(e, CycleGroupNameLabel);
 		}
 
 		protected override CreateParams CreateParams

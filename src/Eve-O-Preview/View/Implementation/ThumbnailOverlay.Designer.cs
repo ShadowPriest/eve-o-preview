@@ -31,6 +31,7 @@
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ThumbnailOverlay));
 			OverlayAreaPictureBox = new System.Windows.Forms.PictureBox();
 			OverlayLabel = new System.Windows.Forms.Label();
+			CycleGroupNameLabel = new System.Windows.Forms.Label();
 			CycleGroupIndicator = new System.Windows.Forms.PictureBox();
 			((System.ComponentModel.ISupportInitialize)OverlayAreaPictureBox).BeginInit();
 			((System.ComponentModel.ISupportInitialize)CycleGroupIndicator).BeginInit();
@@ -70,9 +71,27 @@
 			OverlayLabel.MouseLeave += OverlayArea_MouseLeave;
 			OverlayLabel.MouseMove += OverlayArea_MouseMove;
 			OverlayLabel.MouseUp += OverlayArea_MouseUp;
-			// 
+			//
+			// CycleGroupNameLabel
+			//
+			CycleGroupNameLabel.AutoSize = true;
+			CycleGroupNameLabel.BackColor = System.Drawing.Color.FromArgb(0, 0, 1);
+			CycleGroupNameLabel.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+			CycleGroupNameLabel.ForeColor = System.Drawing.Color.DarkGray;
+			CycleGroupNameLabel.Location = new System.Drawing.Point(8, 24);
+			CycleGroupNameLabel.Name = "CycleGroupNameLabel";
+			CycleGroupNameLabel.Size = new System.Drawing.Size(25, 13);
+			CycleGroupNameLabel.TabIndex = 4;
+			CycleGroupNameLabel.Text = "";
+			CycleGroupNameLabel.Visible = false;
+			CycleGroupNameLabel.MouseDown += OverlayArea_MouseDown;
+			CycleGroupNameLabel.MouseEnter += OverlayArea_MouseEnter;
+			CycleGroupNameLabel.MouseLeave += OverlayArea_MouseLeave;
+			CycleGroupNameLabel.MouseMove += OverlayArea_MouseMove;
+			CycleGroupNameLabel.MouseUp += OverlayArea_MouseUp;
+			//
 			// CycleGroupIndicator
-			// 
+			//
 			CycleGroupIndicator.BackColor = System.Drawing.Color.Transparent;
 			CycleGroupIndicator.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
 			CycleGroupIndicator.Image = (System.Drawing.Image)resources.GetObject("CycleGroupIndicator.Image");
@@ -95,6 +114,7 @@
 			ClientSize = new System.Drawing.Size(438, 351);
 			ControlBox = false;
 			Controls.Add(OverlayLabel);
+			Controls.Add(CycleGroupNameLabel);
 			Controls.Add(CycleGroupIndicator);
 			Controls.Add(OverlayAreaPictureBox);
 			FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
@@ -116,6 +136,7 @@
 		#endregion
 
 		private System.Windows.Forms.Label OverlayLabel;
+		private System.Windows.Forms.Label CycleGroupNameLabel;
 		private System.Windows.Forms.PictureBox OverlayAreaPictureBox;
 		private System.Windows.Forms.PictureBox CycleGroupIndicator;
 	}

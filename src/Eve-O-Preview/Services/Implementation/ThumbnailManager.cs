@@ -52,11 +52,15 @@ namespace EveOPreview.Services
 		private int _hideThumbnailsDelay;
 
 		private List<HotkeyHandler> _cycleClientHotkeyHandlers = new List<HotkeyHandler>();
+		private readonly IMouseHookService _mouseHook;
+		private bool _areHotkeysSuspended;
+		private bool _areAllPreviewsHidden;
 		#endregion
 
-		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory)
+		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory, IMouseHookService mouseHook)
 		{
 			this._mediator = mediator;
+			this._mouseHook = mouseHook;
 			this._processMonitor = processMonitor;
 			this._windowManager = windowManager;
 			this._configuration = configuration;
@@ -80,22 +84,177 @@ namespace EveOPreview.Services
 
 			this._hideThumbnailsDelay = this._configuration.HideThumbnailsDelay;
 
-			RegisterCycleClientHotkey(this._configuration.CycleGroup1ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup1ClientsOrder);
-			RegisterCycleClientHotkey(this._configuration.CycleGroup1BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup1ClientsOrder);
+			this.RegisterConfiguredHotkeys();
+		}
 
-			RegisterCycleClientHotkey(this._configuration.CycleGroup2ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup2ClientsOrder);
-			RegisterCycleClientHotkey(this._configuration.CycleGroup2BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup2ClientsOrder);
-
-			RegisterCycleClientHotkey(this._configuration.CycleGroup3ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup3ClientsOrder);
-			RegisterCycleClientHotkey(this._configuration.CycleGroup3BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup3ClientsOrder);
-
-			RegisterCycleClientHotkey(this._configuration.CycleGroup4ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup4ClientsOrder);
-			RegisterCycleClientHotkey(this._configuration.CycleGroup4BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup4ClientsOrder);
-
-			RegisterCycleClientHotkey(this._configuration.CycleGroup5ForwardHotkeys?.Select(x => this._configuration.StringToKey(x)), true, this._configuration.CycleGroup5ClientsOrder);
-			RegisterCycleClientHotkey(this._configuration.CycleGroup5BackwardHotkeys?.Select(x => this._configuration.StringToKey(x)), false, this._configuration.CycleGroup5ClientsOrder);
+		private void RegisterConfiguredHotkeys()
+		{
+			foreach (CycleGroup group in this._configuration.CycleGroups)
+			{
+				RegisterCycleClientHotkey(group.ForwardHotkeys.Select(x => this._configuration.StringToKey(x)), true, group.ClientsOrder);
+				RegisterCycleClientHotkey(group.BackwardHotkeys.Select(x => this._configuration.StringToKey(x)), false, group.ClientsOrder);
+			}
 
 			RegisterMinimizeAllClientsHotkey(this._configuration.MinimizeAllClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
+			RegisterToggleAllPreviewsHotkey(this._configuration.ToggleAllPreviewsHotkeys?.Select(x => this._configuration.StringToKey(x)));
+
+			this.RefreshMouseBindings();
+		}
+
+		public void RegisterToggleAllPreviewsHotkey(IEnumerable<Keys> keys)
+		{
+			foreach (var hotkey in keys)
+			{
+				if (hotkey == Keys.None)
+				{
+					continue;
+				}
+
+				var newHandler = new HotkeyHandler(default(IntPtr), hotkey);
+				newHandler.Pressed += (object s, HandledEventArgs e) =>
+				{
+					this.ToggleAllPreviews();
+					e.Handled = true;
+				};
+
+				newHandler.Register();
+				this._cycleClientHotkeyHandlers.Add(newHandler);
+			}
+		}
+
+		/// <summary>Hides / shows every thumbnail at once without touching the saved settings</summary>
+		private void ToggleAllPreviews()
+		{
+			this._areAllPreviewsHidden = !this._areAllPreviewsHidden;
+
+			this.RefreshThumbnails();
+		}
+
+		private void RefreshMouseBindings()
+		{
+			this._mouseHook.UnregisterAll();
+
+			foreach (CycleGroup group in this._configuration.CycleGroups)
+			{
+				Dictionary<string, int> cycleOrder = group.ClientsOrder;
+
+				foreach (string binding in group.ForwardHotkeys.Where(MouseBinding.IsMouseBinding))
+				{
+					this._mouseHook.Register(binding, () => this.CycleNextClient(true, cycleOrder));
+				}
+
+				foreach (string binding in group.BackwardHotkeys.Where(MouseBinding.IsMouseBinding))
+				{
+					this._mouseHook.Register(binding, () => this.CycleNextClient(false, cycleOrder));
+				}
+			}
+
+			foreach (string binding in (this._configuration.MinimizeAllClientsHotkeys ?? new List<string>()).Where(MouseBinding.IsMouseBinding))
+			{
+				this._mouseHook.Register(binding, () => this.MinimizeAllClients());
+			}
+
+			foreach (string binding in (this._configuration.ToggleAllPreviewsHotkeys ?? new List<string>()).Where(MouseBinding.IsMouseBinding))
+			{
+				this._mouseHook.Register(binding, () => this.ToggleAllPreviews());
+			}
+
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				string title = entry.Value.Title;
+				string binding = this._configuration.GetClientHotkeyString(title);
+
+				if ((binding != null) && MouseBinding.IsMouseBinding(binding))
+				{
+					this._mouseHook.Register(binding, () => this.ActivateClientByTitle(title));
+				}
+			}
+		}
+
+		// Names of the cycle groups the client belongs to, rendered on the thumbnail overlay
+		private string GetCycleGroupNames(string title)
+		{
+			if (!this._configuration.ShowCycleGroupName)
+			{
+				return null;
+			}
+
+			return string.Join(", ", this._configuration.CycleGroups.Where(x => x.ClientsOrder.ContainsKey(title)).Select(x => x.Name));
+		}
+
+		private void ActivateClientByTitle(string title)
+		{
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				if (entry.Value.Title != title)
+				{
+					continue;
+				}
+
+				this.SetActive(entry);
+				return;
+			}
+		}
+
+		public void UpdateHotkeys()
+		{
+			if (this._areHotkeysSuspended)
+			{
+				return;
+			}
+
+			// Re-register cycle group / minimize-all hotkeys from the current configuration
+			this.UnregisterAllHotkeys();
+
+			this.RegisterConfiguredHotkeys();
+
+			// Re-register per-client hotkeys on the active thumbnail views
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				entry.Value.RegisterHotkey(this._configuration.GetClientHotkey(entry.Value.Title));
+			}
+		}
+
+		private void UnregisterAllHotkeys()
+		{
+			foreach (HotkeyHandler handler in this._cycleClientHotkeyHandlers)
+			{
+				handler.Dispose();
+			}
+			this._cycleClientHotkeyHandlers.Clear();
+
+			this._mouseHook.UnregisterAll();
+
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				entry.Value.UnregisterHotkey();
+			}
+		}
+
+		/// <summary>
+		/// Releases every registered hotkey so that the hotkey editor can capture
+		/// a combination that is already bound to an action
+		/// </summary>
+		public void SuspendHotkeys()
+		{
+			if (this._areHotkeysSuspended)
+			{
+				return;
+			}
+
+			this._areHotkeysSuspended = true;
+			this.UnregisterAllHotkeys();
+		}
+
+		public void ResumeHotkeys()
+		{
+			if (!this._areHotkeysSuspended)
+			{
+				return;
+			}
+
+			this._areHotkeysSuspended = false;
+			this.UpdateHotkeys();
 		}
 
 		public IThumbnailView GetClientByTitle(string title)
@@ -105,7 +264,7 @@ namespace EveOPreview.Services
 
 		public IThumbnailView GetClientByPointer(IntPtr ptr)
 		{
-			return _thumbnailViews.FirstOrDefault(x => x.Key == ptr).Value;
+			return this._thumbnailViews.TryGetValue(ptr, out IThumbnailView view) ? view : null;
 		}
 
 		public IThumbnailView GetActiveClient()
@@ -241,7 +400,7 @@ namespace EveOPreview.Services
 			{
 				if (hotkey == Keys.None)
 				{
-					return;
+					continue;
 				}
 
 				var newHandler = new HotkeyHandler(default(IntPtr), hotkey);
@@ -261,7 +420,7 @@ namespace EveOPreview.Services
 			{
 				if (hotkey == Keys.None)
 				{
-					return;
+					continue;
 				}
 
 				var newHandler = new HotkeyHandler(default(IntPtr), hotkey);
@@ -318,9 +477,11 @@ namespace EveOPreview.Services
 				view.SetSizeLimitations(this._configuration.ThumbnailMinimumSize, this._configuration.ThumbnailMaximumSize);
 				view.SetTopMost(this._configuration.ShowThumbnailsAlwaysOnTop);
 
+				// Clients without a character name (login / loading screen) share a single
+				// remembered position: LoginThumbnailLocation is the fallback for the very first run
 				view.ThumbnailLocation = this.IsManageableThumbnail(view)
 											? this._configuration.GetThumbnailLocation(view.Title, this._activeClient.Title, view.ThumbnailLocation)
-											: this._configuration.LoginThumbnailLocation;
+											: this._configuration.GetThumbnailLocation(view.Title, this._activeClient.Title, this._configuration.LoginThumbnailLocation);
 
 				this._thumbnailViews.Add(view.Id, view);
 
@@ -392,6 +553,7 @@ namespace EveOPreview.Services
 
 			if ((viewsAdded.Count > 0) || (viewsRemoved.Count > 0))
 			{
+				this.RefreshMouseBindings();
 				await this._mediator.Publish(new ThumbnailListUpdated(viewsAdded, viewsRemoved));
 			}
 		}
@@ -434,10 +596,12 @@ namespace EveOPreview.Services
 				this.SwitchActiveClient(foregroundWindowHandle, foregroundWindowTitle);
 			}
 
-			bool hideAllThumbnails = this._configuration.HideThumbnailsOnLostFocus && !(isClientWindow || isMainWindowActive);
+			bool hideAllThumbnails = this._areAllPreviewsHidden
+									|| (this._configuration.HideThumbnailsOnLostFocus && !(isClientWindow || isMainWindowActive));
 
 			// Wait for some time before hiding all previews
-			if (hideAllThumbnails)
+			// (the manual toggle takes effect immediately though)
+			if (hideAllThumbnails && !this._areAllPreviewsHidden)
 			{
 				this._hideThumbnailsDelay--;
 				if (this._hideThumbnailsDelay > 0)
@@ -535,6 +699,7 @@ namespace EveOPreview.Services
 				}
 
 				view.IsOverlayEnabled = this._configuration.ShowThumbnailOverlays;
+				view.SetCycleGroupName(this.GetCycleGroupNames(view.Title));
 
 				view.SetHighlight(
 					this._configuration.EnableActiveClientHighlight && (view.Id == this._activeClient.Handle), 
@@ -597,6 +762,9 @@ namespace EveOPreview.Services
 				entry.Value.SetFrames(this._configuration.ShowThumbnailFrames);
 				ApplyCaptionBar(entry.Value);
 				entry.Value.SetPreventPreviews();
+
+				// The per-client border color is cached, refresh it in case the settings changed
+				entry.Value.SetDefaultBorderColor();
 			}
 
 			this.EnableViewEvents();
@@ -983,6 +1151,12 @@ namespace EveOPreview.Services
 			// TODO ??
 			this._configuration.SetThumbnailLocation(view.Title, activeClientTitle, view.ThumbnailLocation);
 
+			// Keep the login screen position setting in sync with the actual window
+			if (!this.IsManageableThumbnail(view))
+			{
+				this._configuration.LoginThumbnailLocation = view.ThumbnailLocation;
+			}
+
 			lock (this._locationChangeNotificationSyncRoot)
 			{
 				if (this._enqueuedLocationChangeNotification.Handle == IntPtr.Zero)
@@ -1031,7 +1205,8 @@ namespace EveOPreview.Services
 
 		private async void RaiseThumbnailLocationUpdatedNotification(string title)
 		{
-			if (string.IsNullOrEmpty(title) || (title == ThumbnailManager.DEFAULT_CLIENT_TITLE))
+			// The login screen thumbnail has no character name but its position is persisted too
+			if (string.IsNullOrEmpty(title))
 			{
 				return;
 			}

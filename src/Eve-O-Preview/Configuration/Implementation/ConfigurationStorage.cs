@@ -22,6 +22,8 @@ namespace EveOPreview.Configuration.Implementation
 
 			if (!File.Exists(filename))
 			{
+				// Still let the configuration initialize defaults (f.e. cycle groups)
+				this._thumbnailConfiguration.ApplyRestrictions();
 				return;
 			}
 

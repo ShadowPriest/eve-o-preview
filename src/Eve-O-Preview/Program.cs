@@ -84,6 +84,7 @@ namespace EveOPreview
 			// Low-level services
 			container.Register<IWindowManager>();
 			container.Register<IProcessMonitor>();
+			container.Register<EveOPreview.UI.Hotkeys.IMouseHookService>();
 
 			// MediatR
 			container.Register<IMediator, MediatR.Mediator>();

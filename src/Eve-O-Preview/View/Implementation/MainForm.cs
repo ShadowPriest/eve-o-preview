@@ -1,4 +1,4 @@
-using EveOPreview.Configuration;
+﻿using EveOPreview.Configuration;
 using EveOPreview.Properties;
 using System;
 using System.Collections.Generic;
@@ -24,6 +24,13 @@ namespace EveOPreview.View
 		private Size _minimumSize;
 		private Size _maximumSize;
 		private string _iconName;
+		private readonly List<string> _cycleGroupNames;
+		private readonly Dictionary<string, List<string>> _cycleGroups;
+		private Dictionary<string, IList<string>> _clientCycleGroups;
+		private List<(string ActionId, string DisplayName)> _hotkeyActions;
+		private List<(string ActionId, string ActionName, string Hotkey)> _hotkeyBindings;
+		private List<string> _activeClients;
+		private Point? _thumbnailsListClickLocation;
 		#endregion
 
 		public MainForm(ApplicationContext context)
@@ -37,9 +44,28 @@ namespace EveOPreview.View
 			this._minimumSize = new Size(20, 20);
 			this._maximumSize = new Size(20, 20);
 
+			this._cycleGroupNames = new List<string>();
+			this._cycleGroups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+			this._clientCycleGroups = new Dictionary<string, IList<string>>(StringComparer.OrdinalIgnoreCase);
+			this._hotkeyActions = new List<(string ActionId, string DisplayName)>();
+			this._hotkeyBindings = new List<(string ActionId, string ActionName, string Hotkey)>();
+			this._activeClients = new List<string>();
+
 			InitializeComponent();
 
+			this.InitTabSeparator();
+
 			this.ThumbnailsList.DisplayMember = "Title";
+			this.ThumbnailsList.Format += this.ThumbnailsList_Format_Handler;
+			this.ThumbnailsList.MouseDown += this.ThumbnailsList_MouseDown_Handler;
+			this.ThumbnailsList.SelectedIndexChanged += this.ThumbnailsList_SelectedIndexChanged_Handler;
+			this.ClientCycleGroupCombo.Enabled = false;
+
+			this.HotkeyBindingsListView.ClientSizeChanged += this.HotkeyBindingsListViewResize_Handler;
+			this.HotkeyBindingsListView.DoubleClick += this.HotkeyBindingsListView_DoubleClick_Handler;
+			this.HotkeyBindingsListViewResize_Handler(this.HotkeyBindingsListView, EventArgs.Empty);
+
+			this.ResizeEnd += this.MainFormResizeEnd_Handler;
 
 			this.InitZoomAnchorMap();
 			this.InitOverlayLabelMap();
@@ -282,8 +308,79 @@ namespace EveOPreview.View
 		public bool ShowThumbnailOverlays
 		{
 			get => this.ShowThumbnailOverlaysCheckBox.Checked;
-			set => this.ShowThumbnailOverlaysCheckBox.Checked = value;
+			set
+			{
+				this.ShowThumbnailOverlaysCheckBox.Checked = value;
+				this.RefreshOverlaySubPages();
+			}
 		}
+
+		// The overlay sub-pages only make sense while the overlay itself is enabled.
+		// TabPage.Enabled does not block the tab header, so the pages are removed instead
+		private void RefreshOverlaySubPages()
+		{
+			bool isEnabled = this.ShowThumbnailOverlaysCheckBox.Checked;
+			TabPage[] optionalPages = { this.OverlayWindowNameSubPage, this.OverlayGroupNameSubPage, this.OverlayBorderSubPage };
+
+			this.OverlaySubTabControl.SuspendLayout();
+
+			foreach (TabPage page in optionalPages)
+			{
+				bool isPresent = this.OverlaySubTabControl.TabPages.Contains(page);
+
+				if (isEnabled && !isPresent)
+				{
+					this.OverlaySubTabControl.TabPages.Add(page);
+				}
+				else if (!isEnabled && isPresent)
+				{
+					this.OverlaySubTabControl.TabPages.Remove(page);
+				}
+			}
+
+			this.OverlaySubTabControl.ResumeLayout();
+		}
+
+		public bool ShowCycleGroupName
+		{
+			get => this.ShowCycleGroupNameCheckBox.Checked;
+			set => this.ShowCycleGroupNameCheckBox.Checked = value;
+		}
+
+		public bool ShowClientName
+		{
+			get => this.ShowClientNameCheckBox.Checked;
+			set => this.ShowClientNameCheckBox.Checked = value;
+		}
+
+		public bool OverlayAlwaysOnTop
+		{
+			get => this.OverlayAlwaysOnTopCheckBox.Checked;
+			set => this.OverlayAlwaysOnTopCheckBox.Checked = value;
+		}
+
+		public Color CycleGroupNameColor
+		{
+			get => this._cycleGroupNameColor;
+			set
+			{
+				this._cycleGroupNameColor = value;
+				this.CycleGroupNameColorButton.BackColor = value;
+				this.LabelCycleGroupNameFont.ForeColor = value;
+			}
+		}
+		private Color _cycleGroupNameColor;
+
+		public Font CycleGroupNameFont
+		{
+			get => this._cycleGroupNameFont;
+			set
+			{
+				this._cycleGroupNameFont = value;
+				this.LabelCycleGroupNameFont.Font = value;
+			}
+		}
+		private Font _cycleGroupNameFont;
 
 		public bool ShowThumbnailFrames
 		{
@@ -317,6 +414,12 @@ namespace EveOPreview.View
 			set => this.EnableActiveClientHighlightCheckBox.Checked = value;
 		}
 
+		public int ActiveClientHighlightThickness
+		{
+			get => (int)this.ActiveClientHighlightThicknessNumericEdit.Value;
+			set => this.ActiveClientHighlightThicknessNumericEdit.Value = Math.Min(Math.Max(value, (int)this.ActiveClientHighlightThicknessNumericEdit.Minimum), (int)this.ActiveClientHighlightThicknessNumericEdit.Maximum);
+		}
+
 		public Color ActiveClientHighlightColor
 		{
 			get => this._activeClientHighlightColor;
@@ -346,6 +449,7 @@ namespace EveOPreview.View
 			{
 				this._OverlayLabelColor = value;
 				this.OverlayLabelColorButton.BackColor = value;
+				this.LabelOverlayLabelFont.ForeColor = value;
 			}
 		}
 		private Color _OverlayLabelColor;
@@ -360,6 +464,20 @@ namespace EveOPreview.View
 			}
 		}
 		private Font _OverlayLabelFont;
+
+		public Size WindowSize
+		{
+			get => this.WindowState == FormWindowState.Normal ? this.Size : this.RestoreBounds.Size;
+			set
+			{
+				if (value.IsEmpty)
+				{
+					return;
+				}
+
+				this.Size = new Size(Math.Max(value.Width, this.MinimumSize.Width), Math.Max(value.Height, this.MinimumSize.Height));
+			}
+		}
 
 		public new void Show()
 		{
@@ -400,7 +518,8 @@ namespace EveOPreview.View
 
 			foreach (IThumbnailDescription view in thumbnails)
 			{
-				this.ThumbnailsList.SetItemChecked(this.ThumbnailsList.Items.Add(view), view.IsDisabled);
+				// The checkbox is checked when the preview is enabled
+				this.ThumbnailsList.SetItemChecked(this.ThumbnailsList.Items.Add(view), !view.IsDisabled);
 			}
 
 			this.ThumbnailsList.EndUpdate();
@@ -425,6 +544,125 @@ namespace EveOPreview.View
 			this.ZoomAnchorPanel.Enabled = enableControls;
 		}
 
+		public void SetHotkeyActions(IList<(string ActionId, string DisplayName)> actions)
+		{
+			this._hotkeyActions = new List<(string ActionId, string DisplayName)>(actions);
+		}
+
+		public void SetHotkeyBindings(IList<(string ActionId, string ActionName, string Hotkey)> bindings)
+		{
+			this._hotkeyBindings = new List<(string ActionId, string ActionName, string Hotkey)>(bindings);
+
+			this.HotkeyBindingsListView.BeginUpdate();
+			this.HotkeyBindingsListView.Items.Clear();
+
+			foreach ((string actionId, string actionName, string hotkey) in bindings)
+			{
+				ListViewItem item = new ListViewItem(new[] { actionName, hotkey });
+				item.Tag = (actionId, hotkey);
+				this.HotkeyBindingsListView.Items.Add(item);
+			}
+
+			this.HotkeyBindingsListView.EndUpdate();
+		}
+
+		public void SetHotkeyStatus(string status)
+		{
+			this.HotkeyStatusLabel.Text = status;
+		}
+
+		public void SetActiveClients(IList<string> clients)
+		{
+			this._activeClients = new List<string>(clients);
+
+			string selectedClient = this.CycleGroupAddClientCombo.SelectedItem as string;
+
+			this.CycleGroupAddClientCombo.BeginUpdate();
+			this.CycleGroupAddClientCombo.Items.Clear();
+
+			foreach (string client in clients)
+			{
+				int index = this.CycleGroupAddClientCombo.Items.Add(client);
+
+				if (client == selectedClient)
+				{
+					this.CycleGroupAddClientCombo.SelectedIndex = index;
+				}
+			}
+
+			this.CycleGroupAddClientCombo.EndUpdate();
+		}
+
+		public void SetCycleGroups(IList<(string Name, IList<string> Clients)> groups)
+		{
+			string selectedGroup = this.SelectedCycleGroupName;
+
+			this._cycleGroupNames.Clear();
+			this._cycleGroups.Clear();
+
+			foreach ((string name, IList<string> clients) in groups)
+			{
+				this._cycleGroupNames.Add(name);
+				this._cycleGroups[name] = new List<string>(clients);
+			}
+
+			bool suppressed = this._suppressEvents;
+			this._suppressEvents = true;
+
+			// The group selector on the Cycle Groups tab
+			this.CycleGroupSelectCombo.BeginUpdate();
+			this.CycleGroupSelectCombo.Items.Clear();
+			foreach (string name in this._cycleGroupNames)
+			{
+				int index = this.CycleGroupSelectCombo.Items.Add(name);
+				if (name == selectedGroup)
+				{
+					this.CycleGroupSelectCombo.SelectedIndex = index;
+				}
+			}
+			if ((this.CycleGroupSelectCombo.SelectedIndex < 0) && (this.CycleGroupSelectCombo.Items.Count > 0))
+			{
+				this.CycleGroupSelectCombo.SelectedIndex = 0;
+			}
+			this.CycleGroupSelectCombo.EndUpdate();
+
+			// The per-client group selector on the Active Clients tab
+			string selectedClientGroup = this.ClientCycleGroupCombo.SelectedItem as string;
+			this.ClientCycleGroupCombo.BeginUpdate();
+			this.ClientCycleGroupCombo.Items.Clear();
+			this.ClientCycleGroupCombo.Items.Add("None");
+			foreach (string name in this._cycleGroupNames)
+			{
+				this.ClientCycleGroupCombo.Items.Add(name);
+			}
+			this.ClientCycleGroupCombo.SelectedIndex = Math.Max(0, this.ClientCycleGroupCombo.Items.IndexOf(selectedClientGroup ?? "None"));
+			this.ClientCycleGroupCombo.EndUpdate();
+
+			this._suppressEvents = suppressed;
+
+			this.RenderSelectedCycleGroup();
+			this.RefreshSelectedThumbnailCycleGroup();
+		}
+
+		public void SelectCycleGroup(string groupName)
+		{
+			int index = this.CycleGroupSelectCombo.Items.IndexOf(groupName);
+
+			if (index >= 0)
+			{
+				this.CycleGroupSelectCombo.SelectedIndex = index;
+			}
+		}
+
+		public void SetClientCycleGroups(IDictionary<string, IList<string>> clientGroups)
+		{
+			this._clientCycleGroups = new Dictionary<string, IList<string>>(clientGroups, StringComparer.OrdinalIgnoreCase);
+			this.RefreshSelectedThumbnailCycleGroup();
+
+			// The group membership is rendered as a suffix in the Active Clients list
+			this.ThumbnailsList.Invalidate();
+		}
+
 		public Action ApplicationExitRequested { get; set; }
 
 		public Action FormActivated { get; set; }
@@ -441,6 +679,26 @@ namespace EveOPreview.View
 
 		public Action DocumentationLinkActivated { get; set; }
 
+		public Action<string, string> HotkeyBindingAssigned { get; set; }
+
+		public Action<string, string> HotkeyBindingRemoved { get; set; }
+
+		public Action<string, string, string, string> HotkeyBindingEdited { get; set; }
+
+		public Action<string, IList<string>> CycleGroupClientsChanged { get; set; }
+
+		public Action<string, string> ThumbnailCycleGroupChanged { get; set; }
+
+		public Action CycleGroupAddRequested { get; set; }
+
+		public Action<string> CycleGroupRemoveRequested { get; set; }
+
+		public Action<string, string> CycleGroupRenameRequested { get; set; }
+
+		public Action<bool> HotkeyCaptureModeChanged { get; set; }
+
+		public Action WindowSizeChanged { get; set; }
+
 		#region UI events
 		private void ContentTabControl_DrawItem(object sender, DrawItemEventArgs e)
 		{
@@ -449,22 +707,40 @@ namespace EveOPreview.View
 			Rectangle bounds = control.GetTabRect(e.Index);
 
 			Graphics graphics = e.Graphics;
+			bool isSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
 
-			Brush textBrush = new SolidBrush(SystemColors.ActiveCaptionText);
-			Brush backgroundBrush = (e.State == DrawItemState.Selected)
-										? new SolidBrush(SystemColors.Control)
-										: new SolidBrush(SystemColors.ControlDark);
-			graphics.FillRectangle(backgroundBrush, e.Bounds);
+			// Flat look: unselected tabs blend with the form, the selected one
+			// is highlighted with a lighter background and an accent bar
+			using (Brush backgroundBrush = new SolidBrush(isSelected ? SystemColors.Window : SystemColors.Control))
+			{
+				graphics.FillRectangle(backgroundBrush, bounds);
+			}
 
-			// Use our own font
-			Font font = new Font("Arial", this.Font.Size * 1.5f, FontStyle.Bold, GraphicsUnit.Pixel);
+			if (isSelected)
+			{
+				using (Brush accentBrush = new SolidBrush(SystemColors.Highlight))
+				{
+					graphics.FillRectangle(accentBrush, new Rectangle(bounds.X, bounds.Y, this.LogicalToDeviceUnits(4), bounds.Height));
+				}
+			}
 
-			// Draw string and center the text
-			StringFormat stringFlags = new StringFormat();
-			stringFlags.Alignment = StringAlignment.Center;
-			stringFlags.LineAlignment = StringAlignment.Center;
+			using (Font font = new Font(this.Font, isSelected ? FontStyle.Bold : FontStyle.Regular))
+			using (Brush textBrush = new SolidBrush(SystemColors.ControlText))
+			using (StringFormat stringFormat = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter })
+			{
+				Rectangle textBounds = new Rectangle(bounds.X + this.LogicalToDeviceUnits(12), bounds.Y, bounds.Width - this.LogicalToDeviceUnits(14), bounds.Height);
+				graphics.DrawString(page.Text, font, textBrush, textBounds, stringFormat);
+			}
+		}
 
-			graphics.DrawString(page.Text, font, textBrush, bounds, stringFlags);
+		private void MainFormResizeEnd_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents || (this.WindowState == FormWindowState.Minimized))
+			{
+				return;
+			}
+
+			this.WindowSizeChanged?.Invoke();
 		}
 
 		private void OptionChanged_Handler(object sender, EventArgs e)
@@ -472,6 +748,11 @@ namespace EveOPreview.View
 			if (this._suppressEvents)
 			{
 				return;
+			}
+
+			if (sender == this.ShowThumbnailOverlaysCheckBox)
+			{
+				this.RefreshOverlaySubPages();
 			}
 
 			this.ApplicationSettingsChanged?.Invoke();
@@ -501,7 +782,7 @@ namespace EveOPreview.View
 			{
 				dialog.Color = this.ActiveClientHighlightColor;
 
-				if (dialog.ShowDialog() != DialogResult.OK)
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
 				{
 					return;
 				}
@@ -518,7 +799,7 @@ namespace EveOPreview.View
 			{
 				dialog.Color = this.OverlayLabelColor;
 
-				if (dialog.ShowDialog() != DialogResult.OK)
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
 				{
 					return;
 				}
@@ -528,14 +809,51 @@ namespace EveOPreview.View
 			this.OptionChanged_Handler(sender, e);
 		}
 
+		private void ThumbnailsList_MouseDown_Handler(object sender, MouseEventArgs e)
+		{
+			this._thumbnailsListClickLocation = e.Location;
+		}
+
+		private void ThumbnailsList_Format_Handler(object sender, ListControlConvertEventArgs e)
+		{
+			if (!(e.ListItem is IThumbnailDescription description))
+			{
+				return;
+			}
+
+			// Render the cycle groups the client belongs to as a row suffix
+			if (this._clientCycleGroups.TryGetValue(description.Title, out IList<string> groups) && (groups.Count > 0))
+			{
+				e.Value = description.Title + "   [" + string.Join(", ", groups) + "]";
+			}
+			else
+			{
+				e.Value = description.Title;
+			}
+		}
+
 		private void ThumbnailsList_ItemCheck_Handler(object sender, ItemCheckEventArgs e)
 		{
+			// A mouse click toggles the checkbox only when it lands on the checkbox itself,
+			// clicking the row text just selects the row
+			if (this._thumbnailsListClickLocation is Point clickLocation)
+			{
+				this._thumbnailsListClickLocation = null;
+
+				if (clickLocation.X > this.LogicalToDeviceUnits(16))
+				{
+					e.NewValue = e.CurrentValue;
+					return;
+				}
+			}
+
 			if (!(this.ThumbnailsList.Items[e.Index] is IThumbnailDescription selectedItem))
 			{
 				return;
 			}
 
-			selectedItem.IsDisabled = (e.NewValue == CheckState.Checked);
+			// The checkbox is checked when the preview is enabled
+			selectedItem.IsDisabled = (e.NewValue != CheckState.Checked);
 
 			this.ThumbnailStateChanged?.Invoke(selectedItem.Title);
 		}
@@ -576,6 +894,320 @@ namespace EveOPreview.View
 		{
 			this.ApplicationExitRequested?.Invoke();
 		}
+
+		// The main form is TopMost, so a non-TopMost modal dialog would open behind it.
+		// TopMost is dropped for the time the dialog is on the screen instead
+		private DialogResult ShowModalDialog(Form dialog)
+		{
+			bool wasTopMost = this.TopMost;
+			this.TopMost = false;
+
+			try
+			{
+				return dialog.ShowDialog(this);
+			}
+			finally
+			{
+				this.TopMost = wasTopMost;
+			}
+		}
+
+		private DialogResult ShowModalDialog(CommonDialog dialog)
+		{
+			bool wasTopMost = this.TopMost;
+			this.TopMost = false;
+
+			try
+			{
+				return dialog.ShowDialog(this);
+			}
+			finally
+			{
+				this.TopMost = wasTopMost;
+			}
+		}
+
+		// Registered hotkeys are released while the editor is open, otherwise an already
+		// bound combination would be swallowed by its handler and never reach the capture box
+		private DialogResult ShowHotkeyDialog(HotkeyEditDialog dialog)
+		{
+			this.HotkeyCaptureModeChanged?.Invoke(true);
+
+			try
+			{
+				return this.ShowModalDialog(dialog);
+			}
+			finally
+			{
+				this.HotkeyCaptureModeChanged?.Invoke(false);
+			}
+		}
+
+		private void AddHotkeyButton_Click_Handler(object sender, EventArgs e)
+		{
+			using (HotkeyEditDialog dialog = new HotkeyEditDialog(this._hotkeyActions, this._activeClients, this._hotkeyBindings))
+			{
+				if (this.ShowHotkeyDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.HotkeyBindingAssigned?.Invoke(dialog.SelectedActionId, dialog.HotkeyString);
+			}
+		}
+
+		private void EditHotkeyButton_Click_Handler(object sender, EventArgs e)
+		{
+			if (this.HotkeyBindingsListView.SelectedItems.Count == 0)
+			{
+				this.SetHotkeyStatus("Select a binding in the list first");
+				return;
+			}
+
+			(string actionId, string hotkey) = ((string, string))this.HotkeyBindingsListView.SelectedItems[0].Tag;
+
+			using (HotkeyEditDialog dialog = new HotkeyEditDialog(this._hotkeyActions, this._activeClients, this._hotkeyBindings, actionId, hotkey))
+			{
+				if (this.ShowHotkeyDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.HotkeyBindingEdited?.Invoke(actionId, hotkey, dialog.SelectedActionId, dialog.HotkeyString);
+			}
+		}
+
+		private void CycleGroupRenameButton_Click_Handler(object sender, EventArgs e)
+		{
+			string groupName = this.SelectedCycleGroupName;
+
+			if (groupName == null)
+			{
+				return;
+			}
+
+			using (TextPromptDialog dialog = new TextPromptDialog("Rename cycle group", "Group name", groupName))
+			{
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				if ((dialog.Value.Length == 0) || (dialog.Value == groupName))
+				{
+					return;
+				}
+
+				this.CycleGroupRenameRequested?.Invoke(groupName, dialog.Value);
+			}
+		}
+
+		private void HotkeyBindingsListView_DoubleClick_Handler(object sender, EventArgs e)
+		{
+			this.EditHotkeyButton_Click_Handler(sender, e);
+		}
+
+		private void RemoveHotkeyButton_Click_Handler(object sender, EventArgs e)
+		{
+			if (this.HotkeyBindingsListView.SelectedItems.Count == 0)
+			{
+				this.SetHotkeyStatus("Select a binding in the list first");
+				return;
+			}
+
+			(string actionId, string hotkey) = ((string, string))this.HotkeyBindingsListView.SelectedItems[0].Tag;
+
+			this.HotkeyBindingRemoved?.Invoke(actionId, hotkey);
+		}
+
+		private string SelectedCycleGroupName => this.CycleGroupSelectCombo.SelectedItem as string;
+
+		private List<string> GetSelectedCycleGroupClients()
+		{
+			string groupName = this.SelectedCycleGroupName;
+
+			if (groupName == null)
+			{
+				return null;
+			}
+
+			if (!this._cycleGroups.TryGetValue(groupName, out List<string> clients))
+			{
+				clients = new List<string>();
+				this._cycleGroups[groupName] = clients;
+			}
+
+			return clients;
+		}
+
+		private void RenderSelectedCycleGroup()
+		{
+			List<string> clients = this.GetSelectedCycleGroupClients() ?? new List<string>();
+			string selectedClient = this.CycleGroupClientsListBox.SelectedItem as string;
+
+			this.CycleGroupClientsListBox.BeginUpdate();
+			this.CycleGroupClientsListBox.Items.Clear();
+
+			foreach (string client in clients)
+			{
+				this.CycleGroupClientsListBox.Items.Add(client);
+			}
+
+			if (selectedClient != null)
+			{
+				int index = this.CycleGroupClientsListBox.Items.IndexOf(selectedClient);
+				if (index >= 0)
+				{
+					this.CycleGroupClientsListBox.SelectedIndex = index;
+				}
+			}
+
+			this.CycleGroupClientsListBox.EndUpdate();
+		}
+
+		private void CycleGroupSelectCombo_SelectedIndexChanged_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			this.RenderSelectedCycleGroup();
+		}
+
+		private void CycleGroupMoveUpButton_Click_Handler(object sender, EventArgs e)
+		{
+			this.MoveSelectedCycleGroupClient(-1);
+		}
+
+		private void CycleGroupMoveDownButton_Click_Handler(object sender, EventArgs e)
+		{
+			this.MoveSelectedCycleGroupClient(1);
+		}
+
+		private void MoveSelectedCycleGroupClient(int direction)
+		{
+			List<string> clients = this.GetSelectedCycleGroupClients();
+			int index = this.CycleGroupClientsListBox.SelectedIndex;
+			int newIndex = index + direction;
+
+			if ((clients == null) || (index < 0) || (newIndex < 0) || (newIndex >= clients.Count))
+			{
+				return;
+			}
+
+			(clients[index], clients[newIndex]) = (clients[newIndex], clients[index]);
+
+			this.RenderSelectedCycleGroup();
+			this.CycleGroupClientsListBox.SelectedIndex = newIndex;
+
+			this.CycleGroupClientsChanged?.Invoke(this.SelectedCycleGroupName, new List<string>(clients));
+		}
+
+		private void CycleGroupRemoveClientButton_Click_Handler(object sender, EventArgs e)
+		{
+			List<string> clients = this.GetSelectedCycleGroupClients();
+			int index = this.CycleGroupClientsListBox.SelectedIndex;
+
+			if ((clients == null) || (index < 0) || (index >= clients.Count))
+			{
+				return;
+			}
+
+			clients.RemoveAt(index);
+
+			this.RenderSelectedCycleGroup();
+
+			this.CycleGroupClientsChanged?.Invoke(this.SelectedCycleGroupName, new List<string>(clients));
+		}
+
+		private void CycleGroupAddClientButton_Click_Handler(object sender, EventArgs e)
+		{
+			string client = (this.CycleGroupAddClientCombo.SelectedItem as string)?.Trim();
+			List<string> clients = this.GetSelectedCycleGroupClients();
+
+			if (string.IsNullOrEmpty(client) || (clients == null))
+			{
+				return;
+			}
+
+			if (clients.Contains(client, StringComparer.OrdinalIgnoreCase))
+			{
+				return;
+			}
+
+			clients.Add(client);
+
+			this.RenderSelectedCycleGroup();
+
+			this.CycleGroupClientsChanged?.Invoke(this.SelectedCycleGroupName, new List<string>(clients));
+		}
+
+		private void CycleGroupAddGroupButton_Click_Handler(object sender, EventArgs e)
+		{
+			this.CycleGroupAddRequested?.Invoke();
+		}
+
+		private void CycleGroupRemoveGroupButton_Click_Handler(object sender, EventArgs e)
+		{
+			string groupName = this.SelectedCycleGroupName;
+
+			if (groupName == null)
+			{
+				return;
+			}
+
+			this.CycleGroupRemoveRequested?.Invoke(groupName);
+		}
+
+		private void ThumbnailsList_SelectedIndexChanged_Handler(object sender, EventArgs e)
+		{
+			this.RefreshSelectedThumbnailCycleGroup();
+		}
+
+		private void RefreshSelectedThumbnailCycleGroup()
+		{
+			string title = (this.ThumbnailsList.SelectedItem as IThumbnailDescription)?.Title;
+
+			bool suppressed = this._suppressEvents;
+			this._suppressEvents = true;
+
+			string groupName = null;
+			if ((title != null) && this._clientCycleGroups.TryGetValue(title, out IList<string> groups) && (groups.Count > 0))
+			{
+				groupName = groups[0];
+			}
+
+			this.ClientCycleGroupCombo.SelectedIndex = Math.Max(0, this.ClientCycleGroupCombo.Items.IndexOf(groupName ?? "None"));
+			this.ClientCycleGroupCombo.Enabled = title != null;
+
+			this._suppressEvents = suppressed;
+		}
+
+		private void ClientCycleGroupCombo_SelectedIndexChanged_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			string title = (this.ThumbnailsList.SelectedItem as IThumbnailDescription)?.Title;
+
+			if (title == null)
+			{
+				return;
+			}
+
+			string groupName = this.ClientCycleGroupCombo.SelectedIndex > 0 ? this.ClientCycleGroupCombo.SelectedItem as string : null;
+
+			this.ThumbnailCycleGroupChanged?.Invoke(title, groupName);
+		}
+
+		private void HotkeyBindingsListViewResize_Handler(object sender, EventArgs e)
+		{
+			// Let the 'Action' column consume the free width
+			this.HotkeyActionColumnHeader.Width = Math.Max(120, this.HotkeyBindingsListView.ClientSize.Width - this.HotkeyKeyColumnHeader.Width);
+		}
 		#endregion
 
 		private void InitZoomAnchorMap()
@@ -615,6 +1247,27 @@ namespace EveOPreview.View
 			this._cycleGroupIndicatorMap[ViewZoomAnchor.SE] = this.CycleGroupIndicatorSERadioButton;
 		}
 
+		// The content area has no frame of its own; a single line separates it from the tab strip
+		private void InitTabSeparator()
+		{
+			TabControl tabControl = (TabControl)this.Controls.Find("ContentTabControl", false).First();
+
+			foreach (TabPage page in tabControl.TabPages)
+			{
+				page.Paint += this.TabPage_Paint_Handler;
+			}
+		}
+
+		private void TabPage_Paint_Handler(object sender, PaintEventArgs e)
+		{
+			TabPage page = (TabPage)sender;
+
+			using (Pen pen = new Pen(SystemColors.ControlDark))
+			{
+				e.Graphics.DrawLine(pen, 0, 0, 0, page.Height);
+			}
+		}
+
 		private void InitFormSize()
 		{
 			const int BUFFER_PIXEL_AMOUNT = 8;
@@ -629,21 +1282,54 @@ namespace EveOPreview.View
 					this.Height = calculatedHeight;
 				}
 			}
+
+			// The form is resizable but should not shrink below the initial layout-safe size
+			this.MinimumSize = this.Size;
 		}
 
 		private void btnLabelFont_Click(object sender, EventArgs e)
 		{
-			FontDialog fontSelector = new FontDialog();
-			fontSelector.Font = OverlayLabelFont;
-			fontSelector.ShowColor = false;
-			fontSelector.ShowApply = false;
-			fontSelector.ShowHelp = false;
-			if (fontSelector.ShowDialog() != DialogResult.Cancel)
+			using (FontDialog fontSelector = new FontDialog { Font = this.OverlayLabelFont, ShowColor = false, ShowApply = false, ShowHelp = false })
 			{
-				OverlayLabelFont = fontSelector.Font;
-				LabelOverlayLabelFont.Font = fontSelector.Font;
-				this.OptionChanged_Handler(sender, e);
+				if (this.ShowModalDialog(fontSelector) == DialogResult.Cancel)
+				{
+					return;
+				}
+
+				this.OverlayLabelFont = fontSelector.Font;
 			}
+
+			this.OptionChanged_Handler(sender, e);
+		}
+
+		private void btnCycleGroupNameFont_Click(object sender, EventArgs e)
+		{
+			using (FontDialog fontSelector = new FontDialog { Font = this.CycleGroupNameFont, ShowColor = false, ShowApply = false, ShowHelp = false })
+			{
+				if (this.ShowModalDialog(fontSelector) == DialogResult.Cancel)
+				{
+					return;
+				}
+
+				this.CycleGroupNameFont = fontSelector.Font;
+			}
+
+			this.OptionChanged_Handler(sender, e);
+		}
+
+		private void CycleGroupNameColorButton_Click(object sender, EventArgs e)
+		{
+			using (ColorDialog dialog = new ColorDialog { Color = this.CycleGroupNameColor })
+			{
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.CycleGroupNameColor = dialog.Color;
+			}
+
+			this.OptionChanged_Handler(sender, e);
 		}
 
 		private void PreventPreviewColorButton_Click(object sender, EventArgs e)
@@ -652,7 +1338,7 @@ namespace EveOPreview.View
 			{
 				dialog.Color = this.PreventPreviewColor;
 
-				if (dialog.ShowDialog() != DialogResult.OK)
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
 				{
 					return;
 				}
