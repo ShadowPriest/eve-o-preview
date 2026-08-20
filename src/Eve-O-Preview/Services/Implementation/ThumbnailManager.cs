@@ -113,6 +113,7 @@ namespace EveOPreview.Services
 
 			RegisterMinimizeAllClientsHotkey(this._configuration.MinimizeAllClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
 			RegisterToggleAllPreviewsHotkey(this._configuration.ToggleAllPreviewsHotkeys?.Select(x => this._configuration.StringToKey(x)));
+			RegisterClickThroughHotkey(this._configuration.ClickThroughHotkeys?.Select(x => this._configuration.StringToKey(x)));
 
 			this.RefreshMouseBindings();
 		}
@@ -136,6 +137,44 @@ namespace EveOPreview.Services
 				newHandler.Register();
 				this._cycleClientHotkeyHandlers.Add(newHandler);
 			}
+		}
+
+		public void RegisterClickThroughHotkey(IEnumerable<Keys> keys)
+		{
+			foreach (var hotkey in keys)
+			{
+				if (hotkey == Keys.None)
+				{
+					continue;
+				}
+
+				var newHandler = new HotkeyHandler(default(IntPtr), hotkey);
+				newHandler.Pressed += (object s, HandledEventArgs e) =>
+				{
+					this.ToggleClickThrough();
+					e.Handled = true;
+				};
+
+				newHandler.Register();
+				this._cycleClientHotkeyHandlers.Add(newHandler);
+			}
+		}
+
+		// While the click-through mode is on, the previews (and their overlays) are
+		// transparent for the mouse, so anything behind them can be interacted with.
+		// The previews are also dimmed so the mode is visually obvious
+		private bool _isClickThroughActive;
+
+		private void ToggleClickThrough()
+		{
+			this._isClickThroughActive = !this._isClickThroughActive;
+
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				entry.Value.SetClickThrough(this._isClickThroughActive);
+			}
+
+			this.RefreshThumbnails();
 		}
 
 		/// <summary>Hides / shows every thumbnail at once without touching the saved settings</summary>
@@ -185,6 +224,11 @@ namespace EveOPreview.Services
 			foreach (string binding in (this._configuration.ToggleAllPreviewsHotkeys ?? new List<string>()).Where(MouseBinding.IsMouseBinding))
 			{
 				this._mouseHook.Register(binding, () => this.ToggleAllPreviews());
+			}
+
+			foreach (string binding in (this._configuration.ClickThroughHotkeys ?? new List<string>()).Where(MouseBinding.IsMouseBinding))
+			{
+				this._mouseHook.Register(binding, () => this.ToggleClickThrough());
 			}
 
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
@@ -415,7 +459,10 @@ namespace EveOPreview.Services
 
 					foreach (IntPtr handle in minimizeHandles)
 					{
-						this._windowManager.MinimizeWindow(handle, this._configuration.WindowsAnimationStyle, false);
+						// The no-activation minimize: a regular one would make Windows
+						// activate the next window in the Z order, stealing the focus
+						// from the client that was just raised
+						this._windowManager.MinimizeWindowWithoutActivation(handle);
 					}
 
 					if (wakeHandle != IntPtr.Zero)
@@ -467,7 +514,10 @@ namespace EveOPreview.Services
 				return;
 			}
 
-			this._windowManager.MinimizeWindow(handle, this._configuration.WindowsAnimationStyle, false);
+			// Minimized strictly without activation: SW_MINIMIZE would activate the next
+			// window in the Z order, silently stealing the focus from whatever the user
+			// is interacting with (f.e. the settings window) on every wake cycle
+			this._windowManager.MinimizeWindowWithoutActivation(handle);
 		}
 
 		private static bool WasUserInputAfter(int startTick)
@@ -538,12 +588,19 @@ namespace EveOPreview.Services
 			IOrderedEnumerable<KeyValuePair<string, int>> clientOrder;
 			Dictionary<string, int> _cycleOrder = new Dictionary<string, int>(cycleOrder);
 
-			if ( _cycleOrder.Count == 0 ) 
+			if ( _cycleOrder.Count == 0 )
 			{
 				int order = 0;
 				foreach( var x in _thumbnailViews )
 				{
-					_cycleOrder.Add(x.Value.Title, order++);
+					// Several clients can share one title: every window still sitting on the
+					// login screen is called "EVE". A plain Add would throw on the duplicate
+					// (and crash the app); one entry per title is enough - the cycling logic
+					// below walks same-titled clients by their window handles
+					if (!_cycleOrder.ContainsKey(x.Value.Title))
+					{
+						_cycleOrder.Add(x.Value.Title, order++);
+					}
 				}
 			}
 
@@ -767,9 +824,45 @@ namespace EveOPreview.Services
 			this.RefreshThumbnails();
 		}
 
+		// Single-flight guard for the background process scan: touched only on the UI thread
+		private bool _isProcessScanRunning;
+
 		private async void UpdateThumbnailsList()
 		{
-			this._processMonitor.GetUpdatedProcesses(out ICollection<IProcessInfo> addedProcesses, out ICollection<IProcessInfo> updatedProcesses, out ICollection<IProcessInfo> removedProcesses);
+			// The process/window scan (Process.GetProcesses + EnumWindows) is the heaviest
+			// part of the refresh cycle. It runs on a worker task so the UI thread only
+			// applies the results; a scan still in progress just skips this tick
+			if (this._isProcessScanRunning)
+			{
+				return;
+			}
+
+			this._isProcessScanRunning = true;
+
+			ICollection<IProcessInfo> addedProcesses = null;
+			ICollection<IProcessInfo> updatedProcesses = null;
+			ICollection<IProcessInfo> removedProcesses = null;
+
+			try
+			{
+				await Task.Run(() =>
+				{
+					this._processMonitor.GetUpdatedProcesses(out ICollection<IProcessInfo> added, out ICollection<IProcessInfo> updated, out ICollection<IProcessInfo> removed);
+
+					addedProcesses = added;
+					updatedProcesses = updated;
+					removedProcesses = removed;
+				});
+			}
+			catch (Exception)
+			{
+				// A failed scan is not fatal - the next tick retries
+				return;
+			}
+			finally
+			{
+				this._isProcessScanRunning = false;
+			}
 
 			List<string> viewsAdded = new List<string>();
 			List<string> viewsRemoved = new List<string>();
@@ -809,6 +902,11 @@ namespace EveOPreview.Services
 				view.ThumbnailToggleCycleGroup = this.ThumbnailToggleCycleGroup;
 
 				view.RegisterHotkey(this._configuration.GetClientHotkey(view.Title));
+
+				if (this._isClickThroughActive)
+				{
+					view.SetClickThrough(true);
+				}
 
 				this.ApplyClientLayout(view);
 				this.ApplyCaptionBar(view);
@@ -1018,10 +1116,24 @@ namespace EveOPreview.Services
 					if (this.IsManageableThumbnail(view))
 					{
 						view.ThumbnailLocation = this._configuration.GetThumbnailLocation(view.Title, this._activeClient.Title, view.ThumbnailLocation);
-						view.ThumbnailSize = this._configuration.GetThumbnailSize(view.Title, this._activeClient.Title, view.ThumbnailSize);
+
+						// In the fill-cell mode the size is dictated by the grid cell
+						// (minus the padding on both sides), not by the size settings;
+						// the size limits are lifted so the cell size always wins
+						if (this.IsGridCellFillActive())
+						{
+							view.SetSizeLimitations(new Size(10, 10), Size.Empty);
+							view.ThumbnailSize = this.GetGridCellFillSize();
+						}
+						else
+						{
+							view.SetSizeLimitations(this._configuration.ThumbnailMinimumSize, this._configuration.ThumbnailMaximumSize);
+							view.ThumbnailSize = this._configuration.GetThumbnailSize(view.Title, this._activeClient.Title, view.ThumbnailSize);
+						}
 					}
 
-					view.SetOpacity(this._configuration.ThumbnailOpacity);
+					// Click-through mode dims the previews so its being active is obvious
+					view.SetOpacity(this._isClickThroughActive ? this._configuration.ThumbnailOpacity * 0.6 : this._configuration.ThumbnailOpacity);
 					view.SetTopMost(this._configuration.ShowThumbnailsAlwaysOnTop);
 				}
 
@@ -1056,8 +1168,12 @@ namespace EveOPreview.Services
 		{
 			int period = this._configuration.MinimizedClientsRefreshPeriod;
 
-			// Nothing to refresh when the feature is off or no thumbnails are on the screen
-			if ((period <= 0) || areThumbnailsHidden)
+			// Nothing to refresh when the feature is off or no thumbnails are on the screen.
+			// The feature follows the minimize-inactive setting - same dependency as in the GUI
+			if (!this._configuration.EnableMinimizedClientsRefresh
+				|| !this._configuration.MinimizeInactiveClients
+				|| (period <= 0)
+				|| areThumbnailsHidden)
 			{
 				return;
 			}
@@ -1211,6 +1327,8 @@ namespace EveOPreview.Services
 
 			if (this._configuration.ThumbnailZoomEnabled && ! view.IsPreventPreviews() )
 			{
+				// The expanded window must never be covered by the neighboring previews
+				view.BringAboveOtherThumbnails();
 				this.ThumbnailZoomIn(view);
 			}
 		}
@@ -1276,6 +1394,22 @@ namespace EveOPreview.Services
 		}
 
 
+		// True when the snapped previews must occupy their whole grid cell:
+		// the preview size is then locked to the cell size and cannot be edited
+		private bool IsGridCellFillActive()
+		{
+			return this._configuration.ThumbnailSnapToGrid && this._configuration.ThumbnailSnapToGridFillCell;
+		}
+
+		private Size GetGridCellFillSize()
+		{
+			int padding = this._configuration.ThumbnailSnapToGridCellPadding;
+
+			return new Size(
+				Math.Max(10, this._configuration.ThumbnailSnapToGridSizeX - 2 * padding),
+				Math.Max(10, this._configuration.ThumbnailSnapToGridSizeY - 2 * padding));
+		}
+
 		private async void ThumbnailViewResized(IntPtr id)
 		{
 			if (this._ignoreViewEvents)
@@ -1284,6 +1418,14 @@ namespace EveOPreview.Services
 			}
 
 			IThumbnailView view = this._thumbnailViews[id];
+
+			// In the fill-cell mode the size is locked to the grid cell: a resize must
+			// neither spread to the other previews nor overwrite the size settings
+			if (this.IsGridCellFillActive())
+			{
+				view.Refresh(false);
+				return;
+			}
 
 			this.SetThumbnailsSize(view.ThumbnailSize);
 

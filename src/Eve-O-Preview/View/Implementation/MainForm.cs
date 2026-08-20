@@ -71,6 +71,23 @@ namespace EveOPreview.View
 
 			this.ResizeEnd += this.MainFormResizeEnd_Handler;
 
+			// The background rendering availability follows the minimize-inactive setting
+			this.MinimizeInactiveClientsCheckBox.CheckedChanged += (s, e) => this.RefreshRenderingSettings();
+
+			// The 'fill the grid cell' option availability follows the snap checkbox,
+			// and the size fields lock while the fill-cell mode is active
+			this.ThumbnailSnapToGridCheckBox.CheckedChanged += (s, e) => this.RefreshSnapSettings();
+			this.SnapFillCellCheckBox.CheckedChanged += (s, e) => this.RefreshSnapSettings();
+
+			// The snap grid overlay follows the grid step / offset edits while it is visible
+			EventHandler gridStepChanged = (s, e) => this._gridOverlay?.SetGridStep(
+				(int)this.ThumbnailSnapToGridSizeXNumericEdit.Value, (int)this.ThumbnailSnapToGridSizeYNumericEdit.Value,
+				(int)this.GridOffsetXNumericEdit.Value, (int)this.GridOffsetYNumericEdit.Value);
+			this.ThumbnailSnapToGridSizeXNumericEdit.ValueChanged += gridStepChanged;
+			this.ThumbnailSnapToGridSizeYNumericEdit.ValueChanged += gridStepChanged;
+			this.GridOffsetXNumericEdit.ValueChanged += gridStepChanged;
+			this.GridOffsetYNumericEdit.ValueChanged += gridStepChanged;
+
 			this.InitZoomAnchorMap();
 			this.InitOverlayLabelMap();
 			this.InitCycleGroupIndicatorMap();
@@ -154,6 +171,35 @@ namespace EveOPreview.View
 			}
 		}
 
+		public bool EnableMinimizedClientsRefresh
+		{
+			get => this.EnableBackgroundRenderingCheckBox.Checked;
+			set
+			{
+				this.EnableBackgroundRenderingCheckBox.Checked = value;
+				this.RefreshRenderingSettings();
+			}
+		}
+
+		// Background rendering only applies to clients minimized by the app, so the
+		// checkbox is available only while 'Minimize inactive clients' is on, and the
+		// interval fields only while the background rendering itself is on
+		private void RefreshRenderingSettings()
+		{
+			bool minimizeInactive = this.MinimizeInactiveClientsCheckBox.Checked;
+			this.EnableBackgroundRenderingCheckBox.Enabled = minimizeInactive;
+
+			bool intervalsEnabled = minimizeInactive && this.EnableBackgroundRenderingCheckBox.Checked;
+			this.ThumbnailRefreshPeriodNumericEdit.Enabled = intervalsEnabled;
+			this.MinimizedClientsRefreshPeriodNumericEdit.Enabled = intervalsEnabled;
+		}
+
+		private void EnableBackgroundRenderingCheckBox_CheckedChanged(object sender, EventArgs e)
+		{
+			this.RefreshRenderingSettings();
+			this.OptionChanged_Handler(sender, e);
+		}
+
 		public int ThumbnailRefreshPeriod
 		{
 			get => (int)this.ThumbnailRefreshPeriodNumericEdit.Value;
@@ -181,7 +227,11 @@ namespace EveOPreview.View
 		public bool MinimizeInactiveClients
 		{
 			get => this.MinimizeInactiveClientsCheckBox.Checked;
-			set => this.MinimizeInactiveClientsCheckBox.Checked = value;
+			set
+			{
+				this.MinimizeInactiveClientsCheckBox.Checked = value;
+				this.RefreshRenderingSettings();
+			}
 		}
 		public bool HideCaptionOnClients
 		{
@@ -423,7 +473,11 @@ namespace EveOPreview.View
 		public bool ThumbnailSnapToGrid
 		{
 			get => this.ThumbnailSnapToGridCheckBox.Checked;
-			set => this.ThumbnailSnapToGridCheckBox.Checked = value;
+			set
+			{
+				this.ThumbnailSnapToGridCheckBox.Checked = value;
+				this.RefreshSnapSettings();
+			}
 		}
 		public int ThumbnailSnapToGridSizeX
 		{
@@ -434,6 +488,48 @@ namespace EveOPreview.View
 		{
 			get => (int)ThumbnailSnapToGridSizeYNumericEdit.Value;
 			set => ThumbnailSnapToGridSizeYNumericEdit.Value = value;
+		}
+
+		public bool ThumbnailSnapToGridFillCell
+		{
+			get => this.SnapFillCellCheckBox.Checked;
+			set
+			{
+				this.SnapFillCellCheckBox.Checked = value;
+				this.RefreshSnapSettings();
+			}
+		}
+
+		public int ThumbnailSnapToGridOffsetX
+		{
+			get => (int)this.GridOffsetXNumericEdit.Value;
+			set => this.GridOffsetXNumericEdit.Value = Math.Max(this.GridOffsetXNumericEdit.Minimum, Math.Min(this.GridOffsetXNumericEdit.Maximum, value));
+		}
+
+		public int ThumbnailSnapToGridOffsetY
+		{
+			get => (int)this.GridOffsetYNumericEdit.Value;
+			set => this.GridOffsetYNumericEdit.Value = Math.Max(this.GridOffsetYNumericEdit.Minimum, Math.Min(this.GridOffsetYNumericEdit.Maximum, value));
+		}
+
+		public int ThumbnailSnapToGridCellPadding
+		{
+			get => (int)this.SnapPaddingNumericEdit.Value;
+			set => this.SnapPaddingNumericEdit.Value = Math.Max(this.SnapPaddingNumericEdit.Minimum, Math.Min(this.SnapPaddingNumericEdit.Maximum, value));
+		}
+
+		// 'Fill the grid cell' only makes sense while the snap itself is enabled.
+		// While it is active, the preview size is dictated by the grid cell, so the
+		// manual size fields are locked
+		private void RefreshSnapSettings()
+		{
+			bool snapEnabled = this.ThumbnailSnapToGridCheckBox.Checked;
+			this.SnapFillCellCheckBox.Enabled = snapEnabled;
+			this.SnapPaddingNumericEdit.Enabled = snapEnabled;
+
+			bool fillCell = snapEnabled && this.SnapFillCellCheckBox.Checked;
+			this.ThumbnailsWidthNumericEdit.Enabled = !fillCell;
+			this.ThumbnailsHeightNumericEdit.Enabled = !fillCell;
 		}
 
 		public bool EnableActiveClientHighlight
@@ -842,6 +938,74 @@ namespace EveOPreview.View
 			this.OptionChanged_Handler(sender, e);
 		}
 
+		public bool OverlayLabelOutlineEnabled
+		{
+			get => this.LabelOutlineCheckBox.Checked;
+			set => this.LabelOutlineCheckBox.Checked = value;
+		}
+
+		public int OverlayLabelOutlineThickness
+		{
+			get => (int)this.LabelOutlineThicknessNumericEdit.Value;
+			set => this.LabelOutlineThicknessNumericEdit.Value = Math.Max(this.LabelOutlineThicknessNumericEdit.Minimum, Math.Min(this.LabelOutlineThicknessNumericEdit.Maximum, value));
+		}
+
+		public Color OverlayLabelOutlineColor
+		{
+			get => this.LabelOutlineColorButton.BackColor;
+			set => this.LabelOutlineColorButton.BackColor = value;
+		}
+
+		public bool CycleGroupNameOutlineEnabled
+		{
+			get => this.GroupNameOutlineCheckBox.Checked;
+			set => this.GroupNameOutlineCheckBox.Checked = value;
+		}
+
+		public int CycleGroupNameOutlineThickness
+		{
+			get => (int)this.GroupNameOutlineThicknessNumericEdit.Value;
+			set => this.GroupNameOutlineThicknessNumericEdit.Value = Math.Max(this.GroupNameOutlineThicknessNumericEdit.Minimum, Math.Min(this.GroupNameOutlineThicknessNumericEdit.Maximum, value));
+		}
+
+		public Color CycleGroupNameOutlineColor
+		{
+			get => this.GroupNameOutlineColorButton.BackColor;
+			set => this.GroupNameOutlineColorButton.BackColor = value;
+		}
+
+		private void LabelOutlineColorButton_Click(object sender, EventArgs e)
+		{
+			using (ColorDialog dialog = new ColorDialog())
+			{
+				dialog.Color = this.OverlayLabelOutlineColor;
+
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+				this.OverlayLabelOutlineColor = dialog.Color;
+			}
+
+			this.OptionChanged_Handler(sender, e);
+		}
+
+		private void GroupNameOutlineColorButton_Click(object sender, EventArgs e)
+		{
+			using (ColorDialog dialog = new ColorDialog())
+			{
+				dialog.Color = this.CycleGroupNameOutlineColor;
+
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+				this.CycleGroupNameOutlineColor = dialog.Color;
+			}
+
+			this.OptionChanged_Handler(sender, e);
+		}
+
 		private void OverlayLabelColorButton_Click(object sender, EventArgs e)
 		{
 			using (ColorDialog dialog = new ColorDialog())
@@ -929,6 +1093,29 @@ namespace EveOPreview.View
 			this.FormCloseRequested?.Invoke(request);
 
 			e.Cancel = !request.Allow;
+		}
+
+		// Visual aid: dims the desktop and shows the snap grid; not persisted anywhere
+		private GridOverlayForm _gridOverlay;
+
+		private void ShowGridCheckBox_CheckedChanged(object sender, EventArgs e)
+		{
+			if (this.ShowGridCheckBox.Checked)
+			{
+				this._gridOverlay = this._gridOverlay ?? new GridOverlayForm();
+				this._gridOverlay.SetGridStep(
+					(int)this.ThumbnailSnapToGridSizeXNumericEdit.Value, (int)this.ThumbnailSnapToGridSizeYNumericEdit.Value,
+					(int)this.GridOffsetXNumericEdit.Value, (int)this.GridOffsetYNumericEdit.Value);
+				this._gridOverlay.Show();
+
+				// The grid enters the topmost band on top - push it below the previews
+				// and this window right away
+				this._gridOverlay.SinkBelowOtherTopmostWindows();
+			}
+			else
+			{
+				this._gridOverlay?.Hide();
+			}
 		}
 
 		private void RestoreMainForm_Handler(object sender, EventArgs e)
@@ -1308,9 +1495,19 @@ namespace EveOPreview.View
 				["PreviewRenderingSubPage"] = Strings.PreviewTab_Rendering,
 				["PreviewLayoutSubPage"] = Strings.PreviewTab_Layout,
 				["PreviewZoomSubPage"] = Strings.PreviewTab_Zoom,
+				["EnableBackgroundRenderingCheckBox"] = Strings.Preview_EnableBackgroundRendering,
 				["ThumbnailRefreshPeriodLabel"] = Strings.Preview_RefreshPeriod,
+				["ThumbnailRefreshHintLabel"] = Strings.Preview_RefreshPeriodHint,
 				["MinimizedRefreshPeriodLabel"] = Strings.Preview_MinimizedRefreshPeriod,
 				["MinimizedRefreshHintLabel"] = Strings.Preview_MinimizedRefreshHint,
+				["AlwaysOnTopNoteLabel"] = Strings.Preview_AlwaysOnTopHint,
+				["LockLocationNoteLabel"] = Strings.Preview_LockLocationHint,
+				["ShowGridCheckBox"] = Strings.Preview_ShowGrid,
+				["SnapFillCellCheckBox"] = Strings.Preview_SnapFillCell,
+				["GridOffsetXLabel"] = Strings.Preview_GridOffsetX,
+				["GridOffsetYLabel"] = Strings.Preview_GridOffsetY,
+				["SnapPaddingLabel"] = Strings.Preview_GridCellPadding,
+				["PerClientLayoutNoteLabel"] = Strings.Preview_PerClientLayoutsHint,
 				["HideActiveClientThumbnailCheckBox"] = Strings.Preview_HideActiveClient,
 				["ShowThumbnailsAlwaysOnTopCheckBox"] = Strings.Preview_AlwaysOnTop,
 				["HideThumbnailsOnLostFocusCheckBox"] = Strings.Preview_HideOnLostFocus,
@@ -1340,6 +1537,10 @@ namespace EveOPreview.View
 				["OverlayLabelPositionLabel"] = Strings.Overlay_Position,
 				["btnLabelFont"] = Strings.Overlay_Font,
 				["LabelOverlayLabelFont"] = Strings.Overlay_WindowNameSample,
+				["LabelOutlineCheckBox"] = Strings.Overlay_Outline,
+				["LabelOutlineThicknessLabel"] = Strings.Overlay_BorderThickness,
+				["GroupNameOutlineCheckBox"] = Strings.Overlay_Outline,
+				["GroupNameOutlineThicknessLabel"] = Strings.Overlay_BorderThickness,
 				["ShowCycleGroupNameCheckBox"] = Strings.Overlay_ShowGroupName,
 				["CycleGroupNameColorLabel"] = Strings.Overlay_Color,
 				["CycleGroupNamePositionLabel"] = Strings.Overlay_Position,

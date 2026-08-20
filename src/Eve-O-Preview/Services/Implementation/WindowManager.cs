@@ -340,6 +340,16 @@ namespace EveOPreview.Services.Implementation
 			User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_SHOWNOACTIVATE);
 		}
 
+		/// <summary>
+		/// Minimizes a window without any activation side effects. The regular minimize
+		/// (SW_MINIMIZE / SC_MINIMIZE) makes Windows activate the next top-level window
+		/// in the Z order, which steals focus from whatever the user is working with
+		/// </summary>
+		public void MinimizeWindowWithoutActivation(IntPtr handle)
+		{
+			User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_SHOWMINNOACTIVE);
+		}
+
 		public void MoveWindow(IntPtr handle, int left, int top, int width, int height)
 		{
 			User32NativeMethods.MoveWindow(handle, left, top, width, height, true);

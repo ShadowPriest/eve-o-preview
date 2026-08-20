@@ -33,6 +33,8 @@ namespace EveOPreview.View
 		void SetPreventPreviews();
 		void ZoomIn(ViewZoomAnchor anchor, int zoomFactor);
 		void ZoomOut();
+		void BringAboveOtherThumbnails();
+		void SetClickThrough(bool enable);
 
 		void RegisterHotkey(Keys hotkey);
 		void UnregisterHotkey();

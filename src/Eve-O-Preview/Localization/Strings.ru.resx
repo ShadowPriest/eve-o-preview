@@ -121,6 +121,9 @@
   <data name="PreviewTab_Rendering" xml:space="preserve">
     <value>Рендеринг</value>
   </data>
+  <data name="Preview_EnableBackgroundRendering" xml:space="preserve">
+    <value>Включить фоновый рендеринг</value>
+  </data>
   <data name="Preview_RefreshPeriod" xml:space="preserve">
     <value>Период обновления превью (мс)</value>
   </data>
@@ -128,7 +131,34 @@
     <value>Период обновления свёрнутых клиентов (с)</value>
   </data>
   <data name="Preview_MinimizedRefreshHint" xml:space="preserve">
-    <value>Эти интервалы задают фоновое обновление свёрнутых клиентов: Windows не может рендерить свёрнутое окно в реальном времени, поэтому клиент по этому расписанию на мгновение пробуждается и перерисовывает своё превью. 0 — не обновлять.</value>
+    <value>Как часто свёрнутый клиент на мгновение пробуждается, чтобы отрисовать свежий кадр для своего превью — свёрнутые окна Windows сама не рендерит. 0 — не обновлять.</value>
+  </data>
+  <data name="Preview_RefreshPeriodHint" xml:space="preserve">
+    <value>Как часто обновляются содержимое, положение и рамки ВСЕХ превью. Меньше — плавнее, но выше нагрузка на процессор.</value>
+  </data>
+  <data name="Preview_AlwaysOnTopHint" xml:space="preserve">
+    <value>Превью всегда остаются поверх окон игры и любых других приложений.</value>
+  </data>
+  <data name="Preview_LockLocationHint" xml:space="preserve">
+    <value>Превью нельзя перетаскивать мышью — защита от случайного сдвига.</value>
+  </data>
+  <data name="Preview_ShowGrid" xml:space="preserve">
+    <value>Показать сетку привязки</value>
+  </data>
+  <data name="Preview_SnapFillCell" xml:space="preserve">
+    <value>Занимать весь объём ячейки сетки</value>
+  </data>
+  <data name="Preview_GridOffsetX" xml:space="preserve">
+    <value>Смещение сетки по X</value>
+  </data>
+  <data name="Preview_GridOffsetY" xml:space="preserve">
+    <value>Смещение сетки по Y</value>
+  </data>
+  <data name="Preview_GridCellPadding" xml:space="preserve">
+    <value>Отступ внутри ячейки</value>
+  </data>
+  <data name="Preview_PerClientLayoutsHint" xml:space="preserve">
+    <value>Для каждого активного клиента хранится своя раскладка превью — настраивайте её, переключившись в этого клиента. Без галки раскладка одна на всех.</value>
   </data>
   <data name="ClientWindows_MinimizedRenderingNote" xml:space="preserve">
     <value>Windows не рендерит свёрнутые окна в реальном времени, поэтому их превью обновляются периодически. Интервалы задаются на вкладке Превью → Рендеринг.</value>
@@ -309,6 +339,12 @@
   </data>
   <data name="Hotkey_ToggleAllPreviews" xml:space="preserve">
     <value>Показать / скрыть все превью</value>
+  </data>
+  <data name="Overlay_Outline" xml:space="preserve">
+    <value>Обводка текста</value>
+  </data>
+  <data name="Hotkey_ClickThrough" xml:space="preserve">
+    <value>Клики сквозь превью (вкл/выкл)</value>
   </data>
   <data name="Hotkey_Unsupported" xml:space="preserve">
     <value>Неподдерживаемое сочетание</value>

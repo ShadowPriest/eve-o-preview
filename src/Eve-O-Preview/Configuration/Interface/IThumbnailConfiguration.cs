@@ -17,6 +17,7 @@ namespace EveOPreview.Configuration
 		bool MinimizeToTray { get; set; }
 		int ThumbnailRefreshPeriod { get; set; }
 		int ThumbnailResizeTimeoutPeriod { get; set; }
+		bool EnableMinimizedClientsRefresh { get; set; }
 		int MinimizedClientsRefreshPeriod { get; set; }
 		bool EnableWineCompatibilityMode { get; set; }
 
@@ -57,6 +58,10 @@ namespace EveOPreview.Configuration
 		Font CycleGroupNameFont { get; set; }
 		bool LockThumbnailLocation { get; set; }
 		bool ThumbnailSnapToGrid {  get; set; }
+		bool ThumbnailSnapToGridFillCell { get; set; }
+		int ThumbnailSnapToGridOffsetX { get; set; }
+		int ThumbnailSnapToGridOffsetY { get; set; }
+		int ThumbnailSnapToGridCellPadding { get; set; }
 		int ThumbnailSnapToGridSizeX { get; set; }
 		int ThumbnailSnapToGridSizeY { get; set; }
 
@@ -71,6 +76,13 @@ namespace EveOPreview.Configuration
 		string Language { get; set; }
 		List<string> MinimizeAllClientsHotkeys { get; set; }
 		List<string> ToggleAllPreviewsHotkeys { get; set; }
+		List<string> ClickThroughHotkeys { get; set; }
+		bool OverlayLabelOutlineEnabled { get; set; }
+		int OverlayLabelOutlineThickness { get; set; }
+		Color OverlayLabelOutlineColor { get; set; }
+		bool CycleGroupNameOutlineEnabled { get; set; }
+		int CycleGroupNameOutlineThickness { get; set; }
+		Color CycleGroupNameOutlineColor { get; set; }
 
 		Point LoginThumbnailLocation { get; set; }
 		Size MainWindowSize { get; set; }

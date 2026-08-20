@@ -56,6 +56,16 @@ namespace EveOPreview.View
 			Label MinimizedRefreshPeriodLabel;
 			Label MinimizedRefreshHintLabel;
 			Label MinimizedRenderingNoteLabel;
+			Label ThumbnailRefreshHintLabel;
+			Label AlwaysOnTopNoteLabel;
+			Label LockLocationNoteLabel;
+			Panel PreventPreviewColorRowPanel;
+			Label LabelOutlineThicknessLabel;
+			Label GroupNameOutlineThicknessLabel;
+			Label PerClientLayoutNoteLabel;
+			Label GridOffsetXLabel;
+			Label GridOffsetYLabel;
+			Label SnapPaddingLabel;
 			TableLayoutPanel PreviewLayoutTablePanel;
 			TableLayoutPanel PreviewZoomTablePanel;
 			Label HeightLabel;
@@ -136,6 +146,14 @@ namespace EveOPreview.View
 			OverlayLabelPositionLabel = new Label();
 			OverlayLabelColorLabel = new Label();
 			OverlayLabelColorButton = new Panel();
+			LabelOutlineCheckBox = new CheckBox();
+			LabelOutlineColorButton = new Panel();
+			LabelOutlineThicknessLabel = new Label();
+			LabelOutlineThicknessNumericEdit = new NumericUpDown();
+			GroupNameOutlineCheckBox = new CheckBox();
+			GroupNameOutlineColorButton = new Panel();
+			GroupNameOutlineThicknessLabel = new Label();
+			GroupNameOutlineThicknessNumericEdit = new NumericUpDown();
 			OverlayLabelAnchorPanel = new Panel();
 			OverlayLabelNWRadioButton = new RadioButton();
 			OverlayLabelNRadioButton = new RadioButton();
@@ -217,6 +235,20 @@ namespace EveOPreview.View
 			MinimizedClientsRefreshPeriodNumericEdit = new NumericUpDown();
 			MinimizedRefreshHintLabel = new Label();
 			MinimizedRenderingNoteLabel = new Label();
+			ThumbnailRefreshHintLabel = new Label();
+			AlwaysOnTopNoteLabel = new Label();
+			LockLocationNoteLabel = new Label();
+			PreventPreviewColorRowPanel = new Panel();
+			PerClientLayoutNoteLabel = new Label();
+			GridOffsetXLabel = new Label();
+			GridOffsetXNumericEdit = new NumericUpDown();
+			GridOffsetYLabel = new Label();
+			GridOffsetYNumericEdit = new NumericUpDown();
+			SnapPaddingLabel = new Label();
+			SnapPaddingNumericEdit = new NumericUpDown();
+			SnapFillCellCheckBox = new CheckBox();
+			ShowGridCheckBox = new CheckBox();
+			EnableBackgroundRenderingCheckBox = new CheckBox();
 			PreviewLayoutTablePanel = new TableLayoutPanel();
 			PreviewZoomTablePanel = new TableLayoutPanel();
 			HeightLabel = new Label();
@@ -263,6 +295,11 @@ namespace EveOPreview.View
 			PreviewZoomTablePanel.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)ThumbnailRefreshPeriodNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)MinimizedClientsRefreshPeriodNumericEdit).BeginInit();
+			((System.ComponentModel.ISupportInitialize)LabelOutlineThicknessNumericEdit).BeginInit();
+			((System.ComponentModel.ISupportInitialize)GroupNameOutlineThicknessNumericEdit).BeginInit();
+			((System.ComponentModel.ISupportInitialize)GridOffsetXNumericEdit).BeginInit();
+			((System.ComponentModel.ISupportInitialize)GridOffsetYNumericEdit).BeginInit();
+			((System.ComponentModel.ISupportInitialize)SnapPaddingNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailSnapToGridSizeYNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ActiveClientHighlightThicknessNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailSnapToGridSizeXNumericEdit).BeginInit();
@@ -435,9 +472,9 @@ namespace EveOPreview.View
 			ClientWindowsPanel.ColumnCount = 1;
 			ClientWindowsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 			ClientWindowsPanel.Controls.Add(EnableClientLayoutTrackingCheckBox, 0, 0);
-			ClientWindowsPanel.Controls.Add(MinimizeInactiveClientsCheckBox, 0, 1);
-			ClientWindowsPanel.Controls.Add(HideCaptionOnClientsCheckBox, 0, 2);
-			ClientWindowsPanel.Controls.Add(DisableAnimationCheckBox, 0, 3);
+			ClientWindowsPanel.Controls.Add(HideCaptionOnClientsCheckBox, 0, 1);
+			ClientWindowsPanel.Controls.Add(DisableAnimationCheckBox, 0, 2);
+			ClientWindowsPanel.Controls.Add(MinimizeInactiveClientsCheckBox, 0, 3);
 			ClientWindowsPanel.Controls.Add(MinimizedRenderingNoteLabel, 0, 4);
 			ClientWindowsPanel.Dock = DockStyle.Fill;
 			ClientWindowsPanel.Location = new Point(4, 4);
@@ -499,7 +536,7 @@ namespace EveOPreview.View
 			MinimizedRenderingNoteLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
 			MinimizedRenderingNoteLabel.AutoSize = true;
 			MinimizedRenderingNoteLabel.ForeColor = SystemColors.GrayText;
-			MinimizedRenderingNoteLabel.Margin = new Padding(4, 12, 4, 0);
+			MinimizedRenderingNoteLabel.Margin = new Padding(24, 2, 4, 0);
 			MinimizedRenderingNoteLabel.Name = "MinimizedRenderingNoteLabel";
 			MinimizedRenderingNoteLabel.TabIndex = 4;
 			MinimizedRenderingNoteLabel.Text = "Windows does not render minimized windows in real time, so their previews are refreshed periodically instead - the interval is set on the Previews > Rendering tab.";
@@ -557,14 +594,20 @@ namespace EveOPreview.View
 			PreviewGeneralTablePanel.ColumnCount = 2;
 			PreviewGeneralTablePanel.ColumnStyles.Add(new ColumnStyle());
 			PreviewGeneralTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-			PreviewGeneralTablePanel.Controls.Add(HideActiveClientThumbnailCheckBox, 0, 0);
-			PreviewGeneralTablePanel.Controls.Add(ShowThumbnailsAlwaysOnTopCheckBox, 0, 1);
-			PreviewGeneralTablePanel.Controls.Add(HideThumbnailsOnLostFocusCheckBox, 0, 2);
+			PreviewGeneralTablePanel.Controls.Add(ShowThumbnailsAlwaysOnTopCheckBox, 0, 0);
+			PreviewGeneralTablePanel.Controls.Add(AlwaysOnTopNoteLabel, 0, 1);
+			PreviewGeneralTablePanel.Controls.Add(LockThumbnailLocationCheckbox, 0, 2);
+			PreviewGeneralTablePanel.Controls.Add(LockLocationNoteLabel, 0, 3);
+			PreviewGeneralTablePanel.Controls.Add(HideActiveClientThumbnailCheckBox, 0, 4);
+			PreviewGeneralTablePanel.Controls.Add(HideThumbnailsOnLostFocusCheckBox, 0, 5);
 			PreviewGeneralTablePanel.Dock = DockStyle.Fill;
 			PreviewGeneralTablePanel.Location = new Point(3, 3);
 			PreviewGeneralTablePanel.Name = "PreviewGeneralTablePanel";
 			PreviewGeneralTablePanel.Padding = new Padding(6);
-			PreviewGeneralTablePanel.RowCount = 4;
+			PreviewGeneralTablePanel.RowCount = 7;
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
 			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
 			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
 			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
@@ -647,24 +690,157 @@ namespace EveOPreview.View
 			PreventPreviewsCheckBox.UseVisualStyleBackColor = true;
 			PreventPreviewsCheckBox.CheckedChanged += OptionChanged_Handler;
 			//
-			// PreventPreviewColorLabel
+			// PreventPreviewColorRowPanel
 			//
-			PreventPreviewColorLabel.Anchor = AnchorStyles.Left;
-			PreventPreviewColorLabel.AutoSize = true;
-			PreventPreviewColorLabel.Margin = new Padding(4, 0, 8, 0);
-			PreventPreviewColorLabel.Name = "PreventPreviewColorLabel";
-			PreventPreviewColorLabel.TabIndex = 6;
-			PreventPreviewColorLabel.Text = "Placeholder color";
+			PreviewVisualTablePanel.SetColumnSpan(PreventPreviewColorRowPanel, 2);
+			PreventPreviewColorRowPanel.Controls.Add(PreventPreviewColorButton);
+			PreventPreviewColorRowPanel.Controls.Add(PreventPreviewColorLabel);
+			PreventPreviewColorRowPanel.Margin = new Padding(24, 2, 4, 4);
+			PreventPreviewColorRowPanel.Name = "PreventPreviewColorRowPanel";
+			PreventPreviewColorRowPanel.Size = new Size(260, 22);
+			PreventPreviewColorRowPanel.TabIndex = 1;
 			//
 			// PreventPreviewColorButton
 			//
-			PreventPreviewColorButton.Anchor = AnchorStyles.Left;
 			PreventPreviewColorButton.BorderStyle = BorderStyle.FixedSingle;
-			PreventPreviewColorButton.Margin = new Padding(4);
+			PreventPreviewColorButton.Location = new Point(0, 2);
 			PreventPreviewColorButton.Name = "PreventPreviewColorButton";
-			PreventPreviewColorButton.Size = new Size(72, 21);
-			PreventPreviewColorButton.TabIndex = 7;
+			PreventPreviewColorButton.Size = new Size(16, 16);
+			PreventPreviewColorButton.TabIndex = 0;
 			PreventPreviewColorButton.Click += PreventPreviewColorButton_Click;
+			//
+			// PreventPreviewColorLabel
+			//
+			PreventPreviewColorLabel.AutoSize = true;
+			PreventPreviewColorLabel.Location = new Point(22, 3);
+			PreventPreviewColorLabel.Name = "PreventPreviewColorLabel";
+			PreventPreviewColorLabel.TabIndex = 1;
+			PreventPreviewColorLabel.Text = "Placeholder color";
+			PreventPreviewColorLabel.Click += PreventPreviewColorButton_Click;
+			//
+			// AlwaysOnTopNoteLabel
+			//
+			PreviewGeneralTablePanel.SetColumnSpan(AlwaysOnTopNoteLabel, 2);
+			AlwaysOnTopNoteLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			AlwaysOnTopNoteLabel.AutoSize = true;
+			AlwaysOnTopNoteLabel.ForeColor = SystemColors.GrayText;
+			AlwaysOnTopNoteLabel.Margin = new Padding(24, 2, 4, 0);
+			AlwaysOnTopNoteLabel.Name = "AlwaysOnTopNoteLabel";
+			AlwaysOnTopNoteLabel.TabIndex = 1;
+			AlwaysOnTopNoteLabel.Text = "Previews stay above the game windows and any other applications.";
+			//
+			// LockLocationNoteLabel
+			//
+			PreviewGeneralTablePanel.SetColumnSpan(LockLocationNoteLabel, 2);
+			LockLocationNoteLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			LockLocationNoteLabel.AutoSize = true;
+			LockLocationNoteLabel.ForeColor = SystemColors.GrayText;
+			LockLocationNoteLabel.Margin = new Padding(24, 2, 4, 0);
+			LockLocationNoteLabel.Name = "LockLocationNoteLabel";
+			LockLocationNoteLabel.TabIndex = 3;
+			LockLocationNoteLabel.Text = "Previews cannot be dragged with the mouse, protecting them from accidental moves.";
+			//
+			// PerClientLayoutNoteLabel
+			//
+			PreviewLayoutTablePanel.SetColumnSpan(PerClientLayoutNoteLabel, 2);
+			PerClientLayoutNoteLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			PerClientLayoutNoteLabel.AutoSize = true;
+			PerClientLayoutNoteLabel.ForeColor = SystemColors.GrayText;
+			PerClientLayoutNoteLabel.Margin = new Padding(24, 2, 4, 0);
+			PerClientLayoutNoteLabel.Name = "PerClientLayoutNoteLabel";
+			PerClientLayoutNoteLabel.TabIndex = 3;
+			PerClientLayoutNoteLabel.Text = "A separate preview layout is stored for every active client - arrange it while that client is active. When off, a single shared layout is used.";
+			//
+			// GridOffsetXLabel
+			//
+			GridOffsetXLabel.Anchor = AnchorStyles.Left;
+			GridOffsetXLabel.AutoSize = true;
+			GridOffsetXLabel.Margin = new Padding(20, 0, 8, 0);
+			GridOffsetXLabel.Name = "GridOffsetXLabel";
+			GridOffsetXLabel.TabIndex = 6;
+			GridOffsetXLabel.Text = "Grid offset X";
+			//
+			// GridOffsetXNumericEdit
+			//
+			GridOffsetXNumericEdit.Anchor = AnchorStyles.Left;
+			GridOffsetXNumericEdit.BackColor = SystemColors.Window;
+			GridOffsetXNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			GridOffsetXNumericEdit.CausesValidation = false;
+			GridOffsetXNumericEdit.Margin = new Padding(4);
+			GridOffsetXNumericEdit.Minimum = new decimal(new int[] { 9999, 0, 0, int.MinValue });
+			GridOffsetXNumericEdit.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
+			GridOffsetXNumericEdit.Name = "GridOffsetXNumericEdit";
+			GridOffsetXNumericEdit.Size = new Size(72, 23);
+			GridOffsetXNumericEdit.TabIndex = 7;
+			GridOffsetXNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// GridOffsetYLabel
+			//
+			GridOffsetYLabel.Anchor = AnchorStyles.Left;
+			GridOffsetYLabel.AutoSize = true;
+			GridOffsetYLabel.Margin = new Padding(20, 0, 8, 0);
+			GridOffsetYLabel.Name = "GridOffsetYLabel";
+			GridOffsetYLabel.TabIndex = 8;
+			GridOffsetYLabel.Text = "Grid offset Y";
+			//
+			// GridOffsetYNumericEdit
+			//
+			GridOffsetYNumericEdit.Anchor = AnchorStyles.Left;
+			GridOffsetYNumericEdit.BackColor = SystemColors.Window;
+			GridOffsetYNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			GridOffsetYNumericEdit.CausesValidation = false;
+			GridOffsetYNumericEdit.Margin = new Padding(4);
+			GridOffsetYNumericEdit.Minimum = new decimal(new int[] { 9999, 0, 0, int.MinValue });
+			GridOffsetYNumericEdit.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
+			GridOffsetYNumericEdit.Name = "GridOffsetYNumericEdit";
+			GridOffsetYNumericEdit.Size = new Size(72, 23);
+			GridOffsetYNumericEdit.TabIndex = 9;
+			GridOffsetYNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// SnapPaddingLabel
+			//
+			SnapPaddingLabel.Anchor = AnchorStyles.Left;
+			SnapPaddingLabel.AutoSize = true;
+			SnapPaddingLabel.Margin = new Padding(20, 0, 8, 0);
+			SnapPaddingLabel.Name = "SnapPaddingLabel";
+			SnapPaddingLabel.TabIndex = 12;
+			SnapPaddingLabel.Text = "Cell padding";
+			//
+			// SnapPaddingNumericEdit
+			//
+			SnapPaddingNumericEdit.Anchor = AnchorStyles.Left;
+			SnapPaddingNumericEdit.BackColor = SystemColors.Window;
+			SnapPaddingNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			SnapPaddingNumericEdit.CausesValidation = false;
+			SnapPaddingNumericEdit.Margin = new Padding(4);
+			SnapPaddingNumericEdit.Maximum = new decimal(new int[] { 100, 0, 0, 0 });
+			SnapPaddingNumericEdit.Name = "SnapPaddingNumericEdit";
+			SnapPaddingNumericEdit.Size = new Size(72, 23);
+			SnapPaddingNumericEdit.TabIndex = 13;
+			SnapPaddingNumericEdit.Value = new decimal(new int[] { 2, 0, 0, 0 });
+			SnapPaddingNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// SnapFillCellCheckBox
+			//
+			PreviewLayoutTablePanel.SetColumnSpan(SnapFillCellCheckBox, 2);
+			SnapFillCellCheckBox.AutoSize = true;
+			SnapFillCellCheckBox.Margin = new Padding(20, 4, 4, 4);
+			SnapFillCellCheckBox.Name = "SnapFillCellCheckBox";
+			SnapFillCellCheckBox.TabIndex = 10;
+			SnapFillCellCheckBox.Text = "Fill the entire grid cell";
+			SnapFillCellCheckBox.UseVisualStyleBackColor = true;
+			SnapFillCellCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// ShowGridCheckBox
+			//
+			PreviewLayoutTablePanel.SetColumnSpan(ShowGridCheckBox, 2);
+			ShowGridCheckBox.AutoSize = true;
+			ShowGridCheckBox.Margin = new Padding(4, 8, 4, 4);
+			ShowGridCheckBox.Name = "ShowGridCheckBox";
+			ShowGridCheckBox.TabIndex = 11;
+			ShowGridCheckBox.Text = "Show snap grid";
+			ShowGridCheckBox.UseVisualStyleBackColor = true;
+			ShowGridCheckBox.CheckedChanged += ShowGridCheckBox_CheckedChanged;
 			//
 			// PreviewVisualSubPage
 			//
@@ -682,11 +858,10 @@ namespace EveOPreview.View
 			PreviewVisualTablePanel.ColumnCount = 2;
 			PreviewVisualTablePanel.ColumnStyles.Add(new ColumnStyle());
 			PreviewVisualTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-			PreviewVisualTablePanel.Controls.Add(OpacityLabel, 0, 0);
-			PreviewVisualTablePanel.Controls.Add(ThumbnailOpacityTrackBar, 1, 0);
-			PreviewVisualTablePanel.Controls.Add(PreventPreviewsCheckBox, 0, 1);
-			PreviewVisualTablePanel.Controls.Add(PreventPreviewColorLabel, 0, 2);
-			PreviewVisualTablePanel.Controls.Add(PreventPreviewColorButton, 1, 2);
+			PreviewVisualTablePanel.Controls.Add(PreventPreviewsCheckBox, 0, 0);
+			PreviewVisualTablePanel.Controls.Add(PreventPreviewColorRowPanel, 0, 1);
+			PreviewVisualTablePanel.Controls.Add(OpacityLabel, 0, 2);
+			PreviewVisualTablePanel.Controls.Add(ThumbnailOpacityTrackBar, 1, 2);
 			PreviewVisualTablePanel.Dock = DockStyle.Fill;
 			PreviewVisualTablePanel.Location = new Point(3, 3);
 			PreviewVisualTablePanel.Name = "PreviewVisualTablePanel";
@@ -713,24 +888,41 @@ namespace EveOPreview.View
 			// PreviewRenderingTablePanel
 			//
 			PreviewRenderingTablePanel.ColumnCount = 2;
-			PreviewRenderingTablePanel.ColumnStyles.Add(new ColumnStyle());
 			PreviewRenderingTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshPeriodLabel, 0, 0);
-			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshPeriodNumericEdit, 1, 0);
-			PreviewRenderingTablePanel.Controls.Add(MinimizedRefreshPeriodLabel, 0, 1);
-			PreviewRenderingTablePanel.Controls.Add(MinimizedClientsRefreshPeriodNumericEdit, 1, 1);
-			PreviewRenderingTablePanel.Controls.Add(MinimizedRefreshHintLabel, 0, 2);
+			PreviewRenderingTablePanel.ColumnStyles.Add(new ColumnStyle());
+			PreviewRenderingTablePanel.Controls.Add(EnableBackgroundRenderingCheckBox, 0, 0);
+			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshPeriodLabel, 0, 1);
+			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshPeriodNumericEdit, 1, 1);
+			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshHintLabel, 0, 2);
+			PreviewRenderingTablePanel.Controls.Add(MinimizedRefreshPeriodLabel, 0, 3);
+			PreviewRenderingTablePanel.Controls.Add(MinimizedClientsRefreshPeriodNumericEdit, 1, 3);
+			PreviewRenderingTablePanel.Controls.Add(MinimizedRefreshHintLabel, 0, 4);
 			PreviewRenderingTablePanel.Dock = DockStyle.Fill;
 			PreviewRenderingTablePanel.Location = new Point(3, 3);
 			PreviewRenderingTablePanel.Name = "PreviewRenderingTablePanel";
 			PreviewRenderingTablePanel.Padding = new Padding(6);
-			PreviewRenderingTablePanel.RowCount = 4;
+			PreviewRenderingTablePanel.RowCount = 6;
+			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
+			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
 			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
 			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
 			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
 			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 			PreviewRenderingTablePanel.Size = new Size(303, 201);
 			PreviewRenderingTablePanel.TabIndex = 0;
+			//
+			// EnableBackgroundRenderingCheckBox
+			//
+			PreviewRenderingTablePanel.SetColumnSpan(EnableBackgroundRenderingCheckBox, 2);
+			EnableBackgroundRenderingCheckBox.AutoSize = true;
+			EnableBackgroundRenderingCheckBox.Checked = true;
+			EnableBackgroundRenderingCheckBox.CheckState = CheckState.Checked;
+			EnableBackgroundRenderingCheckBox.Margin = new Padding(4);
+			EnableBackgroundRenderingCheckBox.Name = "EnableBackgroundRenderingCheckBox";
+			EnableBackgroundRenderingCheckBox.TabIndex = 0;
+			EnableBackgroundRenderingCheckBox.Text = "Enable background rendering";
+			EnableBackgroundRenderingCheckBox.UseVisualStyleBackColor = true;
+			EnableBackgroundRenderingCheckBox.CheckedChanged += EnableBackgroundRenderingCheckBox_CheckedChanged;
 			//
 			// ThumbnailRefreshPeriodLabel
 			//
@@ -786,10 +978,21 @@ namespace EveOPreview.View
 			MinimizedRefreshHintLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
 			MinimizedRefreshHintLabel.AutoSize = true;
 			MinimizedRefreshHintLabel.ForeColor = SystemColors.GrayText;
-			MinimizedRefreshHintLabel.Margin = new Padding(4, 12, 4, 0);
+			MinimizedRefreshHintLabel.Margin = new Padding(24, 2, 4, 0);
 			MinimizedRefreshHintLabel.Name = "MinimizedRefreshHintLabel";
-			MinimizedRefreshHintLabel.TabIndex = 4;
-			MinimizedRefreshHintLabel.Text = "These intervals drive the background refresh of minimized clients: Windows cannot render a minimized window in real time, so it is briefly woken up on this schedule to redraw its preview. 0 disables the refresh.";
+			MinimizedRefreshHintLabel.TabIndex = 5;
+			MinimizedRefreshHintLabel.Text = "How often a minimized client is briefly woken up to render a fresh frame for its preview - Windows does not render minimized windows on its own. 0 disables the refresh.";
+			//
+			// ThumbnailRefreshHintLabel
+			//
+			PreviewRenderingTablePanel.SetColumnSpan(ThumbnailRefreshHintLabel, 2);
+			ThumbnailRefreshHintLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			ThumbnailRefreshHintLabel.AutoSize = true;
+			ThumbnailRefreshHintLabel.ForeColor = SystemColors.GrayText;
+			ThumbnailRefreshHintLabel.Margin = new Padding(24, 2, 4, 8);
+			ThumbnailRefreshHintLabel.Name = "ThumbnailRefreshHintLabel";
+			ThumbnailRefreshHintLabel.TabIndex = 2;
+			ThumbnailRefreshHintLabel.Text = "How often the content, positions and borders of ALL previews are updated. Lower values are smoother but use more CPU.";
 			//
 			// PreviewLayoutSubPage
 			//
@@ -811,18 +1014,31 @@ namespace EveOPreview.View
 			PreviewLayoutTablePanel.Controls.Add(ThumbnailsWidthNumericEdit, 1, 0);
 			PreviewLayoutTablePanel.Controls.Add(HeightLabel, 0, 1);
 			PreviewLayoutTablePanel.Controls.Add(ThumbnailsHeightNumericEdit, 1, 1);
-			PreviewLayoutTablePanel.Controls.Add(LockThumbnailLocationCheckbox, 0, 2);
-			PreviewLayoutTablePanel.Controls.Add(EnablePerClientThumbnailsLayoutsCheckBox, 0, 3);
+			PreviewLayoutTablePanel.Controls.Add(EnablePerClientThumbnailsLayoutsCheckBox, 0, 2);
+			PreviewLayoutTablePanel.Controls.Add(PerClientLayoutNoteLabel, 0, 3);
 			PreviewLayoutTablePanel.Controls.Add(ThumbnailSnapToGridCheckBox, 0, 4);
 			PreviewLayoutTablePanel.Controls.Add(SnapXLabel, 0, 5);
 			PreviewLayoutTablePanel.Controls.Add(ThumbnailSnapToGridSizeXNumericEdit, 1, 5);
 			PreviewLayoutTablePanel.Controls.Add(SnapYLabel, 0, 6);
 			PreviewLayoutTablePanel.Controls.Add(ThumbnailSnapToGridSizeYNumericEdit, 1, 6);
+			PreviewLayoutTablePanel.Controls.Add(GridOffsetXLabel, 0, 7);
+			PreviewLayoutTablePanel.Controls.Add(GridOffsetXNumericEdit, 1, 7);
+			PreviewLayoutTablePanel.Controls.Add(GridOffsetYLabel, 0, 8);
+			PreviewLayoutTablePanel.Controls.Add(GridOffsetYNumericEdit, 1, 8);
+			PreviewLayoutTablePanel.Controls.Add(SnapPaddingLabel, 0, 9);
+			PreviewLayoutTablePanel.Controls.Add(SnapPaddingNumericEdit, 1, 9);
+			PreviewLayoutTablePanel.Controls.Add(SnapFillCellCheckBox, 0, 10);
+			PreviewLayoutTablePanel.Controls.Add(ShowGridCheckBox, 0, 11);
 			PreviewLayoutTablePanel.Dock = DockStyle.Fill;
 			PreviewLayoutTablePanel.Location = new Point(3, 3);
 			PreviewLayoutTablePanel.Name = "PreviewLayoutTablePanel";
 			PreviewLayoutTablePanel.Padding = new Padding(6);
-			PreviewLayoutTablePanel.RowCount = 8;
+			PreviewLayoutTablePanel.RowCount = 13;
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
 			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
 			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
 			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
@@ -884,7 +1100,7 @@ namespace EveOPreview.View
 			//
 			// LockThumbnailLocationCheckbox
 			//
-			PreviewLayoutTablePanel.SetColumnSpan(LockThumbnailLocationCheckbox, 2);
+			PreviewGeneralTablePanel.SetColumnSpan(LockThumbnailLocationCheckbox, 2);
 			LockThumbnailLocationCheckbox.AutoSize = true;
 			LockThumbnailLocationCheckbox.Margin = new Padding(4, 8, 4, 4);
 			LockThumbnailLocationCheckbox.Name = "LockThumbnailLocationCheckbox";
@@ -1227,6 +1443,10 @@ namespace EveOPreview.View
 			OverlayWindowNameSubPage.Controls.Add(btnLabelFont);
 			OverlayWindowNameSubPage.Controls.Add(OverlayLabelPositionLabel);
 			OverlayWindowNameSubPage.Controls.Add(OverlayLabelAnchorPanel);
+			OverlayWindowNameSubPage.Controls.Add(LabelOutlineCheckBox);
+			OverlayWindowNameSubPage.Controls.Add(LabelOutlineColorButton);
+			OverlayWindowNameSubPage.Controls.Add(LabelOutlineThicknessLabel);
+			OverlayWindowNameSubPage.Controls.Add(LabelOutlineThicknessNumericEdit);
 			OverlayWindowNameSubPage.Controls.Add(OverlayLabelFontPreviewPanel);
 			OverlayLabelFontPreviewPanel.Controls.Add(LabelOverlayLabelFont);
 			OverlayWindowNameSubPage.Location = new Point(4, 24);
@@ -1235,6 +1455,51 @@ namespace EveOPreview.View
 			OverlayWindowNameSubPage.Size = new Size(309, 286);
 			OverlayWindowNameSubPage.TabIndex = 1;
 			OverlayWindowNameSubPage.Text = "Window Name";
+			//
+			// LabelOutlineCheckBox
+			//
+			LabelOutlineCheckBox.AutoSize = true;
+			LabelOutlineCheckBox.Location = new Point(12, 132);
+			LabelOutlineCheckBox.Margin = new Padding(4);
+			LabelOutlineCheckBox.Name = "LabelOutlineCheckBox";
+			LabelOutlineCheckBox.TabIndex = 7;
+			LabelOutlineCheckBox.Text = "Text outline";
+			LabelOutlineCheckBox.UseVisualStyleBackColor = true;
+			LabelOutlineCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// LabelOutlineColorButton
+			//
+			LabelOutlineColorButton.BorderStyle = BorderStyle.FixedSingle;
+			LabelOutlineColorButton.Location = new Point(170, 133);
+			LabelOutlineColorButton.Margin = new Padding(4);
+			LabelOutlineColorButton.Name = "LabelOutlineColorButton";
+			LabelOutlineColorButton.Size = new Size(16, 16);
+			LabelOutlineColorButton.TabIndex = 8;
+			LabelOutlineColorButton.Click += LabelOutlineColorButton_Click;
+			//
+			// LabelOutlineThicknessLabel
+			//
+			LabelOutlineThicknessLabel.AutoSize = true;
+			LabelOutlineThicknessLabel.Location = new Point(12, 163);
+			LabelOutlineThicknessLabel.Margin = new Padding(4, 0, 4, 0);
+			LabelOutlineThicknessLabel.Name = "LabelOutlineThicknessLabel";
+			LabelOutlineThicknessLabel.TabIndex = 9;
+			LabelOutlineThicknessLabel.Text = "Thickness";
+			//
+			// LabelOutlineThicknessNumericEdit
+			//
+			LabelOutlineThicknessNumericEdit.BackColor = SystemColors.Window;
+			LabelOutlineThicknessNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			LabelOutlineThicknessNumericEdit.CausesValidation = false;
+			LabelOutlineThicknessNumericEdit.Location = new Point(170, 159);
+			LabelOutlineThicknessNumericEdit.Margin = new Padding(4);
+			LabelOutlineThicknessNumericEdit.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+			LabelOutlineThicknessNumericEdit.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
+			LabelOutlineThicknessNumericEdit.Name = "LabelOutlineThicknessNumericEdit";
+			LabelOutlineThicknessNumericEdit.Size = new Size(60, 23);
+			LabelOutlineThicknessNumericEdit.TabIndex = 10;
+			LabelOutlineThicknessNumericEdit.Value = new decimal(new int[] { 1, 0, 0, 0 });
+			LabelOutlineThicknessNumericEdit.ValueChanged += OptionChanged_Handler;
 			//
 			// OverlayGroupNameSubPage
 			//
@@ -1245,6 +1510,10 @@ namespace EveOPreview.View
 			OverlayGroupNameSubPage.Controls.Add(btnCycleGroupNameFont);
 			OverlayGroupNameSubPage.Controls.Add(CycleGroupNamePositionLabel);
 			OverlayGroupNameSubPage.Controls.Add(CycleGroupIndicatorPanel);
+			OverlayGroupNameSubPage.Controls.Add(GroupNameOutlineCheckBox);
+			OverlayGroupNameSubPage.Controls.Add(GroupNameOutlineColorButton);
+			OverlayGroupNameSubPage.Controls.Add(GroupNameOutlineThicknessLabel);
+			OverlayGroupNameSubPage.Controls.Add(GroupNameOutlineThicknessNumericEdit);
 			OverlayGroupNameSubPage.Controls.Add(CycleGroupNameFontPreviewPanel);
 			CycleGroupNameFontPreviewPanel.Controls.Add(LabelCycleGroupNameFont);
 			OverlayGroupNameSubPage.Location = new Point(4, 24);
@@ -1253,6 +1522,51 @@ namespace EveOPreview.View
 			OverlayGroupNameSubPage.Size = new Size(309, 286);
 			OverlayGroupNameSubPage.TabIndex = 2;
 			OverlayGroupNameSubPage.Text = "Group Name";
+			//
+			// GroupNameOutlineCheckBox
+			//
+			GroupNameOutlineCheckBox.AutoSize = true;
+			GroupNameOutlineCheckBox.Location = new Point(12, 132);
+			GroupNameOutlineCheckBox.Margin = new Padding(4);
+			GroupNameOutlineCheckBox.Name = "GroupNameOutlineCheckBox";
+			GroupNameOutlineCheckBox.TabIndex = 7;
+			GroupNameOutlineCheckBox.Text = "Text outline";
+			GroupNameOutlineCheckBox.UseVisualStyleBackColor = true;
+			GroupNameOutlineCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// GroupNameOutlineColorButton
+			//
+			GroupNameOutlineColorButton.BorderStyle = BorderStyle.FixedSingle;
+			GroupNameOutlineColorButton.Location = new Point(170, 133);
+			GroupNameOutlineColorButton.Margin = new Padding(4);
+			GroupNameOutlineColorButton.Name = "GroupNameOutlineColorButton";
+			GroupNameOutlineColorButton.Size = new Size(16, 16);
+			GroupNameOutlineColorButton.TabIndex = 8;
+			GroupNameOutlineColorButton.Click += GroupNameOutlineColorButton_Click;
+			//
+			// GroupNameOutlineThicknessLabel
+			//
+			GroupNameOutlineThicknessLabel.AutoSize = true;
+			GroupNameOutlineThicknessLabel.Location = new Point(12, 163);
+			GroupNameOutlineThicknessLabel.Margin = new Padding(4, 0, 4, 0);
+			GroupNameOutlineThicknessLabel.Name = "GroupNameOutlineThicknessLabel";
+			GroupNameOutlineThicknessLabel.TabIndex = 9;
+			GroupNameOutlineThicknessLabel.Text = "Thickness";
+			//
+			// GroupNameOutlineThicknessNumericEdit
+			//
+			GroupNameOutlineThicknessNumericEdit.BackColor = SystemColors.Window;
+			GroupNameOutlineThicknessNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			GroupNameOutlineThicknessNumericEdit.CausesValidation = false;
+			GroupNameOutlineThicknessNumericEdit.Location = new Point(170, 159);
+			GroupNameOutlineThicknessNumericEdit.Margin = new Padding(4);
+			GroupNameOutlineThicknessNumericEdit.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+			GroupNameOutlineThicknessNumericEdit.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
+			GroupNameOutlineThicknessNumericEdit.Name = "GroupNameOutlineThicknessNumericEdit";
+			GroupNameOutlineThicknessNumericEdit.Size = new Size(60, 23);
+			GroupNameOutlineThicknessNumericEdit.TabIndex = 10;
+			GroupNameOutlineThicknessNumericEdit.Value = new decimal(new int[] { 1, 0, 0, 0 });
+			GroupNameOutlineThicknessNumericEdit.ValueChanged += OptionChanged_Handler;
 			//
 			// ShowClientNameCheckBox
 			//
@@ -1291,7 +1605,7 @@ namespace EveOPreview.View
 			// CycleGroupNameColorLabel
 			//
 			CycleGroupNameColorLabel.AutoSize = true;
-			CycleGroupNameColorLabel.Location = new Point(12, 47);
+			CycleGroupNameColorLabel.Location = new Point(34, 48);
 			CycleGroupNameColorLabel.Margin = new Padding(4, 0, 4, 0);
 			CycleGroupNameColorLabel.Name = "CycleGroupNameColorLabel";
 			CycleGroupNameColorLabel.Size = new Size(36, 15);
@@ -1301,10 +1615,10 @@ namespace EveOPreview.View
 			// CycleGroupNameColorButton
 			//
 			CycleGroupNameColorButton.BorderStyle = BorderStyle.FixedSingle;
-			CycleGroupNameColorButton.Location = new Point(12, 66);
+			CycleGroupNameColorButton.Location = new Point(12, 47);
 			CycleGroupNameColorButton.Margin = new Padding(4);
 			CycleGroupNameColorButton.Name = "CycleGroupNameColorButton";
-			CycleGroupNameColorButton.Size = new Size(110, 23);
+			CycleGroupNameColorButton.Size = new Size(16, 16);
 			CycleGroupNameColorButton.TabIndex = 2;
 			CycleGroupNameColorButton.Click += CycleGroupNameColorButton_Click;
 			//
@@ -1528,7 +1842,7 @@ namespace EveOPreview.View
 			// OverlayLabelColorLabel
 			// 
 			OverlayLabelColorLabel.AutoSize = true;
-			OverlayLabelColorLabel.Location = new Point(12, 47);
+			OverlayLabelColorLabel.Location = new Point(34, 48);
 			OverlayLabelColorLabel.Margin = new Padding(4, 0, 4, 0);
 			OverlayLabelColorLabel.Name = "OverlayLabelColorLabel";
 			OverlayLabelColorLabel.Size = new Size(36, 15);
@@ -1536,12 +1850,12 @@ namespace EveOPreview.View
 			OverlayLabelColorLabel.Text = "Color";
 			// 
 			// OverlayLabelColorButton
-			// 
+			//
 			OverlayLabelColorButton.BorderStyle = BorderStyle.FixedSingle;
-			OverlayLabelColorButton.Location = new Point(12, 66);
+			OverlayLabelColorButton.Location = new Point(12, 47);
 			OverlayLabelColorButton.Margin = new Padding(4);
 			OverlayLabelColorButton.Name = "OverlayLabelColorButton";
-			OverlayLabelColorButton.Size = new Size(110, 23);
+			OverlayLabelColorButton.Size = new Size(16, 16);
 			OverlayLabelColorButton.TabIndex = 41;
 			OverlayLabelColorButton.Click += OverlayLabelColorButton_Click;
 			// 
@@ -1712,7 +2026,7 @@ namespace EveOPreview.View
 			// HighlightColorLabel
 			//
 			HighlightColorLabel.AutoSize = true;
-			HighlightColorLabel.Location = new Point(12, 48);
+			HighlightColorLabel.Location = new Point(34, 48);
 			HighlightColorLabel.Margin = new Padding(4, 0, 4, 0);
 			HighlightColorLabel.Name = "HighlightColorLabel";
 			HighlightColorLabel.Size = new Size(36, 15);
@@ -1722,10 +2036,10 @@ namespace EveOPreview.View
 			// ActiveClientHighlightColorButton
 			// 
 			ActiveClientHighlightColorButton.BorderStyle = BorderStyle.FixedSingle;
-			ActiveClientHighlightColorButton.Location = new Point(90, 47);
+			ActiveClientHighlightColorButton.Location = new Point(12, 47);
 			ActiveClientHighlightColorButton.Margin = new Padding(4);
 			ActiveClientHighlightColorButton.Name = "ActiveClientHighlightColorButton";
-			ActiveClientHighlightColorButton.Size = new Size(108, 19);
+			ActiveClientHighlightColorButton.Size = new Size(16, 16);
 			ActiveClientHighlightColorButton.TabIndex = 28;
 			ActiveClientHighlightColorButton.Click += ActiveClientHighlightColorButton_Click;
 			// 
@@ -2286,6 +2600,11 @@ namespace EveOPreview.View
 			PreviewRenderingTablePanel.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)ThumbnailRefreshPeriodNumericEdit).EndInit();
 			((System.ComponentModel.ISupportInitialize)MinimizedClientsRefreshPeriodNumericEdit).EndInit();
+			((System.ComponentModel.ISupportInitialize)LabelOutlineThicknessNumericEdit).EndInit();
+			((System.ComponentModel.ISupportInitialize)GroupNameOutlineThicknessNumericEdit).EndInit();
+			((System.ComponentModel.ISupportInitialize)GridOffsetXNumericEdit).EndInit();
+			((System.ComponentModel.ISupportInitialize)GridOffsetYNumericEdit).EndInit();
+			((System.ComponentModel.ISupportInitialize)SnapPaddingNumericEdit).EndInit();
 			PreviewLayoutSubPage.ResumeLayout(false);
 			PreviewLayoutTablePanel.ResumeLayout(false);
 			PreviewLayoutTablePanel.PerformLayout();
@@ -2349,6 +2668,18 @@ namespace EveOPreview.View
 		private NumericUpDown ThumbnailsWidthNumericEdit;
 		private NumericUpDown ThumbnailRefreshPeriodNumericEdit;
 		private NumericUpDown MinimizedClientsRefreshPeriodNumericEdit;
+		private CheckBox EnableBackgroundRenderingCheckBox;
+		private CheckBox ShowGridCheckBox;
+		private CheckBox SnapFillCellCheckBox;
+		private NumericUpDown GridOffsetXNumericEdit;
+		private NumericUpDown GridOffsetYNumericEdit;
+		private NumericUpDown SnapPaddingNumericEdit;
+		private CheckBox LabelOutlineCheckBox;
+		private Panel LabelOutlineColorButton;
+		private NumericUpDown LabelOutlineThicknessNumericEdit;
+		private CheckBox GroupNameOutlineCheckBox;
+		private Panel GroupNameOutlineColorButton;
+		private NumericUpDown GroupNameOutlineThicknessNumericEdit;
 		private NumericUpDown ThumbnailsHeightNumericEdit;
 		private TrackBar ThumbnailOpacityTrackBar;
 		private Panel ZoomAnchorPanel;

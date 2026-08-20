@@ -57,6 +57,7 @@ namespace EveOPreview.Configuration.Implementation
 			this.ClientHotkey = new Dictionary<string, string>();
 			this.MinimizeAllClientsHotkeys = new List<string> { "Control+F22" };
 			this.ToggleAllPreviewsHotkeys = new List<string>();
+			this.ClickThroughHotkeys = new List<string>();
 			this.DisableThumbnail = new Dictionary<string, bool>();
 			this.PriorityClients = new List<string>();
 
@@ -65,6 +66,7 @@ namespace EveOPreview.Configuration.Implementation
 			this.MinimizeToTray = false;
 			this.ThumbnailRefreshPeriod = 500;
 			this.ThumbnailResizeTimeoutPeriod = 500;
+			this.EnableMinimizedClientsRefresh = true;
 			this.MinimizedClientsRefreshPeriod = 5;
 
 #if LINUX
@@ -101,6 +103,12 @@ namespace EveOPreview.Configuration.Implementation
 			this.CycleGroupIndicatorAnchor = ZoomAnchor.NW;
 
 			this.ShowThumbnailOverlays = true;
+			this.OverlayLabelOutlineEnabled = true;
+			this.OverlayLabelOutlineThickness = 1;
+			this.OverlayLabelOutlineColor = Color.Black;
+			this.CycleGroupNameOutlineEnabled = true;
+			this.CycleGroupNameOutlineThickness = 1;
+			this.CycleGroupNameOutlineColor = Color.Black;
 			this.ShowClientName = true;
 			this.ShowCycleGroupName = false;
 			this.OverlayAlwaysOnTop = true;
@@ -111,6 +119,10 @@ namespace EveOPreview.Configuration.Implementation
 			this.LockThumbnailLocation = false;
 
 			this.ThumbnailSnapToGrid = true;
+			this.ThumbnailSnapToGridFillCell = false;
+			this.ThumbnailSnapToGridOffsetX = 0;
+			this.ThumbnailSnapToGridOffsetY = 0;
+			this.ThumbnailSnapToGridCellPadding = 2;
 			this.ThumbnailSnapToGridSizeX = 100;
 			this.ThumbnailSnapToGridSizeY = 50;
 
@@ -220,6 +232,9 @@ namespace EveOPreview.Configuration.Implementation
 		public int ThumbnailRefreshPeriod { get; set; }
 		public int ThumbnailResizeTimeoutPeriod { get; set; }
 
+		/// <summary>Master switch for the background refresh of minimized clients</summary>
+		public bool EnableMinimizedClientsRefresh { get; set; }
+
 		/// <summary>
 		/// How often (in seconds) a minimized client is briefly woken up so that its
 		/// thumbnail shows fresh content (minimized clients stop rendering, so their
@@ -286,6 +301,16 @@ namespace EveOPreview.Configuration.Implementation
 		public ZoomAnchor CycleGroupIndicatorAnchor { get; set; }
 
 		public bool ShowThumbnailOverlays { get; set; }
+
+		/// <summary>Outline behind the window name label for readability on bright scenes</summary>
+		public bool OverlayLabelOutlineEnabled { get; set; }
+		public int OverlayLabelOutlineThickness { get; set; }
+		public Color OverlayLabelOutlineColor { get; set; }
+
+		/// <summary>Outline behind the cycle group name label</summary>
+		public bool CycleGroupNameOutlineEnabled { get; set; }
+		public int CycleGroupNameOutlineThickness { get; set; }
+		public Color CycleGroupNameOutlineColor { get; set; }
 		public bool ShowClientName { get; set; }
 		public bool ShowCycleGroupName { get; set; }
 		public bool OverlayAlwaysOnTop { get; set; }
@@ -297,6 +322,21 @@ namespace EveOPreview.Configuration.Implementation
 		public Font CycleGroupNameFont { get; set; }
 		public bool LockThumbnailLocation { get; set; }
 		public bool ThumbnailSnapToGrid { get; set; }
+
+		/// <summary>Snapped previews are resized to the full grid cell (SizeX x SizeY)</summary>
+		public bool ThumbnailSnapToGridFillCell { get; set; }
+
+		/// <summary>Offset of the snap grid relative to the (0, 0) screen origin</summary>
+		public int ThumbnailSnapToGridOffsetX { get; set; }
+		public int ThumbnailSnapToGridOffsetY { get; set; }
+
+		/// <summary>
+		/// Inset from the cell borders: a snapped preview is placed this many pixels away
+		/// from the top/left grid lines (and shrunk accordingly in the fill-cell mode),
+		/// so it sits INSIDE the cell instead of covering the lines
+		/// </summary>
+		public int ThumbnailSnapToGridCellPadding { get; set; }
+
 		public int ThumbnailSnapToGridSizeX {  get; set; }
 		public int ThumbnailSnapToGridSizeY { get; set; }
 
@@ -333,6 +373,9 @@ namespace EveOPreview.Configuration.Implementation
 		public List<string> MinimizeAllClientsHotkeys { get; set; }
 		[JsonProperty]
 		public List<string> ToggleAllPreviewsHotkeys { get; set; }
+
+		/// <summary>Hotkeys that toggle the click-through mode of the previews</summary>
+		public List<string> ClickThroughHotkeys { get; set; }
 		[JsonProperty]
 		private Dictionary<string, bool> DisableThumbnail { get; set; }
 		[JsonProperty]
@@ -500,6 +543,10 @@ namespace EveOPreview.Configuration.Implementation
 #endif
 			this.ThumbnailResizeTimeoutPeriod = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailResizeTimeoutPeriod, 200, 5000);
 
+			this.ThumbnailSnapToGridCellPadding = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailSnapToGridCellPadding, 0, 100);
+			this.OverlayLabelOutlineThickness = ThumbnailConfiguration.ApplyRestrictions(this.OverlayLabelOutlineThickness, 1, 5);
+			this.CycleGroupNameOutlineThickness = ThumbnailConfiguration.ApplyRestrictions(this.CycleGroupNameOutlineThickness, 1, 5);
+
 			// 0 keeps the minimized clients wake-up feature disabled
 			if (this.MinimizedClientsRefreshPeriod != 0)
 			{
@@ -552,6 +599,7 @@ namespace EveOPreview.Configuration.Implementation
 			// Configs written before these options existed have them missing
 			this.MinimizeAllClientsHotkeys = this.MinimizeAllClientsHotkeys ?? new List<string>();
 			this.ToggleAllPreviewsHotkeys = this.ToggleAllPreviewsHotkeys ?? new List<string>();
+			this.ClickThroughHotkeys = this.ClickThroughHotkeys ?? new List<string>();
 			this.CycleGroupNameFont = this.CycleGroupNameFont ?? this.OverlayLabelFont;
 
 			if (this.CycleGroups == null)

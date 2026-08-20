@@ -5,7 +5,7 @@ namespace EveOPreview.UI.Hotkeys
 {
 	static class HotkeyHandlerNativeMethods
 	{
-		[DllImport("user32.dll")]
+		[DllImport("user32.dll", SetLastError = true)]
 		public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
 		[DllImport("user32.dll")]

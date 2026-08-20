@@ -145,18 +145,80 @@ namespace EveOPreview.Configuration.Implementation
 				return;
 			}
 
+			// Serialization runs on the caller's thread so it captures a consistent state.
+			// The disk write itself goes to a worker task with 'latest data wins' coalescing:
+			// a slow disk or an antivirus scan must never stall the UI thread, and rapid
+			// setting changes (f.e. holding a numeric spinner arrow) collapse into one write
 			string rawData = JsonConvert.SerializeObject(this._thumbnailConfiguration, Formatting.Indented);
-			string filename = this.GetConfigFileName();
 
-			try
+			bool startWorker;
+
+			lock (this._writeSyncRoot)
 			{
-				File.WriteAllText(filename, rawData);
+				this._pendingWriteData = rawData;
+
+				startWorker = !this._isWriteWorkerRunning;
+				this._isWriteWorkerRunning = true;
 			}
-			catch (IOException)
+
+			if (startWorker)
 			{
-				// Ignore error if for some reason the updated config cannot be written down
+				System.Threading.Tasks.Task.Run(this.WritePendingData);
 			}
 		}
+
+		/// <summary>
+		/// Blocks until the queued settings write has hit the disk. Called on shutdown -
+		/// the process must not exit while the latest settings are still in the queue
+		/// </summary>
+		public void Flush()
+		{
+			for (int i = 0; i < 150; i++)
+			{
+				lock (this._writeSyncRoot)
+				{
+					if (!this._isWriteWorkerRunning)
+					{
+						return;
+					}
+				}
+
+				System.Threading.Thread.Sleep(20);
+			}
+		}
+
+		private void WritePendingData()
+		{
+			while (true)
+			{
+				string rawData;
+
+				lock (this._writeSyncRoot)
+				{
+					rawData = this._pendingWriteData;
+					this._pendingWriteData = null;
+
+					if (rawData == null)
+					{
+						this._isWriteWorkerRunning = false;
+						return;
+					}
+				}
+
+				try
+				{
+					File.WriteAllText(this.GetConfigFileName(), rawData);
+				}
+				catch (Exception)
+				{
+					// Ignore error if for some reason the updated config cannot be written down
+				}
+			}
+		}
+
+		private readonly object _writeSyncRoot = new object();
+		private string _pendingWriteData;
+		private bool _isWriteWorkerRunning;
 
 		private string GetConfigFileName()
 		{

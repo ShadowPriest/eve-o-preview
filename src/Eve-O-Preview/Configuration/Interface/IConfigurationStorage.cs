@@ -8,5 +8,6 @@
 		void Load();
 		string ReadLanguage();
 		void Save();
+		void Flush();
 	}
 }

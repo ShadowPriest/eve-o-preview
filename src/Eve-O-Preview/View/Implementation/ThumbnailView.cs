@@ -125,6 +125,14 @@ namespace EveOPreview.View
 
 			this._overlay.SetOverlayLabel(title.Replace("EVE - ", "").Replace("EVE Frontier - ", "*"));
 			this._overlay.SetPropertiesOverlayLabel(this._config.OverlayLabelFont, this._config.OverlayLabelColor, this._config.OverlayLabelAnchor);
+			this._overlay.SetOverlayLabelOutline(this._config.OverlayLabelOutlineEnabled, this._config.OverlayLabelOutlineThickness, this._config.OverlayLabelOutlineColor);
+			this._overlay.SetCycleGroupNameOutline(this._config.CycleGroupNameOutlineEnabled, this._config.CycleGroupNameOutlineThickness, this._config.CycleGroupNameOutlineColor);
+
+			// A lazily created overlay has to catch up with the click-through mode
+			if (this._isClickThrough)
+			{
+				ThumbnailView.ApplyClickThroughStyle(this._overlay.Handle, true);
+			}
 			this._overlay.EnableFakePreview(this._preventPreviews.Value, false, 0, SystemColors.Control);
 			this._overlay.SetCycleGroupIndicator(this.IsExcludedFromCycleGroup, this._config.CycleGroupIndicatorAnchor);
 
@@ -134,6 +142,7 @@ namespace EveOPreview.View
 			if (!string.IsNullOrEmpty(this._cycleGroupName))
 			{
 				this._overlay.SetCycleGroupName(this._cycleGroupName, this._cycleGroupNameAnchor, this._cycleGroupNameFont, this._cycleGroupNameColor);
+				this._cycleGroupNameLayoutSize = this._overlay.Size;
 			}
 		}
 
@@ -151,6 +160,7 @@ namespace EveOPreview.View
 			// A re-created overlay starts empty, so the cached label state is stale
 			this._cycleGroupName = null;
 			this._cycleGroupNameFont = null;
+			this._cycleGroupNameLayoutSize = Size.Empty;
 
 			overlay.Hide();
 			overlay.Close();
@@ -375,11 +385,48 @@ namespace EveOPreview.View
 			this._cycleGroupNameAnchor = this._config.CycleGroupIndicatorAnchor;
 
 			this._overlay?.SetCycleGroupName(groupName, _config.CycleGroupIndicatorAnchor, _config.CycleGroupNameFont, _config.CycleGroupNameColor);
+			this._cycleGroupNameLayoutSize = this._overlay?.Size ?? Size.Empty;
 		}
 		private string _cycleGroupName;
 		private Font _cycleGroupNameFont;
 		private Color _cycleGroupNameColor;
 		private ZoomAnchor _cycleGroupNameAnchor;
+
+		// Overlay size the group name label was last laid out for: the layout is cached,
+		// but a resized overlay (f.e. the hover zoom) invalidates the label position
+		private Size _cycleGroupNameLayoutSize;
+
+		// Click-through mode: the preview and its overlay stop receiving mouse input,
+		// so the user can interact with whatever is behind them
+		private bool _isClickThrough;
+
+		public void SetClickThrough(bool enable)
+		{
+			this._isClickThrough = enable;
+
+			ThumbnailView.ApplyClickThroughStyle(this.Handle, enable);
+
+			if (this._overlay != null)
+			{
+				ThumbnailView.ApplyClickThroughStyle(this._overlay.Handle, enable);
+			}
+		}
+
+		private static void ApplyClickThroughStyle(IntPtr handle, bool enable)
+		{
+			uint exStyle = User32NativeMethods.GetWindowLong(handle, InteropConstants.GWL_EXSTYLE);
+
+			// WS_EX_TRANSPARENT makes hit testing skip the window entirely; it is only
+			// honored reliably for layered windows, so WS_EX_LAYERED is set along with it
+			uint newExStyle = enable
+				? exStyle | InteropConstants.WS_EX_LAYERED | InteropConstants.WS_EX_TRANSPARENT
+				: exStyle & ~InteropConstants.WS_EX_TRANSPARENT;
+
+			if (newExStyle != exStyle)
+			{
+				User32NativeMethods.SetWindowLong(handle, InteropConstants.GWL_EXSTYLE, newExStyle);
+			}
+		}
 
 		public void SetTopMost(bool enableTopmost)
 		{
@@ -394,6 +441,30 @@ namespace EveOPreview.View
 			this._isTopMost = enableTopmost;
 
 			this.RaiseOverlayAboveThumbnail();
+		}
+
+		/// <summary>
+		/// Raises this thumbnail (and its overlay) above every other thumbnail window.
+		/// Used when the thumbnail zooms on hover so the expanded window is never
+		/// covered by the neighboring previews. The overlay is raised first and the
+		/// thumbnail is placed directly below it, preserving the overlay-on-top invariant
+		/// </summary>
+		public void BringAboveOtherThumbnails()
+		{
+			IntPtr insertAfter = this._isTopMost ? User32NativeMethods.HWND_TOPMOST : User32NativeMethods.HWND_TOP;
+
+			if ((this._overlay != null) && this._isOverlayVisible)
+			{
+				User32NativeMethods.SetWindowPos(this._overlay.Handle, insertAfter, 0, 0, 0, 0,
+					User32NativeMethods.SWP_NOMOVE | User32NativeMethods.SWP_NOSIZE | User32NativeMethods.SWP_NOACTIVATE);
+				User32NativeMethods.SetWindowPos(this.Handle, this._overlay.Handle, 0, 0, 0, 0,
+					User32NativeMethods.SWP_NOMOVE | User32NativeMethods.SWP_NOSIZE | User32NativeMethods.SWP_NOACTIVATE);
+			}
+			else
+			{
+				User32NativeMethods.SetWindowPos(this.Handle, insertAfter, 0, 0, 0, 0,
+					User32NativeMethods.SWP_NOMOVE | User32NativeMethods.SWP_NOSIZE | User32NativeMethods.SWP_NOACTIVATE);
+			}
 		}
 
 		/// <summary>
@@ -455,8 +526,14 @@ namespace EveOPreview.View
 			this.Refresh(true);
 		}
 
+		// Set while the thumbnail is expanded by the hover zoom. Used to reset the zoom
+		// as soon as the cursor leaves the ORIGINAL (small) thumbnail bounds instead of
+		// keeping it up while the cursor wanders around the expanded window
+		private bool _isZoomedByHover;
+
 		public void ZoomIn(ViewZoomAnchor anchor, int zoomFactor)
 		{
+			this._isZoomedByHover = true;
 			int oldWidth = this._baseZoomSize.Width;
 			int oldHeight = this._baseZoomSize.Height;
 
@@ -467,6 +544,12 @@ namespace EveOPreview.View
 			int clientSizeHeight = this.ClientSize.Height;
 			int newWidth = (zoomFactor * clientSizeWidth) + (this.Size.Width - clientSizeWidth);
 			int newHeight = (zoomFactor * clientSizeHeight) + (this.Size.Height - clientSizeHeight);
+
+			// The zoomed window must stay on the monitor the thumbnail is on,
+			// so its size is capped by the size of that monitor
+			Rectangle screenBounds = Screen.FromPoint(new Point(locationX + oldWidth / 2, locationY + oldHeight / 2)).Bounds;
+			newWidth = Math.Min(newWidth, screenBounds.Width);
+			newHeight = Math.Min(newHeight, screenBounds.Height);
 
 			// First change size, THEN move the window
 			// Otherwise there is a chance to fail in a loop
@@ -504,6 +587,16 @@ namespace EveOPreview.View
 				case ViewZoomAnchor.SE:
 					this.Location = new Point(locationX - newWidth + oldWidth, locationY - newHeight + oldHeight);
 					break;
+			}
+
+			// Whatever position the anchor produced, the zoomed window is pushed back
+			// inside the monitor bounds instead of expanding off-screen
+			int clampedX = Math.Max(screenBounds.Left, Math.Min(this.Location.X, screenBounds.Right - newWidth));
+			int clampedY = Math.Max(screenBounds.Top, Math.Min(this.Location.Y, screenBounds.Bottom - newHeight));
+
+			if ((clampedX != this.Location.X) || (clampedY != this.Location.Y))
+			{
+				this.Location = new Point(clampedX, clampedY);
 			}
 		}
 
@@ -651,6 +744,17 @@ namespace EveOPreview.View
 			overlay.Size = overlaySize;
 
 			overlay.SetPropertiesOverlayLabel(_config.OverlayLabelFont, _config.OverlayLabelColor, _config.OverlayLabelAnchor);
+			overlay.SetOverlayLabelOutline(this._config.OverlayLabelOutlineEnabled, this._config.OverlayLabelOutlineThickness, this._config.OverlayLabelOutlineColor);
+			overlay.SetCycleGroupNameOutline(this._config.CycleGroupNameOutlineEnabled, this._config.CycleGroupNameOutlineThickness, this._config.CycleGroupNameOutlineColor);
+
+			// The group name label layout is cached for a specific overlay size (text
+			// measurement is not free), so a resized overlay (f.e. the hover zoom)
+			// has to lay it out again - same as the window name label right above
+			if (!string.IsNullOrEmpty(this._cycleGroupName) && (this._cycleGroupNameLayoutSize != overlaySize))
+			{
+				overlay.SetCycleGroupName(this._cycleGroupName, this._cycleGroupNameAnchor, this._cycleGroupNameFont, this._cycleGroupNameColor);
+				this._cycleGroupNameLayoutSize = overlaySize;
+			}
 
 			overlay.Location = overlayLocation;
 			overlay.Refresh();
@@ -717,6 +821,14 @@ namespace EveOPreview.View
 			if (this._isCustomMouseModeActive)
 			{
 				this.ProcessCustomMouseMode(e.Button.HasFlag(MouseButtons.Left), e.Button.HasFlag(MouseButtons.Right));
+				return;
+			}
+
+			// The zoom is reset as soon as the cursor leaves the area the SMALL thumbnail
+			// occupied, not the whole expanded window
+			if (this._isZoomedByHover && !new Rectangle(this._baseZoomLocation, this._baseZoomSize).Contains(Control.MousePosition))
+			{
+				this.ThumbnailLostFocus?.Invoke(this.Id);
 			}
 		}
 
@@ -729,10 +841,35 @@ namespace EveOPreview.View
 				// Snap to Grid on release of mouse (if moved)
 				if (_config.ThumbnailSnapToGrid && this.WindowMoved)
 				{
-					var x = (int)Math.Round((double)this.Location.X / (double)_config.ThumbnailSnapToGridSizeX) * _config.ThumbnailSnapToGridSizeX;
-                    var y = (int)Math.Round((double)this.Location.Y / (double)_config.ThumbnailSnapToGridSizeY) * _config.ThumbnailSnapToGridSizeY;
+					// The grid can be shifted relative to the (0, 0) screen origin
+					int offsetX = _config.ThumbnailSnapToGridOffsetX;
+					int offsetY = _config.ThumbnailSnapToGridOffsetY;
+
+					// The preview is placed INSIDE the cell, padded away from the grid
+					// lines instead of covering them with its top/left corner
+					int padding = _config.ThumbnailSnapToGridCellPadding;
+
+					var x = (int)Math.Round((double)(this.Location.X - offsetX) / (double)_config.ThumbnailSnapToGridSizeX) * _config.ThumbnailSnapToGridSizeX + offsetX + padding;
+					var y = (int)Math.Round((double)(this.Location.Y - offsetY) / (double)_config.ThumbnailSnapToGridSizeY) * _config.ThumbnailSnapToGridSizeY + offsetY + padding;
 					this.Location = new Point(x, y);
 					this._baseZoomLocation = this.Location;
+
+					// The snapped preview can be stretched over the whole grid cell
+					// (minus the padding on both sides, so the lines stay visible)
+					if (_config.ThumbnailSnapToGridFillCell)
+					{
+						Size cellSize = new Size(
+							Math.Max(10, _config.ThumbnailSnapToGridSizeX - 2 * padding),
+							Math.Max(10, _config.ThumbnailSnapToGridSizeY - 2 * padding));
+
+						if (this.Size != cellSize)
+						{
+							this.MaximumSize = new Size(0, 0);
+							this.Size = cellSize;
+						}
+
+						this._baseZoomSize = this.Size;
+					}
 
 					this.WindowMoved = false;
 
@@ -780,6 +917,8 @@ namespace EveOPreview.View
 
 		private void RestoreWindowSizeAndLocation()
 		{
+			this._isZoomedByHover = false;
+
 			this.Size = this._baseZoomSize;
 			this.MaximumSize = this._baseZoomMaximumSize;
 			this.Location = this._baseZoomLocation;

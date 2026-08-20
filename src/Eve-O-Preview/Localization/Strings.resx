@@ -121,6 +121,9 @@
   <data name="PreviewTab_Rendering" xml:space="preserve">
     <value>Rendering</value>
   </data>
+  <data name="Preview_EnableBackgroundRendering" xml:space="preserve">
+    <value>Enable background rendering</value>
+  </data>
   <data name="Preview_RefreshPeriod" xml:space="preserve">
     <value>Preview refresh period (ms)</value>
   </data>
@@ -128,7 +131,34 @@
     <value>Minimized clients refresh period (s)</value>
   </data>
   <data name="Preview_MinimizedRefreshHint" xml:space="preserve">
-    <value>These intervals drive the background refresh of minimized clients: Windows cannot render a minimized window in real time, so it is briefly woken up on this schedule to redraw its preview. 0 disables the refresh.</value>
+    <value>How often a minimized client is briefly woken up to render a fresh frame for its preview - Windows does not render minimized windows on its own. 0 disables the refresh.</value>
+  </data>
+  <data name="Preview_RefreshPeriodHint" xml:space="preserve">
+    <value>How often the content, positions and borders of ALL previews are updated. Lower values are smoother but use more CPU.</value>
+  </data>
+  <data name="Preview_AlwaysOnTopHint" xml:space="preserve">
+    <value>Previews stay above the game windows and any other applications.</value>
+  </data>
+  <data name="Preview_LockLocationHint" xml:space="preserve">
+    <value>Previews cannot be dragged with the mouse, protecting them from accidental moves.</value>
+  </data>
+  <data name="Preview_ShowGrid" xml:space="preserve">
+    <value>Show snap grid</value>
+  </data>
+  <data name="Preview_SnapFillCell" xml:space="preserve">
+    <value>Fill the entire grid cell</value>
+  </data>
+  <data name="Preview_GridOffsetX" xml:space="preserve">
+    <value>Grid offset X</value>
+  </data>
+  <data name="Preview_GridOffsetY" xml:space="preserve">
+    <value>Grid offset Y</value>
+  </data>
+  <data name="Preview_GridCellPadding" xml:space="preserve">
+    <value>Cell padding</value>
+  </data>
+  <data name="Preview_PerClientLayoutsHint" xml:space="preserve">
+    <value>A separate preview layout is stored for every active client - arrange it while that client is active. When off, a single shared layout is used.</value>
   </data>
   <data name="ClientWindows_MinimizedRenderingNote" xml:space="preserve">
     <value>Windows does not render minimized windows in real time, so their previews are refreshed periodically instead. The intervals are set on the Previews &gt; Rendering tab.</value>
@@ -309,6 +339,12 @@
   </data>
   <data name="Hotkey_ToggleAllPreviews" xml:space="preserve">
     <value>Show / hide all previews</value>
+  </data>
+  <data name="Overlay_Outline" xml:space="preserve">
+    <value>Text outline</value>
+  </data>
+  <data name="Hotkey_ClickThrough" xml:space="preserve">
+    <value>Click-through previews (toggle)</value>
   </data>
   <data name="Hotkey_Unsupported" xml:space="preserve">
     <value>Unsupported key combination</value>

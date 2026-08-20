@@ -29,7 +29,20 @@ namespace EveOPreview.View
 
 		protected override void RefreshThumbnail(bool forceRefresh)
 		{
-			if (!forceRefresh || this.IsPreventPreviews())
+			// 'Do not display previews' releases the captured image entirely
+			if (this.IsPreventPreviews())
+			{
+				if (this._thumbnail.Image != null)
+				{
+					var oldImage = this._thumbnail.Image;
+					this._thumbnail.Image = null;
+					oldImage.Dispose();
+				}
+
+				return;
+			}
+
+			if (!forceRefresh)
 			{
 				return;
 			}

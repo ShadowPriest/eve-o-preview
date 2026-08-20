@@ -22,6 +22,7 @@ namespace EveOPreview.Presenters
 		private const string HOTKEY_ACTION_CLIENT_PREFIX = "client:";
 		private const string HOTKEY_ACTION_MINIMIZE_ALL = "minimizeall";
 		private const string HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS = "toggleallpreviews";
+		private const string HOTKEY_ACTION_CLICK_THROUGH = "toggleclickthrough";
 		#endregion
 
 		#region Private fields
@@ -106,6 +107,10 @@ namespace EveOPreview.Presenters
 				this._mediator.Send(new StopService()).Wait();
 
 				this._configurationStorage.Save();
+
+				// Settings are written on a worker task - wait for the write to land
+				// before letting the process exit
+				this._configurationStorage.Flush();
 				request.Allow = true;
 				return;
 			}
@@ -133,6 +138,7 @@ namespace EveOPreview.Presenters
 			this.View.ThumbnailOpacity = this._configuration.ThumbnailOpacity;
 			this.View.ThumbnailRefreshPeriod = this._configuration.ThumbnailRefreshPeriod;
 			this.View.MinimizedClientsRefreshPeriod = this._configuration.MinimizedClientsRefreshPeriod;
+			this.View.EnableMinimizedClientsRefresh = this._configuration.EnableMinimizedClientsRefresh;
 
 			this.View.EnableClientLayoutTracking = this._configuration.EnableClientLayoutTracking;
 			this.View.HideActiveClientThumbnail = this._configuration.HideActiveClientThumbnail;
@@ -164,6 +170,10 @@ namespace EveOPreview.Presenters
 			this.View.ThumbnailSnapToGrid = this._configuration.ThumbnailSnapToGrid;
 			this.View.ThumbnailSnapToGridSizeX = this._configuration.ThumbnailSnapToGridSizeX;
 			this.View.ThumbnailSnapToGridSizeY = this._configuration.ThumbnailSnapToGridSizeY;
+			this.View.ThumbnailSnapToGridOffsetX = this._configuration.ThumbnailSnapToGridOffsetX;
+			this.View.ThumbnailSnapToGridOffsetY = this._configuration.ThumbnailSnapToGridOffsetY;
+			this.View.ThumbnailSnapToGridFillCell = this._configuration.ThumbnailSnapToGridFillCell;
+			this.View.ThumbnailSnapToGridCellPadding = this._configuration.ThumbnailSnapToGridCellPadding;
 			this.View.EnableActiveClientHighlight = this._configuration.EnableActiveClientHighlight;
 			this.View.ActiveClientHighlightThickness = this._configuration.ActiveClientHighlightThickness;
 			this.View.ActiveClientHighlightColor = this._configuration.ActiveClientHighlightColor;
@@ -171,6 +181,12 @@ namespace EveOPreview.Presenters
 
 			this.View.OverlayLabelColor = this._configuration.OverlayLabelColor;
 			this.View.OverlayLabelFont = this._configuration.OverlayLabelFont;
+			this.View.OverlayLabelOutlineEnabled = this._configuration.OverlayLabelOutlineEnabled;
+			this.View.OverlayLabelOutlineThickness = this._configuration.OverlayLabelOutlineThickness;
+			this.View.OverlayLabelOutlineColor = this._configuration.OverlayLabelOutlineColor;
+			this.View.CycleGroupNameOutlineEnabled = this._configuration.CycleGroupNameOutlineEnabled;
+			this.View.CycleGroupNameOutlineThickness = this._configuration.CycleGroupNameOutlineThickness;
+			this.View.CycleGroupNameOutlineColor = this._configuration.CycleGroupNameOutlineColor;
 
 
 			this.View.IconName = this._configuration.IconName;
@@ -226,6 +242,7 @@ namespace EveOPreview.Presenters
 			this._configuration.ThumbnailOpacity = (float)this.View.ThumbnailOpacity;
 			this._configuration.ThumbnailRefreshPeriod = this.View.ThumbnailRefreshPeriod;
 			this._configuration.MinimizedClientsRefreshPeriod = this.View.MinimizedClientsRefreshPeriod;
+			this._configuration.EnableMinimizedClientsRefresh = this.View.EnableMinimizedClientsRefresh;
 
 			this._configuration.EnableClientLayoutTracking = this.View.EnableClientLayoutTracking;
 			this._configuration.HideActiveClientThumbnail = this.View.HideActiveClientThumbnail;
@@ -276,6 +293,10 @@ namespace EveOPreview.Presenters
 			this._configuration.ThumbnailSnapToGrid = this.View.ThumbnailSnapToGrid;
 			this._configuration.ThumbnailSnapToGridSizeX = this.View.ThumbnailSnapToGridSizeX;
             this._configuration.ThumbnailSnapToGridSizeY = this.View.ThumbnailSnapToGridSizeY;
+			this._configuration.ThumbnailSnapToGridOffsetX = this.View.ThumbnailSnapToGridOffsetX;
+			this._configuration.ThumbnailSnapToGridOffsetY = this.View.ThumbnailSnapToGridOffsetY;
+			this._configuration.ThumbnailSnapToGridFillCell = this.View.ThumbnailSnapToGridFillCell;
+			this._configuration.ThumbnailSnapToGridCellPadding = this.View.ThumbnailSnapToGridCellPadding;
 
             this._configuration.EnableActiveClientHighlight = this.View.EnableActiveClientHighlight;
 
@@ -296,6 +317,12 @@ namespace EveOPreview.Presenters
 
 			this._configuration.OverlayLabelColor = this.View.OverlayLabelColor;
 			this._configuration.OverlayLabelFont = this.View.OverlayLabelFont;
+			this._configuration.OverlayLabelOutlineEnabled = this.View.OverlayLabelOutlineEnabled;
+			this._configuration.OverlayLabelOutlineThickness = this.View.OverlayLabelOutlineThickness;
+			this._configuration.OverlayLabelOutlineColor = this.View.OverlayLabelOutlineColor;
+			this._configuration.CycleGroupNameOutlineEnabled = this.View.CycleGroupNameOutlineEnabled;
+			this._configuration.CycleGroupNameOutlineThickness = this.View.CycleGroupNameOutlineThickness;
+			this._configuration.CycleGroupNameOutlineColor = this.View.CycleGroupNameOutlineColor;
 
 			this._configuration.IconName = this.View.IconName;
 
@@ -397,6 +424,7 @@ namespace EveOPreview.Presenters
 
 			actions.Add((MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL, Strings.Hotkey_MinimizeAll));
 			actions.Add((MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS, Strings.Hotkey_ToggleAllPreviews));
+			actions.Add((MainFormPresenter.HOTKEY_ACTION_CLICK_THROUGH, Strings.Hotkey_ClickThrough));
 
 			this.View.SetHotkeyActions(actions);
 		}
@@ -441,6 +469,11 @@ namespace EveOPreview.Presenters
 			foreach (string hotkey in this._configuration.ToggleAllPreviewsHotkeys.Where(x => !string.IsNullOrEmpty(x)))
 			{
 				bindings.Add((MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS, Strings.Hotkey_ToggleAllPreviews, hotkey));
+			}
+
+			foreach (string hotkey in this._configuration.ClickThroughHotkeys.Where(x => !string.IsNullOrEmpty(x)))
+			{
+				bindings.Add((MainFormPresenter.HOTKEY_ACTION_CLICK_THROUGH, Strings.Hotkey_ClickThrough, hotkey));
 			}
 
 			return bindings;
@@ -505,6 +538,13 @@ namespace EveOPreview.Presenters
 				return true;
 			}
 
+			if (actionId == MainFormPresenter.HOTKEY_ACTION_CLICK_THROUGH)
+			{
+				this._configuration.ClickThroughHotkeys.RemoveAll(string.IsNullOrEmpty);
+				this._configuration.ClickThroughHotkeys.Add(normalizedHotkey);
+				return true;
+			}
+
 			if (MainFormPresenter.TryParseCycleGroupActionId(actionId, out bool isForward, out string groupName))
 			{
 				CycleGroup group = this.FindCycleGroup(groupName);
@@ -536,6 +576,10 @@ namespace EveOPreview.Presenters
 			else if (actionId == MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS)
 			{
 				this._configuration.ToggleAllPreviewsHotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
+			}
+			else if (actionId == MainFormPresenter.HOTKEY_ACTION_CLICK_THROUGH)
+			{
+				this._configuration.ClickThroughHotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
 			}
 			else if (MainFormPresenter.TryParseCycleGroupActionId(actionId, out bool isForward, out string groupName))
 			{

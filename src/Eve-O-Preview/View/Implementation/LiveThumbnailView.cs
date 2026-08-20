@@ -32,13 +32,26 @@ namespace EveOPreview.View
 
 		protected override void RefreshThumbnail(bool forceRefresh)
 		{
+			// 'Do not display previews' releases the DWM capture entirely instead of just
+			// covering the picture with the placeholder: no capture - no rendering load
+			if (this.IsPreventPreviews())
+			{
+				if (this._thumbnail != null)
+				{
+					this._thumbnail.Unregister();
+					this._thumbnail = null;
+				}
+
+				return;
+			}
+
 			if (this._thumbnail == null)
 			{
 				this.RegisterThumbnail();
 				return;
 			}
 
-			if (!forceRefresh || this.IsPreventPreviews())
+			if (!forceRefresh)
 			{
 				return;
 			}
@@ -69,8 +82,10 @@ namespace EveOPreview.View
 			this._startLocation = new Point(left, top);
 			this._endLocation = new Point(right, bottom);
 
-			this._thumbnail.Move(left, top, right, bottom);
-			this._thumbnail.Update();
+			// The thumbnail is unloaded while 'do not display previews' is active;
+			// the stored locations will be applied when it is registered again
+			this._thumbnail?.Move(left, top, right, bottom);
+			this._thumbnail?.Update();
 		}
 
 		private void RegisterThumbnail()

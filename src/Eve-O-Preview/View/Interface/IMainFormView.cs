@@ -14,6 +14,7 @@ namespace EveOPreview.View
 
 		double ThumbnailOpacity { get; set; }
 
+		bool EnableMinimizedClientsRefresh { get; set; }
 		int ThumbnailRefreshPeriod { get; set; }
 		int MinimizedClientsRefreshPeriod { get; set; }
 
@@ -48,8 +49,12 @@ namespace EveOPreview.View
 
 		bool LockThumbnailLocation { get; set; }
 		bool ThumbnailSnapToGrid { get; set; }
+		bool ThumbnailSnapToGridFillCell { get; set; }
 		int ThumbnailSnapToGridSizeX { get; set; }
 		int ThumbnailSnapToGridSizeY { get; set; }
+		int ThumbnailSnapToGridOffsetX { get; set; }
+		int ThumbnailSnapToGridOffsetY { get; set; }
+		int ThumbnailSnapToGridCellPadding { get; set; }
 
 		bool EnableActiveClientHighlight { get; set; }
 		int ActiveClientHighlightThickness { get; set; }
@@ -57,6 +62,12 @@ namespace EveOPreview.View
 		Color PreventPreviewColor { get; set; }
 		Color OverlayLabelColor { get; set; }
 		Font OverlayLabelFont { get; set; }
+		bool OverlayLabelOutlineEnabled { get; set; }
+		int OverlayLabelOutlineThickness { get; set; }
+		Color OverlayLabelOutlineColor { get; set; }
+		bool CycleGroupNameOutlineEnabled { get; set; }
+		int CycleGroupNameOutlineThickness { get; set; }
+		Color CycleGroupNameOutlineColor { get; set; }
 
 		string IconName { get; set; }
 

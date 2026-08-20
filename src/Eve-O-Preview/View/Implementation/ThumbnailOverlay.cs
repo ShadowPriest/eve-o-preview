@@ -321,7 +321,21 @@ namespace EveOPreview.View
 			}
 		}
 
-		private void PaintDrawText(PaintEventArgs e, System.Windows.Forms.Label l)
+		// Per-label outline settings: (enabled, thickness in pixels, color)
+		private (bool Enabled, int Thickness, Color Color) _labelOutline = (true, 1, Color.Black);
+		private (bool Enabled, int Thickness, Color Color) _groupNameOutline = (true, 1, Color.Black);
+
+		public void SetOverlayLabelOutline(bool enabled, int thickness, Color color)
+		{
+			this._labelOutline = (enabled, thickness, color);
+		}
+
+		public void SetCycleGroupNameOutline(bool enabled, int thickness, Color color)
+		{
+			this._groupNameOutline = (enabled, thickness, color);
+		}
+
+		private void PaintDrawText(PaintEventArgs e, System.Windows.Forms.Label l, (bool Enabled, int Thickness, Color Color) outline)
 		{
 			var flags = TextFormatFlags.Right;
 			if (l.TextAlign == ContentAlignment.TopLeft || l.TextAlign == ContentAlignment.BottomLeft || l.TextAlign == ContentAlignment.MiddleLeft) flags = TextFormatFlags.Left;
@@ -329,13 +343,35 @@ namespace EveOPreview.View
 
 			e.Graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
 
-			TextRenderer.DrawText(e.Graphics, l.Text, l.Font, new Rectangle(l.Left, l.Top, l.Width, l.Height), l.ForeColor, flags);
+			Rectangle bounds = new Rectangle(l.Left, l.Top, l.Width, l.Height);
+
+			if (outline.Enabled && (outline.Thickness > 0))
+			{
+				// The text is stamped around the base position in a filled square pattern,
+				// which produces a solid outline of the requested thickness
+				for (int dx = -outline.Thickness; dx <= outline.Thickness; dx++)
+				{
+					for (int dy = -outline.Thickness; dy <= outline.Thickness; dy++)
+					{
+						if ((dx == 0) && (dy == 0))
+						{
+							continue;
+						}
+
+						Rectangle outlineBounds = bounds;
+						outlineBounds.Offset(dx, dy);
+						TextRenderer.DrawText(e.Graphics, l.Text, l.Font, outlineBounds, outline.Color, flags);
+					}
+				}
+			}
+
+			TextRenderer.DrawText(e.Graphics, l.Text, l.Font, bounds, l.ForeColor, flags);
 		}
 
 		private void OverlayAreaPictureBox_Paint(object sender, PaintEventArgs e)
 		{
-			if (this._showOverlayText) PaintDrawText(e, OverlayLabel);
-			if (this._showCycleGroupName) PaintDrawText(e, CycleGroupNameLabel);
+			if (this._showOverlayText) PaintDrawText(e, OverlayLabel, this._labelOutline);
+			if (this._showCycleGroupName) PaintDrawText(e, CycleGroupNameLabel, this._groupNameOutline);
 		}
 
 		protected override CreateParams CreateParams
