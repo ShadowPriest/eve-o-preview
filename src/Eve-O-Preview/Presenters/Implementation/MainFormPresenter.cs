@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EveOPreview.Configuration;
+using EveOPreview.Localization;
 using EveOPreview.Mediator.Messages;
 using EveOPreview.UI.Hotkeys;
 using EveOPreview.View;
@@ -29,6 +30,7 @@ namespace EveOPreview.Presenters
 		private readonly IConfigurationStorage _configurationStorage;
 		private readonly IDictionary<string, IThumbnailDescription> _descriptionsCache;
 		private bool _suppressSizeNotifications;
+		private bool _settingsLoaded;
 
 		private bool _exitApplication;
 		#endregion
@@ -43,6 +45,7 @@ namespace EveOPreview.Presenters
 			this._descriptionsCache = new Dictionary<string, IThumbnailDescription>();
 
 			this._suppressSizeNotifications = false;
+			this._settingsLoaded = false;
 			this._exitApplication = false;
 
 			this.View.FormActivated = this.Activate;
@@ -71,6 +74,7 @@ namespace EveOPreview.Presenters
 		{
 			this._suppressSizeNotifications = true;
 			this.LoadApplicationSettings();
+			this.ReportBrokenConfiguration();
 			this.RefreshHotkeyActions();
 			this.RefreshHotkeyBindings();
 			this.RefreshCycleGroupData();
@@ -124,8 +128,11 @@ namespace EveOPreview.Presenters
 			this._configurationStorage.Load();
 
 			this.View.MinimizeToTray = this._configuration.MinimizeToTray;
+			this.View.Language = this._configuration.Language;
 
 			this.View.ThumbnailOpacity = this._configuration.ThumbnailOpacity;
+			this.View.ThumbnailRefreshPeriod = this._configuration.ThumbnailRefreshPeriod;
+			this.View.MinimizedClientsRefreshPeriod = this._configuration.MinimizedClientsRefreshPeriod;
 
 			this.View.EnableClientLayoutTracking = this._configuration.EnableClientLayoutTracking;
 			this.View.HideActiveClientThumbnail = this._configuration.HideActiveClientThumbnail;
@@ -169,6 +176,26 @@ namespace EveOPreview.Presenters
 			this.View.IconName = this._configuration.IconName;
 
 			this.View.WindowSize = this._configuration.MainWindowSize;
+
+			this._settingsLoaded = true;
+		}
+
+		// Losing every setting without a word looks like the app forgot them on its own,
+		// so an unreadable settings file is reported instead of being silently replaced
+		private void ReportBrokenConfiguration()
+		{
+			string brokenFile = this._configurationStorage.BrokenConfigurationFileName;
+
+			if (brokenFile == null)
+			{
+				return;
+			}
+
+			string message = string.Format(
+				this._configurationStorage.IsSaveBlocked ? Strings.Config_BrokenKept : Strings.Config_BrokenMovedAside,
+				brokenFile);
+
+			this.View.ShowWarning(Strings.Config_BrokenTitle, message);
 		}
 
 		private async void SaveWindowSize()
@@ -186,9 +213,19 @@ namespace EveOPreview.Presenters
 
 		private async void SaveApplicationSettings()
 		{
+			// Saving copies the view state into the configuration, so a save triggered before
+			// the settings reached the view would overwrite the stored config with empty values
+			if (!this._settingsLoaded)
+			{
+				return;
+			}
+
 			this._configuration.MinimizeToTray = this.View.MinimizeToTray;
+			this._configuration.Language = this.View.Language;
 
 			this._configuration.ThumbnailOpacity = (float)this.View.ThumbnailOpacity;
+			this._configuration.ThumbnailRefreshPeriod = this.View.ThumbnailRefreshPeriod;
+			this._configuration.MinimizedClientsRefreshPeriod = this.View.MinimizedClientsRefreshPeriod;
 
 			this._configuration.EnableClientLayoutTracking = this.View.EnableClientLayoutTracking;
 			this._configuration.HideActiveClientThumbnail = this.View.HideActiveClientThumbnail;
@@ -349,17 +386,17 @@ namespace EveOPreview.Presenters
 
 			foreach (string client in this.GetKnownClients())
 			{
-				actions.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + client, "Activate " + client));
+				actions.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + client, string.Format(Strings.Hotkey_ActivateClient, client)));
 			}
 
 			foreach (CycleGroup group in this._configuration.CycleGroups)
 			{
-				actions.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, true), "Cycle " + group.Name + " forward"));
-				actions.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, false), "Cycle " + group.Name + " backward"));
+				actions.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, true), string.Format(Strings.Hotkey_CycleForward, group.Name)));
+				actions.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, false), string.Format(Strings.Hotkey_CycleBackward, group.Name)));
 			}
 
-			actions.Add((MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL, "Minimize all clients"));
-			actions.Add((MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS, "Show / hide all previews"));
+			actions.Add((MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL, Strings.Hotkey_MinimizeAll));
+			actions.Add((MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS, Strings.Hotkey_ToggleAllPreviews));
 
 			this.View.SetHotkeyActions(actions);
 		}
@@ -380,30 +417,30 @@ namespace EveOPreview.Presenters
 					continue;
 				}
 
-				bindings.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + entry.Key, "Activate " + entry.Key, entry.Value));
+				bindings.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + entry.Key, string.Format(Strings.Hotkey_ActivateClient, entry.Key), entry.Value));
 			}
 
 			foreach (CycleGroup group in this._configuration.CycleGroups)
 			{
 				foreach (string hotkey in group.ForwardHotkeys.Where(x => !string.IsNullOrEmpty(x)))
 				{
-					bindings.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, true), "Cycle " + group.Name + " forward", hotkey));
+					bindings.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, true), string.Format(Strings.Hotkey_CycleForward, group.Name), hotkey));
 				}
 
 				foreach (string hotkey in group.BackwardHotkeys.Where(x => !string.IsNullOrEmpty(x)))
 				{
-					bindings.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, false), "Cycle " + group.Name + " backward", hotkey));
+					bindings.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, false), string.Format(Strings.Hotkey_CycleBackward, group.Name), hotkey));
 				}
 			}
 
 			foreach (string hotkey in this._configuration.MinimizeAllClientsHotkeys.Where(x => !string.IsNullOrEmpty(x)))
 			{
-				bindings.Add((MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL, "Minimize all clients", hotkey));
+				bindings.Add((MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL, Strings.Hotkey_MinimizeAll, hotkey));
 			}
 
 			foreach (string hotkey in this._configuration.ToggleAllPreviewsHotkeys.Where(x => !string.IsNullOrEmpty(x)))
 			{
-				bindings.Add((MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS, "Show / hide all previews", hotkey));
+				bindings.Add((MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS, Strings.Hotkey_ToggleAllPreviews, hotkey));
 			}
 
 			return bindings;
@@ -439,7 +476,7 @@ namespace EveOPreview.Presenters
 					continue;
 				}
 
-				this.View.SetHotkeyStatus(boundActionId == actionId ? "This hotkey is already assigned" : "Hotkey is already used: " + boundActionName);
+				this.View.SetHotkeyStatus(boundActionId == actionId ? Strings.Hotkey_AlreadyAssigned : string.Format(Strings.Hotkey_UsedBy, boundActionName));
 				return false;
 			}
 
@@ -520,7 +557,7 @@ namespace EveOPreview.Presenters
 		{
 			if (!this.IsUsableHotkey(hotkey))
 			{
-				this.View.SetHotkeyStatus("Unsupported key combination");
+				this.View.SetHotkeyStatus(Strings.Hotkey_Unsupported);
 				return;
 			}
 
@@ -537,14 +574,14 @@ namespace EveOPreview.Presenters
 			}
 
 			await this.ApplyHotkeySettings();
-			this.View.SetHotkeyStatus("Assigned: " + normalized);
+			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Assigned, normalized));
 		}
 
 		private async void EditHotkeyBinding(string oldActionId, string oldHotkey, string newActionId, string newHotkey)
 		{
 			if (!this.IsUsableHotkey(newHotkey))
 			{
-				this.View.SetHotkeyStatus("Unsupported key combination");
+				this.View.SetHotkeyStatus(Strings.Hotkey_Unsupported);
 				return;
 			}
 
@@ -566,7 +603,7 @@ namespace EveOPreview.Presenters
 			}
 
 			await this.ApplyHotkeySettings();
-			this.View.SetHotkeyStatus("Updated: " + normalizedNew);
+			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Updated, normalizedNew));
 		}
 
 		private async void RemoveHotkeyBinding(string actionId, string hotkey)
@@ -576,7 +613,7 @@ namespace EveOPreview.Presenters
 			this.RemoveHotkeyFromConfig(actionId, normalized);
 
 			await this.ApplyHotkeySettings();
-			this.View.SetHotkeyStatus("Removed: " + normalized);
+			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Removed, normalized));
 		}
 
 		private async Task ApplyHotkeySettings()
@@ -656,12 +693,12 @@ namespace EveOPreview.Presenters
 		private async void AddCycleGroup()
 		{
 			int index = 1;
-			while (this.FindCycleGroup("Group " + index) != null)
+			while (this.FindCycleGroup(string.Format(Strings.CycleGroups_DefaultName, index)) != null)
 			{
 				index++;
 			}
 
-			this._configuration.CycleGroups.Add(new CycleGroup { Name = "Group " + index });
+			this._configuration.CycleGroups.Add(new CycleGroup { Name = string.Format(Strings.CycleGroups_DefaultName, index) });
 
 			await this.ApplyCycleGroupSettings();
 		}
@@ -679,7 +716,7 @@ namespace EveOPreview.Presenters
 
 			if ((existingGroup != null) && (existingGroup != group))
 			{
-				this.View.SetHotkeyStatus("A cycle group named '" + newName + "' already exists");
+				this.View.SetHotkeyStatus(string.Format(Strings.CycleGroups_NameExists, newName));
 				return;
 			}
 

@@ -17,6 +17,7 @@ namespace EveOPreview.Configuration
 		bool MinimizeToTray { get; set; }
 		int ThumbnailRefreshPeriod { get; set; }
 		int ThumbnailResizeTimeoutPeriod { get; set; }
+		int MinimizedClientsRefreshPeriod { get; set; }
 		bool EnableWineCompatibilityMode { get; set; }
 
 		double ThumbnailOpacity { get; set; }
@@ -67,6 +68,7 @@ namespace EveOPreview.Configuration
 		Font OverlayLabelFont { get; set; }
 
 		string IconName { get; set; }
+		string Language { get; set; }
 		List<string> MinimizeAllClientsHotkeys { get; set; }
 		List<string> ToggleAllPreviewsHotkeys { get; set; }
 

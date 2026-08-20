@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 using EveOPreview.Configuration;
+using EveOPreview.Localization;
 using EveOPreview.Presenters;
 using EveOPreview.Services;
 using EveOPreview.View;
@@ -46,7 +47,11 @@ namespace EveOPreview
 			ExceptionHandler handler = new ExceptionHandler();
 			handler.SetupExceptionHandlers();
 
-			IApplicationController controller = Program.InitializeApplicationController();
+			IApplicationController controller = Program.InitializeApplicationController(out IIocContainer container);
+
+			// The UI culture is read while the controls are being built, so the language
+			// has to be in place before the first form is created
+			Program.ApplyConfiguredLanguage(container);
 
 			Program.InitializeWinForms();
 
@@ -88,7 +93,22 @@ namespace EveOPreview
 #endif
 		}
 
-		private static IApplicationController InitializeApplicationController()
+		private static void ApplyConfiguredLanguage(IIocContainer container)
+		{
+			try
+			{
+				// Only the language is read here. A full Load() would fill the shared
+				// configuration before the views exist, and the first settings save would
+				// then write those empty views back over the user's config
+				LanguageManager.Apply(container.Resolve<IConfigurationStorage>().ReadLanguage());
+			}
+			catch (Exception)
+			{
+				// A broken config file leaves the app in the system language
+			}
+		}
+
+		private static IApplicationController InitializeApplicationController(out IIocContainer iocContainer)
 		{
 			IIocContainer container = new LightInjectContainer();
 
@@ -123,6 +143,8 @@ namespace EveOPreview
 
 			controller.RegisterView<IMainFormView, MainForm>();
 			controller.RegisterInstance(new ApplicationContext());
+
+			iocContainer = container;
 
 			return controller;
 		}

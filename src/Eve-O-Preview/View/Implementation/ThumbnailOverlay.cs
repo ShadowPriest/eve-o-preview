@@ -137,6 +137,8 @@ namespace EveOPreview.View
 				return;
 			}
 
+			font = font ?? this.CycleGroupNameLabel.Font;
+
 			if (this.CycleGroupNameLabel.Font.Size != font.Size || this.CycleGroupNameLabel.Font.FontFamily != font.FontFamily)
 			{
 				this.CycleGroupNameLabel.Font = font;
@@ -204,6 +206,13 @@ namespace EveOPreview.View
 
 		public void SetPropertiesOverlayLabel(Font f, System.Drawing.Color c, ZoomAnchor anchor)
 		{
+			// The label keeps its current font when the caller has none to offer,
+			// rather than taking the whole application down
+			if (f == null)
+			{
+				f = this.OverlayLabel.Font;
+			}
+
 			if (
 				this.OverlayLabel.Font.Size != f.Size ||
 				this.OverlayLabel.Font.FontFamily != f.FontFamily ||

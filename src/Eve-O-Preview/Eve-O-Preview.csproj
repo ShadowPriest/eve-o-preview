@@ -95,6 +95,17 @@
   <ItemGroup>
     <EmbeddedResource Include="app.manifest" />
   </ItemGroup>
+  <!-- UI strings. The typed accessor is generated during the build, so it works on the
+       command line as well and does not have to be kept in the repo -->
+  <ItemGroup>
+    <EmbeddedResource Update="Localization\Strings.resx">
+      <Generator>MSBuild:Compile</Generator>
+      <StronglyTypedFileName>$(IntermediateOutputPath)\Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>EveOPreview.Localization</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+    </EmbeddedResource>
+  </ItemGroup>
   <ItemGroup>
     <Content Include="original-icon.ico" />
   </ItemGroup>
@@ -121,10 +132,5 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="AboutBox.cs" />
-    <Compile Remove="AboutBox.Designer.cs" />
-    <EmbeddedResource Remove="AboutBox.resx" />
   </ItemGroup>
 </Project>

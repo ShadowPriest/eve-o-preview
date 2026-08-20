@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Tab_General" xml:space="preserve">
+    <value>Общие</value>
+  </data>
+  <data name="Tab_Previews" xml:space="preserve">
+    <value>Превью</value>
+  </data>
+  <data name="Tab_Overlay" xml:space="preserve">
+    <value>Оверлей</value>
+  </data>
+  <data name="Tab_ClientWindows" xml:space="preserve">
+    <value>Окна клиентов</value>
+  </data>
+  <data name="Tab_ActiveClients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="Tab_CycleGroups" xml:space="preserve">
+    <value>Группы</value>
+  </data>
+  <data name="Tab_Hotkeys" xml:space="preserve">
+    <value>Хоткеи</value>
+  </data>
+  <data name="Tab_About" xml:space="preserve">
+    <value>О программе</value>
+  </data>
+  <data name="General_MinimizeToTray" xml:space="preserve">
+    <value>Сворачивать в системный трей</value>
+  </data>
+  <data name="General_Language" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="General_LanguageRestartHint" xml:space="preserve">
+    <value>Применится после перезапуска</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>Как в системе</value>
+  </data>
+  <data name="ClientWindows_TrackLocations" xml:space="preserve">
+    <value>Запоминать расположение окон клиентов</value>
+  </data>
+  <data name="ClientWindows_MinimizeInactive" xml:space="preserve">
+    <value>Сворачивать неактивные клиенты EVE</value>
+  </data>
+  <data name="ClientWindows_HideCaption" xml:space="preserve">
+    <value>Убрать заголовок окна у клиентов</value>
+  </data>
+  <data name="ClientWindows_DisableAnimation" xml:space="preserve">
+    <value>Отключить анимацию сворачивания окон</value>
+  </data>
+  <data name="PreviewTab_General" xml:space="preserve">
+    <value>Общие</value>
+  </data>
+  <data name="PreviewTab_Layout" xml:space="preserve">
+    <value>Размещение</value>
+  </data>
+  <data name="PreviewTab_Zoom" xml:space="preserve">
+    <value>Увеличение</value>
+  </data>
+  <data name="PreviewTab_Visualization" xml:space="preserve">
+    <value>Визуализация</value>
+  </data>
+  <data name="PreviewTab_Rendering" xml:space="preserve">
+    <value>Рендеринг</value>
+  </data>
+  <data name="Preview_RefreshPeriod" xml:space="preserve">
+    <value>Период обновления превью (мс)</value>
+  </data>
+  <data name="Preview_MinimizedRefreshPeriod" xml:space="preserve">
+    <value>Период обновления свёрнутых клиентов (с)</value>
+  </data>
+  <data name="Preview_MinimizedRefreshHint" xml:space="preserve">
+    <value>Эти интервалы задают фоновое обновление свёрнутых клиентов: Windows не может рендерить свёрнутое окно в реальном времени, поэтому клиент по этому расписанию на мгновение пробуждается и перерисовывает своё превью. 0 — не обновлять.</value>
+  </data>
+  <data name="ClientWindows_MinimizedRenderingNote" xml:space="preserve">
+    <value>Windows не рендерит свёрнутые окна в реальном времени, поэтому их превью обновляются периодически. Интервалы задаются на вкладке Превью → Рендеринг.</value>
+  </data>
+  <data name="Preview_HideActiveClient" xml:space="preserve">
+    <value>Скрывать превью активного клиента</value>
+  </data>
+  <data name="Preview_AlwaysOnTop" xml:space="preserve">
+    <value>Превью поверх всех окон</value>
+  </data>
+  <data name="Preview_HideOnLostFocus" xml:space="preserve">
+    <value>Скрывать превью, когда клиент EVE не активен</value>
+  </data>
+  <data name="Preview_Opacity" xml:space="preserve">
+    <value>Прозрачность</value>
+  </data>
+  <data name="Preview_PreventPreviews" xml:space="preserve">
+    <value>Не показывать изображение в превью</value>
+  </data>
+  <data name="Preview_PlaceholderColor" xml:space="preserve">
+    <value>Цвет заглушки</value>
+  </data>
+  <data name="Preview_Width" xml:space="preserve">
+    <value>Ширина превью</value>
+  </data>
+  <data name="Preview_Height" xml:space="preserve">
+    <value>Высота превью</value>
+  </data>
+  <data name="Preview_LockLocation" xml:space="preserve">
+    <value>Зафиксировать положение превью</value>
+  </data>
+  <data name="Preview_PerClientLayouts" xml:space="preserve">
+    <value>Своя раскладка для каждого клиента EVE</value>
+  </data>
+  <data name="Preview_SnapToGrid" xml:space="preserve">
+    <value>Привязывать превью к сетке</value>
+  </data>
+  <data name="Preview_GridStepX" xml:space="preserve">
+    <value>Шаг сетки по X</value>
+  </data>
+  <data name="Preview_GridStepY" xml:space="preserve">
+    <value>Шаг сетки по Y</value>
+  </data>
+  <data name="Preview_ZoomOnHover" xml:space="preserve">
+    <value>Увеличивать при наведении</value>
+  </data>
+  <data name="Preview_ZoomFactor" xml:space="preserve">
+    <value>Кратность</value>
+  </data>
+  <data name="Preview_ZoomAnchor" xml:space="preserve">
+    <value>Точка привязки</value>
+  </data>
+  <data name="OverlayTab_General" xml:space="preserve">
+    <value>Общие</value>
+  </data>
+  <data name="OverlayTab_WindowName" xml:space="preserve">
+    <value>Имя окна</value>
+  </data>
+  <data name="OverlayTab_GroupName" xml:space="preserve">
+    <value>Имя группы</value>
+  </data>
+  <data name="OverlayTab_Border" xml:space="preserve">
+    <value>Рамка</value>
+  </data>
+  <data name="Overlay_ShowOverlay" xml:space="preserve">
+    <value>Показывать оверлей</value>
+  </data>
+  <data name="Overlay_ShowFrames" xml:space="preserve">
+    <value>Показывать рамки превью</value>
+  </data>
+  <data name="Overlay_AlwaysOnTop" xml:space="preserve">
+    <value>Оверлей всегда над превью</value>
+  </data>
+  <data name="Overlay_ShowWindowName" xml:space="preserve">
+    <value>Показывать имя окна</value>
+  </data>
+  <data name="Overlay_ShowGroupName" xml:space="preserve">
+    <value>Показывать имя группы</value>
+  </data>
+  <data name="Overlay_Color" xml:space="preserve">
+    <value>Цвет</value>
+  </data>
+  <data name="Overlay_Position" xml:space="preserve">
+    <value>Положение</value>
+  </data>
+  <data name="Overlay_Font" xml:space="preserve">
+    <value>Шрифт...</value>
+  </data>
+  <data name="Overlay_WindowNameSample" xml:space="preserve">
+    <value>EVE - Имя персонажа</value>
+  </data>
+  <data name="Overlay_GroupNameSample" xml:space="preserve">
+    <value>Группа 1</value>
+  </data>
+  <data name="Overlay_HighlightActiveClient" xml:space="preserve">
+    <value>Подсвечивать активный клиент</value>
+  </data>
+  <data name="Overlay_BorderThickness" xml:space="preserve">
+    <value>Толщина</value>
+  </data>
+  <data name="Clients_ListLabel" xml:space="preserve">
+    <value>Превью</value>
+  </data>
+  <data name="Clients_CycleGroup" xml:space="preserve">
+    <value>Группа</value>
+  </data>
+  <data name="Clients_NoCycleGroup" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="CycleGroups_Group" xml:space="preserve">
+    <value>Группа</value>
+  </data>
+  <data name="CycleGroups_Clients" xml:space="preserve">
+    <value>Клиенты в группе (порядок обхода)</value>
+  </data>
+  <data name="CycleGroups_MoveUp" xml:space="preserve">
+    <value>Выше</value>
+  </data>
+  <data name="CycleGroups_MoveDown" xml:space="preserve">
+    <value>Ниже</value>
+  </data>
+  <data name="CycleGroups_RemoveClient" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="CycleGroups_AddClient" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="CycleGroups_RenameTitle" xml:space="preserve">
+    <value>Переименовать группу</value>
+  </data>
+  <data name="CycleGroups_NamePrompt" xml:space="preserve">
+    <value>Название группы</value>
+  </data>
+  <data name="Hotkeys_ColumnAction" xml:space="preserve">
+    <value>Действие</value>
+  </data>
+  <data name="Hotkeys_ColumnHotkey" xml:space="preserve">
+    <value>Сочетание</value>
+  </data>
+  <data name="Hotkeys_Add" xml:space="preserve">
+    <value>Добавить...</value>
+  </data>
+  <data name="Hotkeys_Edit" xml:space="preserve">
+    <value>Изменить...</value>
+  </data>
+  <data name="Hotkeys_Remove" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="Hotkeys_SelectBindingFirst" xml:space="preserve">
+    <value>Сначала выберите привязку в списке</value>
+  </data>
+  <data name="About_Credit" xml:space="preserve">
+    <value>Благодарность прежнему мейнтейнеру: Phrynohyas Tig-Rah</value>
+  </data>
+  <data name="About_ForumHint" xml:space="preserve">
+    <value>Подробности — в теме на форуме:</value>
+  </data>
+  <data name="Crash_Message" xml:space="preserve">
+    <value>В работе EVE-O-Preview произошла ошибка, и приложение будет закрыто. Подробности сохранены в файле журнала.</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Hotkey_ActivateClient" xml:space="preserve">
+    <value>Переключиться на {0}</value>
+  </data>
+  <data name="Hotkey_CycleForward" xml:space="preserve">
+    <value>Обход группы {0} вперёд</value>
+  </data>
+  <data name="Hotkey_CycleBackward" xml:space="preserve">
+    <value>Обход группы {0} назад</value>
+  </data>
+  <data name="Hotkey_MinimizeAll" xml:space="preserve">
+    <value>Свернуть все клиенты</value>
+  </data>
+  <data name="Hotkey_ToggleAllPreviews" xml:space="preserve">
+    <value>Показать / скрыть все превью</value>
+  </data>
+  <data name="Hotkey_Unsupported" xml:space="preserve">
+    <value>Неподдерживаемое сочетание</value>
+  </data>
+  <data name="Hotkey_AlreadyAssigned" xml:space="preserve">
+    <value>Это сочетание уже назначено</value>
+  </data>
+  <data name="Hotkey_UsedBy" xml:space="preserve">
+    <value>Сочетание уже занято: {0}</value>
+  </data>
+  <data name="Hotkey_Assigned" xml:space="preserve">
+    <value>Назначено: {0}</value>
+  </data>
+  <data name="Hotkey_Updated" xml:space="preserve">
+    <value>Изменено: {0}</value>
+  </data>
+  <data name="Hotkey_Removed" xml:space="preserve">
+    <value>Удалено: {0}</value>
+  </data>
+  <data name="HotkeyDialog_AddTitle" xml:space="preserve">
+    <value>Новое сочетание</value>
+  </data>
+  <data name="HotkeyDialog_EditTitle" xml:space="preserve">
+    <value>Изменить сочетание</value>
+  </data>
+  <data name="HotkeyDialog_Action" xml:space="preserve">
+    <value>Действие</value>
+  </data>
+  <data name="HotkeyDialog_Add" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="HotkeyDialog_Save" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="HotkeyDialog_Forward" xml:space="preserve">
+    <value>Вперёд</value>
+  </data>
+  <data name="HotkeyDialog_Backward" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="HotkeyDialog_CycleGroupItem" xml:space="preserve">
+    <value>Группа: {0}</value>
+  </data>
+  <data name="HotkeyDialog_ActivateClientItem" xml:space="preserve">
+    <value>Переключиться на клиента</value>
+  </data>
+  <data name="HotkeyDialog_Direction" xml:space="preserve">
+    <value>Направление обхода</value>
+  </data>
+  <data name="HotkeyDialog_ClientWindow" xml:space="preserve">
+    <value>Окно клиента</value>
+  </data>
+  <data name="HotkeyDialog_CaptureLabel" xml:space="preserve">
+    <value>Сочетание (клавиши, кнопки мыши, колесо; Esc — сброс)</value>
+  </data>
+  <data name="HotkeyDialog_CapturePlaceholder" xml:space="preserve">
+    <value>Нажмите клавиши или кнопку мыши...</value>
+  </data>
+  <data name="HotkeyDialog_ConflictWith" xml:space="preserve">
+    <value>Это сочетание уже занято: {0}</value>
+  </data>
+  <data name="HotkeyDialog_NoBinding" xml:space="preserve">
+    <value>Сначала нажмите сочетание</value>
+  </data>
+  <data name="HotkeyDialog_NoAction" xml:space="preserve">
+    <value>Сначала выберите действие</value>
+  </data>
+  <data name="HotkeyDialog_NoClient" xml:space="preserve">
+    <value>Сначала выберите окно клиента</value>
+  </data>
+  <data name="CycleGroups_DefaultName" xml:space="preserve">
+    <value>Группа {0}</value>
+  </data>
+  <data name="CycleGroups_NameExists" xml:space="preserve">
+    <value>Группа с именем «{0}» уже существует</value>
+  </data>
+  <data name="About_Description" xml:space="preserve">
+    <value>Продвинутый переключатель окон для клиентов EVE Online.
+
+Программа НЕ
+• изменяет интерфейс EVE Online
+• показывает изменённый интерфейс EVE Online
+• рассылает события клавиатуры или мыши
+• взаимодействует с EVE Online иначе, чем;
+    - меняя размер окна или выводя его на передний план</value>
+  </data>
+  <data name="Config_BrokenTitle" xml:space="preserve">
+    <value>Не удалось прочитать настройки</value>
+  </data>
+  <data name="Config_BrokenMovedAside" xml:space="preserve">
+    <value>Файл настроек не читается, поэтому он сохранён как
+
+{0}
+
+а приложение запущено с настройками по умолчанию.</value>
+  </data>
+  <data name="Config_BrokenKept" xml:space="preserve">
+    <value>Файл настроек не читается:
+
+{0}
+
+Приложение запущено с настройками по умолчанию и не будет сохранять настройки, пока этот файл не будет исправлен или удалён.</value>
+  </data>
+  <data name="Tray_Restore" xml:space="preserve">
+    <value>Развернуть</value>
+  </data>
+  <data name="Tray_Exit" xml:space="preserve">
+    <value>Выход</value>
+  </data>
+</root>

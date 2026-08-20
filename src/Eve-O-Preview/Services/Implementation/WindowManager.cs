@@ -15,9 +15,11 @@ namespace EveOPreview.Services.Implementation
 		#endregion
 
 		#region Private fields
+#if LINUX
 		private readonly bool _enableWineCompatabilityMode;
 		private string _bashLocation;
 		private string _wmctrlLocation;
+#endif
 		private const string EXCEPTION_DUMP_FILE_NAME = "EVE-O-Preview.log";
 		#endregion
 
@@ -327,6 +329,15 @@ namespace EveOPreview.Services.Implementation
 			{
 				User32NativeMethods.StopWindowFlashing(handle);
 			}
+		}
+
+		/// <summary>
+		/// Brings a minimized window back to its previous size and position without
+		/// giving it focus and without touching the current foreground window
+		/// </summary>
+		public void RestoreWindowWithoutActivation(IntPtr handle)
+		{
+			User32NativeMethods.ShowWindowAsync(handle, InteropConstants.SW_SHOWNOACTIVATE);
 		}
 
 		public void MoveWindow(IntPtr handle, int left, int top, int width, int height)

@@ -127,6 +127,29 @@ namespace EveOPreview.Services.Interop
 			User32NativeMethods.FlashWindowEx(ref info);
 		}
 
+		public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+		[DllImport("user32.dll")]
+		public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+		[DllImport("user32.dll")]
+		public static extern bool IsWindowVisible(IntPtr hWnd);
+
+		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+		public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+		public const uint GW_OWNER = 4;
+
+		[StructLayout(LayoutKind.Sequential)]
+		public struct LASTINPUTINFO
+		{
+			public uint cbSize;
+			public uint dwTime;
+		}
+
+		[DllImport("user32.dll")]
+		public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
 		public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
 		[DllImport("user32.dll")]

@@ -1,7 +1,9 @@
 ﻿using EveOPreview.Configuration;
+using EveOPreview.Services.Interop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace EveOPreview.Services.Implementation
 {
@@ -76,45 +78,27 @@ namespace EveOPreview.Services.Implementation
 			removedProcesses = new List<IProcessInfo>(16);
 
 			IList<IntPtr> knownProcesses = new List<IntPtr>(this._processCache.Keys);
-			foreach (Process process in Process.GetProcesses())
+
+			foreach ((IntPtr handle, string title) in this.GetClientWindows())
 			{
-				// Process instances hold system handles; this method runs on a timer
-				// so they have to be released deterministically
-				using (process)
+				this._processCache.TryGetValue(handle, out string cachedTitle);
+
+				if (cachedTitle == null)
 				{
-					string processName = process.ProcessName;
-
-					if (!this.IsMonitoredProcess(processName))
+					// This is a new client window
+					this._processCache.Add(handle, title);
+					addedProcesses.Add(new ProcessInfo(handle, title));
+				}
+				else
+				{
+					// This is an already known client window
+					if (cachedTitle != title)
 					{
-						continue;
+						this._processCache[handle] = title;
+						updatedProcesses.Add(new ProcessInfo(handle, title));
 					}
 
-					IntPtr mainWindowHandle = process.MainWindowHandle;
-					if (mainWindowHandle == IntPtr.Zero)
-					{
-						continue; // No need to monitor non-visual processes
-					}
-
-					string mainWindowTitle = process.MainWindowTitle.Replace("—", "-");
-					this._processCache.TryGetValue(mainWindowHandle, out string cachedTitle);
-
-					if (cachedTitle == null)
-					{
-						// This is a new process in the list
-						this._processCache.Add(mainWindowHandle, mainWindowTitle);
-						addedProcesses.Add(new ProcessInfo(mainWindowHandle, mainWindowTitle));
-					}
-					else
-					{
-						// This is an already known process
-						if (cachedTitle != mainWindowTitle)
-						{
-							this._processCache[mainWindowHandle] = mainWindowTitle;
-							updatedProcesses.Add(new ProcessInfo(mainWindowHandle, mainWindowTitle));
-						}
-
-						knownProcesses.Remove(mainWindowHandle);
-					}
+					knownProcesses.Remove(handle);
 				}
 			}
 
@@ -124,6 +108,65 @@ namespace EveOPreview.Services.Implementation
 				removedProcesses.Add(new ProcessInfo(index, title));
 				this._processCache.Remove(index);
 			}
+		}
+
+		/// <summary>
+		/// Enumerates every visible unowned top-level window of the monitored processes.
+		/// Process.MainWindowHandle is deliberately NOT used here: it reports a single
+		/// 'main' window per process, and after an in-game disconnect the EVE client can
+		/// end up presenting its live UI in a different window than the reported one,
+		/// leaving the preview forever bound to a dead window (a stuck black thumbnail)
+		/// </summary>
+		private List<(IntPtr Handle, string Title)> GetClientWindows()
+		{
+			HashSet<uint> monitoredProcessIds = new HashSet<uint>();
+
+			foreach (Process process in Process.GetProcesses())
+			{
+				// Process instances hold system handles; this method runs on a timer
+				// so they have to be released deterministically
+				using (process)
+				{
+					if (this.IsMonitoredProcess(process.ProcessName))
+					{
+						monitoredProcessIds.Add((uint)process.Id);
+					}
+				}
+			}
+
+			List<(IntPtr Handle, string Title)> clientWindows = new List<(IntPtr, string)>(16);
+
+			if (monitoredProcessIds.Count == 0)
+			{
+				return clientWindows;
+			}
+
+			StringBuilder titleBuffer = new StringBuilder(512);
+
+			User32NativeMethods.EnumWindows((hwnd, lparam) =>
+			{
+				User32NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+
+				if (!monitoredProcessIds.Contains(processId)
+					|| !User32NativeMethods.IsWindowVisible(hwnd)
+					|| (User32NativeMethods.GetWindow(hwnd, User32NativeMethods.GW_OWNER) != IntPtr.Zero))
+				{
+					return true;
+				}
+
+				titleBuffer.Clear();
+				User32NativeMethods.GetWindowText(hwnd, titleBuffer, titleBuffer.Capacity);
+
+				// Auxiliary windows without a title are of no interest
+				if (titleBuffer.Length > 0)
+				{
+					clientWindows.Add((hwnd, titleBuffer.ToString().Replace("—", "-")));
+				}
+
+				return true;
+			}, IntPtr.Zero);
+
+			return clientWindows;
 		}
 	}
 }

@@ -1,12 +1,10 @@
-﻿using EveOPreview.Configuration;
-using EveOPreview.Properties;
+﻿using EveOPreview.Localization;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace EveOPreview.View
 {
@@ -31,6 +29,8 @@ namespace EveOPreview.View
 		private List<(string ActionId, string ActionName, string Hotkey)> _hotkeyBindings;
 		private List<string> _activeClients;
 		private Point? _thumbnailsListClickLocation;
+		private readonly List<string> _languages;
+		private string _loadedLanguage;
 		#endregion
 
 		public MainForm(ApplicationContext context)
@@ -50,9 +50,13 @@ namespace EveOPreview.View
 			this._hotkeyActions = new List<(string ActionId, string DisplayName)>();
 			this._hotkeyBindings = new List<(string ActionId, string ActionName, string Hotkey)>();
 			this._activeClients = new List<string>();
+			this._languages = new List<string>();
+			this._loadedLanguage = LanguageManager.SYSTEM_LANGUAGE;
 
 			InitializeComponent();
 
+			this.ApplyLocalization();
+			this.InitLanguages();
 			this.InitTabSeparator();
 
 			this.ThumbnailsList.DisplayMember = "Title";
@@ -71,14 +75,26 @@ namespace EveOPreview.View
 			this.InitOverlayLabelMap();
 			this.InitCycleGroupIndicatorMap();
 			this.InitFormSize();
-
-			this.AnimationStyleCombo.DataSource = Enum.GetValues(typeof(AnimationStyle));
 		}
 
 		public bool MinimizeToTray
 		{
 			get => this.MinimizeToTrayCheckBox.Checked;
 			set => this.MinimizeToTrayCheckBox.Checked = value;
+		}
+
+		public string Language
+		{
+			get
+			{
+				int index = this.LanguageCombo.SelectedIndex;
+				return (index >= 0) && (index < this._languages.Count) ? this._languages[index] : LanguageManager.SYSTEM_LANGUAGE;
+			}
+			set
+			{
+				this._loadedLanguage = LanguageManager.Normalize(value);
+				this.LanguageCombo.SelectedIndex = Math.Max(0, this._languages.IndexOf(this._loadedLanguage));
+			}
 		}
 
 		public string IconName
@@ -107,9 +123,9 @@ namespace EveOPreview.View
 						this.NotifyIcon.Icon = this.Icon;
 					}
 				}
-				catch (Exception ex)
+				catch (Exception)
 				{
-					// Log ?
+					// A missing or unreadable icon resource leaves the default one in place
 				}
 
 				if (value != "")
@@ -138,6 +154,18 @@ namespace EveOPreview.View
 			}
 		}
 
+		public int ThumbnailRefreshPeriod
+		{
+			get => (int)this.ThumbnailRefreshPeriodNumericEdit.Value;
+			set => this.ThumbnailRefreshPeriodNumericEdit.Value = Math.Max(this.ThumbnailRefreshPeriodNumericEdit.Minimum, Math.Min(this.ThumbnailRefreshPeriodNumericEdit.Maximum, value));
+		}
+
+		public int MinimizedClientsRefreshPeriod
+		{
+			get => (int)this.MinimizedClientsRefreshPeriodNumericEdit.Value;
+			set => this.MinimizedClientsRefreshPeriodNumericEdit.Value = Math.Max(this.MinimizedClientsRefreshPeriodNumericEdit.Minimum, Math.Min(this.MinimizedClientsRefreshPeriodNumericEdit.Maximum, value));
+		}
+
 		public bool EnableClientLayoutTracking
 		{
 			get => this.EnableClientLayoutTrackingCheckBox.Checked;
@@ -162,8 +190,8 @@ namespace EveOPreview.View
 		}
 		public ViewAnimationStyle WindowsAnimationStyle
 		{
-			get => (ViewAnimationStyle)this.AnimationStyleCombo.SelectedItem;
-			set => this.AnimationStyleCombo.SelectedIndex = (int)value;
+			get => this.DisableAnimationCheckBox.Checked ? ViewAnimationStyle.NoAnimation : ViewAnimationStyle.OriginalAnimation;
+			set => this.DisableAnimationCheckBox.Checked = value == ViewAnimationStyle.NoAnimation;
 		}
 
 		public bool ShowThumbnailsAlwaysOnTop
@@ -491,6 +519,13 @@ namespace EveOPreview.View
 			Application.Run(this._context);
 		}
 
+		// Raised while the main form is still being brought up, so the dialog is shown
+		// without an owner - the form has no handle to parent it to yet
+		public void ShowWarning(string title, string message)
+		{
+			MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+		}
+
 		public void SetThumbnailSizeLimitations(Size minimumSize, Size maximumSize)
 		{
 			this._minimumSize = minimumSize;
@@ -630,12 +665,12 @@ namespace EveOPreview.View
 			string selectedClientGroup = this.ClientCycleGroupCombo.SelectedItem as string;
 			this.ClientCycleGroupCombo.BeginUpdate();
 			this.ClientCycleGroupCombo.Items.Clear();
-			this.ClientCycleGroupCombo.Items.Add("None");
+			this.ClientCycleGroupCombo.Items.Add(Strings.Clients_NoCycleGroup);
 			foreach (string name in this._cycleGroupNames)
 			{
 				this.ClientCycleGroupCombo.Items.Add(name);
 			}
-			this.ClientCycleGroupCombo.SelectedIndex = Math.Max(0, this.ClientCycleGroupCombo.Items.IndexOf(selectedClientGroup ?? "None"));
+			this.ClientCycleGroupCombo.SelectedIndex = Math.Max(0, this.ClientCycleGroupCombo.Items.IndexOf(selectedClientGroup ?? Strings.Clients_NoCycleGroup));
 			this.ClientCycleGroupCombo.EndUpdate();
 
 			this._suppressEvents = suppressed;
@@ -754,6 +789,20 @@ namespace EveOPreview.View
 			{
 				this.RefreshOverlaySubPages();
 			}
+
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		// Forms are built with the culture that was active at startup, so a language picked
+		// here only takes effect on the next run
+		private void LanguageChanged_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			this.LanguageRestartHintLabel.Visible = this.Language != this._loadedLanguage;
 
 			this.ApplicationSettingsChanged?.Invoke();
 		}
@@ -976,7 +1025,7 @@ namespace EveOPreview.View
 		{
 			if (this.HotkeyBindingsListView.SelectedItems.Count == 0)
 			{
-				this.SetHotkeyStatus("Select a binding in the list first");
+				this.SetHotkeyStatus(Strings.Hotkeys_SelectBindingFirst);
 				return;
 			}
 
@@ -1002,7 +1051,7 @@ namespace EveOPreview.View
 				return;
 			}
 
-			using (TextPromptDialog dialog = new TextPromptDialog("Rename cycle group", "Group name", groupName))
+			using (TextPromptDialog dialog = new TextPromptDialog(Strings.CycleGroups_RenameTitle, Strings.CycleGroups_NamePrompt, groupName))
 			{
 				if (this.ShowModalDialog(dialog) != DialogResult.OK)
 				{
@@ -1027,7 +1076,7 @@ namespace EveOPreview.View
 		{
 			if (this.HotkeyBindingsListView.SelectedItems.Count == 0)
 			{
-				this.SetHotkeyStatus("Select a binding in the list first");
+				this.SetHotkeyStatus(Strings.Hotkeys_SelectBindingFirst);
 				return;
 			}
 
@@ -1194,7 +1243,7 @@ namespace EveOPreview.View
 				groupName = groups[0];
 			}
 
-			this.ClientCycleGroupCombo.SelectedIndex = Math.Max(0, this.ClientCycleGroupCombo.Items.IndexOf(groupName ?? "None"));
+			this.ClientCycleGroupCombo.SelectedIndex = Math.Max(0, this.ClientCycleGroupCombo.Items.IndexOf(groupName ?? Strings.Clients_NoCycleGroup));
 			this.ClientCycleGroupCombo.Enabled = title != null;
 
 			this._suppressEvents = suppressed;
@@ -1226,17 +1275,162 @@ namespace EveOPreview.View
 		}
 		#endregion
 
+		/// <summary>
+		/// Replaces the English captions the designer assigns with the ones for the current
+		/// UI culture. Controls are matched by name, so the designer file stays the single
+		/// place where the layout is defined
+		/// </summary>
+		private void ApplyLocalization()
+		{
+			Dictionary<string, string> texts = new Dictionary<string, string>(StringComparer.Ordinal)
+			{
+				["GeneralTabPage"] = Strings.Tab_General,
+				["ThumbnailTabPage"] = Strings.Tab_Previews,
+				["OverlayTabPage"] = Strings.Tab_Overlay,
+				["ClientWindowsTabPage"] = Strings.Tab_ClientWindows,
+				["ClientsTabPage"] = Strings.Tab_ActiveClients,
+				["CycleGroupsTabPage"] = Strings.Tab_CycleGroups,
+				["HotkeysTabPage"] = Strings.Tab_Hotkeys,
+				["AboutTabPage"] = Strings.Tab_About,
+
+				["MinimizeToTrayCheckBox"] = Strings.General_MinimizeToTray,
+				["LanguageLabel"] = Strings.General_Language,
+				["LanguageRestartHintLabel"] = Strings.General_LanguageRestartHint,
+
+				["EnableClientLayoutTrackingCheckBox"] = Strings.ClientWindows_TrackLocations,
+				["MinimizeInactiveClientsCheckBox"] = Strings.ClientWindows_MinimizeInactive,
+				["HideCaptionOnClientsCheckBox"] = Strings.ClientWindows_HideCaption,
+				["DisableAnimationCheckBox"] = Strings.ClientWindows_DisableAnimation,
+				["MinimizedRenderingNoteLabel"] = Strings.ClientWindows_MinimizedRenderingNote,
+
+				["PreviewGeneralSubPage"] = Strings.PreviewTab_General,
+				["PreviewVisualSubPage"] = Strings.PreviewTab_Visualization,
+				["PreviewRenderingSubPage"] = Strings.PreviewTab_Rendering,
+				["PreviewLayoutSubPage"] = Strings.PreviewTab_Layout,
+				["PreviewZoomSubPage"] = Strings.PreviewTab_Zoom,
+				["ThumbnailRefreshPeriodLabel"] = Strings.Preview_RefreshPeriod,
+				["MinimizedRefreshPeriodLabel"] = Strings.Preview_MinimizedRefreshPeriod,
+				["MinimizedRefreshHintLabel"] = Strings.Preview_MinimizedRefreshHint,
+				["HideActiveClientThumbnailCheckBox"] = Strings.Preview_HideActiveClient,
+				["ShowThumbnailsAlwaysOnTopCheckBox"] = Strings.Preview_AlwaysOnTop,
+				["HideThumbnailsOnLostFocusCheckBox"] = Strings.Preview_HideOnLostFocus,
+				["OpacityLabel"] = Strings.Preview_Opacity,
+				["PreventPreviewsCheckBox"] = Strings.Preview_PreventPreviews,
+				["PreventPreviewColorLabel"] = Strings.Preview_PlaceholderColor,
+				["WidthLabel"] = Strings.Preview_Width,
+				["HeightLabel"] = Strings.Preview_Height,
+				["LockThumbnailLocationCheckbox"] = Strings.Preview_LockLocation,
+				["EnablePerClientThumbnailsLayoutsCheckBox"] = Strings.Preview_PerClientLayouts,
+				["ThumbnailSnapToGridCheckBox"] = Strings.Preview_SnapToGrid,
+				["SnapXLabel"] = Strings.Preview_GridStepX,
+				["SnapYLabel"] = Strings.Preview_GridStepY,
+				["EnableThumbnailZoomCheckBox"] = Strings.Preview_ZoomOnHover,
+				["ZoomFactorLabel"] = Strings.Preview_ZoomFactor,
+				["ZoomAnchorLabel"] = Strings.Preview_ZoomAnchor,
+
+				["OverlayGeneralSubPage"] = Strings.OverlayTab_General,
+				["OverlayWindowNameSubPage"] = Strings.OverlayTab_WindowName,
+				["OverlayGroupNameSubPage"] = Strings.OverlayTab_GroupName,
+				["OverlayBorderSubPage"] = Strings.OverlayTab_Border,
+				["ShowThumbnailOverlaysCheckBox"] = Strings.Overlay_ShowOverlay,
+				["ShowThumbnailFramesCheckBox"] = Strings.Overlay_ShowFrames,
+				["OverlayAlwaysOnTopCheckBox"] = Strings.Overlay_AlwaysOnTop,
+				["ShowClientNameCheckBox"] = Strings.Overlay_ShowWindowName,
+				["OverlayLabelColorLabel"] = Strings.Overlay_Color,
+				["OverlayLabelPositionLabel"] = Strings.Overlay_Position,
+				["btnLabelFont"] = Strings.Overlay_Font,
+				["LabelOverlayLabelFont"] = Strings.Overlay_WindowNameSample,
+				["ShowCycleGroupNameCheckBox"] = Strings.Overlay_ShowGroupName,
+				["CycleGroupNameColorLabel"] = Strings.Overlay_Color,
+				["CycleGroupNamePositionLabel"] = Strings.Overlay_Position,
+				["btnCycleGroupNameFont"] = Strings.Overlay_Font,
+				["LabelCycleGroupNameFont"] = Strings.Overlay_GroupNameSample,
+				["EnableActiveClientHighlightCheckBox"] = Strings.Overlay_HighlightActiveClient,
+				["HighlightColorLabel"] = Strings.Overlay_Color,
+				["ActiveFrameThicknessLabel"] = Strings.Overlay_BorderThickness,
+
+				["ThumbnailsListLabel"] = Strings.Clients_ListLabel,
+				["ClientCycleGroupLabel"] = Strings.Clients_CycleGroup,
+
+				["CycleGroupSelectLabel"] = Strings.CycleGroups_Group,
+				["CycleGroupClientsLabel"] = Strings.CycleGroups_Clients,
+				["CycleGroupMoveUpButton"] = Strings.CycleGroups_MoveUp,
+				["CycleGroupMoveDownButton"] = Strings.CycleGroups_MoveDown,
+				["CycleGroupRemoveClientButton"] = Strings.CycleGroups_RemoveClient,
+				["CycleGroupAddClientLabel"] = Strings.CycleGroups_AddClient,
+				["CycleGroupAddClientButton"] = Strings.CycleGroups_AddClient,
+
+				["AddHotkeyButton"] = Strings.Hotkeys_Add,
+				["EditHotkeyButton"] = Strings.Hotkeys_Edit,
+				["RemoveHotkeyButton"] = Strings.Hotkeys_Remove,
+
+				["DescriptionLabel"] = Strings.About_Description,
+				["CreditMaintLabel"] = Strings.About_Credit,
+				["DocumentationLinkLabel"] = Strings.About_ForumHint
+			};
+
+			MainForm.ApplyTexts(this, texts);
+
+			this.HotkeyActionColumnHeader.Text = Strings.Hotkeys_ColumnAction;
+			this.HotkeyKeyColumnHeader.Text = Strings.Hotkeys_ColumnHotkey;
+
+			foreach (ToolStripItem item in this.TrayMenu.Items)
+			{
+				switch (item.Name)
+				{
+					case "RestoreWindowMenuItem":
+						item.Text = Strings.Tray_Restore;
+						break;
+					case "ExitMenuItem":
+						item.Text = Strings.Tray_Exit;
+						break;
+				}
+			}
+		}
+
+		private static void ApplyTexts(Control root, IDictionary<string, string> texts)
+		{
+			foreach (Control control in root.Controls)
+			{
+				if (texts.TryGetValue(control.Name, out string text))
+				{
+					control.Text = text;
+				}
+
+				MainForm.ApplyTexts(control, texts);
+			}
+		}
+
+		private void InitLanguages()
+		{
+			this._languages.Add(LanguageManager.SYSTEM_LANGUAGE);
+
+			foreach (string language in LanguageManager.SupportedLanguages)
+			{
+				this._languages.Add(language);
+			}
+
+			this.LanguageCombo.BeginUpdate();
+			foreach (string language in this._languages)
+			{
+				this.LanguageCombo.Items.Add(LanguageManager.GetDisplayName(language));
+			}
+			this.LanguageCombo.EndUpdate();
+
+			this.LanguageCombo.SelectedIndex = 0;
+		}
+
 		private void InitZoomAnchorMap()
 		{
-			this._zoomAnchorMap[ViewZoomAnchor.NW] = this.ZoomAanchorNWRadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.N] = this.ZoomAanchorNRadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.NE] = this.ZoomAanchorNERadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.W] = this.ZoomAanchorWRadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.C] = this.ZoomAanchorCRadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.E] = this.ZoomAanchorERadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.SW] = this.ZoomAanchorSWRadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.S] = this.ZoomAanchorSRadioButton;
-			this._zoomAnchorMap[ViewZoomAnchor.SE] = this.ZoomAanchorSERadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.NW] = this.ZoomAnchorNWRadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.N] = this.ZoomAnchorNRadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.NE] = this.ZoomAnchorNERadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.W] = this.ZoomAnchorWRadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.C] = this.ZoomAnchorCRadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.E] = this.ZoomAnchorERadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.SW] = this.ZoomAnchorSWRadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.S] = this.ZoomAnchorSRadioButton;
+			this._zoomAnchorMap[ViewZoomAnchor.SE] = this.ZoomAnchorSERadioButton;
 		}
 		private void InitOverlayLabelMap()
 		{

@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using EveOPreview.Localization;
 
 namespace EveOPreview.View
 {
@@ -33,7 +34,7 @@ namespace EveOPreview.View
 
 			Button okButton = new Button
 			{
-				Text = "OK",
+				Text = Strings.Common_Ok,
 				Location = new Point(152, 69),
 				Size = new Size(75, 27),
 				DialogResult = DialogResult.OK
@@ -41,7 +42,7 @@ namespace EveOPreview.View
 
 			Button cancelButton = new Button
 			{
-				Text = "Cancel",
+				Text = Strings.Common_Cancel,
 				Location = new Point(233, 69),
 				Size = new Size(75, 27),
 				DialogResult = DialogResult.Cancel

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using EveOPreview.Localization;
 using Newtonsoft.Json;
 
 namespace EveOPreview.Configuration.Implementation
@@ -64,6 +65,7 @@ namespace EveOPreview.Configuration.Implementation
 			this.MinimizeToTray = false;
 			this.ThumbnailRefreshPeriod = 500;
 			this.ThumbnailResizeTimeoutPeriod = 500;
+			this.MinimizedClientsRefreshPeriod = 5;
 
 #if LINUX
 			this.EnableWineCompatibilityMode = true;
@@ -121,6 +123,7 @@ namespace EveOPreview.Configuration.Implementation
 			this.OverlayLabelFont = new Font(FontFamily.GenericSansSerif,10.0F, FontStyle.Bold);
 
 			this.IconName = "";
+			this.Language = LanguageManager.SYSTEM_LANGUAGE;
 
 			this.LoginThumbnailLocation = new Point(5, 5);
 
@@ -217,6 +220,13 @@ namespace EveOPreview.Configuration.Implementation
 		public int ThumbnailRefreshPeriod { get; set; }
 		public int ThumbnailResizeTimeoutPeriod { get; set; }
 
+		/// <summary>
+		/// How often (in seconds) a minimized client is briefly woken up so that its
+		/// thumbnail shows fresh content (minimized clients stop rendering, so their
+		/// thumbnails freeze otherwise). 0 disables the wake-ups
+		/// </summary>
+		public int MinimizedClientsRefreshPeriod { get; set; }
+
 		[JsonProperty("WineCompatibilityMode")]
 		public bool EnableWineCompatibilityMode { get; set; }
 
@@ -299,6 +309,9 @@ namespace EveOPreview.Configuration.Implementation
 		[JsonProperty]
 		public Font OverlayLabelFont { get; set; }
 		public string IconName { get; set; }
+
+		[JsonProperty("Language")]
+		public string Language { get; set; }
 
 		public int ActiveClientHighlightThickness { get; set; }
 
@@ -486,13 +499,52 @@ namespace EveOPreview.Configuration.Implementation
 			this.ThumbnailRefreshPeriod = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailRefreshPeriod, 300, 1000);
 #endif
 			this.ThumbnailResizeTimeoutPeriod = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailResizeTimeoutPeriod, 200, 5000);
+
+			// 0 keeps the minimized clients wake-up feature disabled
+			if (this.MinimizedClientsRefreshPeriod != 0)
+			{
+				this.MinimizedClientsRefreshPeriod = ThumbnailConfiguration.ApplyRestrictions(this.MinimizedClientsRefreshPeriod, 2, 300);
+			}
 			this.ThumbnailSize = new Size(ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailSize.Width, this.ThumbnailMinimumSize.Width, this.ThumbnailMaximumSize.Width),
 				ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailSize.Height, this.ThumbnailMinimumSize.Height, this.ThumbnailMaximumSize.Height));
 			this.ThumbnailOpacity = ThumbnailConfiguration.ApplyRestrictions((int)(this.ThumbnailOpacity * 100.00), 20, 100) / 100.00;
 			this.ThumbnailZoomFactor = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailZoomFactor, 2, 10);
 			this.ActiveClientHighlightThickness = ThumbnailConfiguration.ApplyRestrictions(this.ActiveClientHighlightThickness, 1, 6);
+			this.Language = LanguageManager.Normalize(this.Language);
 
+			this.EnsureAppearance();
 			this.EnsureCycleGroups();
+		}
+
+		/// <summary>
+		/// Fonts and colors are the only settings the app cannot fall back on at the point of
+		/// use - a null font takes the overlay down. A hand-edited config, or one written by
+		/// a build that saved before its settings were loaded, can carry empty values here
+		/// </summary>
+		private void EnsureAppearance()
+		{
+			this.OverlayLabelFont = this.OverlayLabelFont ?? new Font(FontFamily.GenericSansSerif, 10.0F, FontStyle.Bold);
+			this.CycleGroupNameFont = this.CycleGroupNameFont ?? new Font(FontFamily.GenericSansSerif, 10.0F, FontStyle.Bold);
+
+			if (this.OverlayLabelColor.IsEmpty)
+			{
+				this.OverlayLabelColor = Color.Orange;
+			}
+
+			if (this.CycleGroupNameColor.IsEmpty)
+			{
+				this.CycleGroupNameColor = Color.Orange;
+			}
+
+			if (this.ActiveClientHighlightColor.IsEmpty)
+			{
+				this.ActiveClientHighlightColor = Color.GreenYellow;
+			}
+
+			if (this.PreventPreviewColor.IsEmpty)
+			{
+				this.PreventPreviewColor = Color.Purple;
+			}
 		}
 
 		private void EnsureCycleGroups()

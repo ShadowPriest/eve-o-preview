@@ -14,8 +14,13 @@ namespace EveOPreview.View
 
 		double ThumbnailOpacity { get; set; }
 
+		int ThumbnailRefreshPeriod { get; set; }
+		int MinimizedClientsRefreshPeriod { get; set; }
+
 		bool EnableClientLayoutTracking { get; set; }
 		bool HideActiveClientThumbnail { get; set; }
+		string Language { get; set; }
+		void ShowWarning(string title, string message);
 		bool MinimizeInactiveClients { get; set; }
 		bool HideCaptionOnClients { get; set; }
 		ViewAnimationStyle WindowsAnimationStyle { get; set; }

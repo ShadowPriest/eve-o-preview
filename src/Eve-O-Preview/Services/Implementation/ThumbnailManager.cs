@@ -9,10 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
-using System.Net;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -68,6 +65,12 @@ namespace EveOPreview.Services
 		private readonly HashSet<IntPtr> _pendingMinimizeHandles = new HashSet<IntPtr>();
 		private (IntPtr Handle, string Title) _pendingActivation;
 		private bool _isActivationWorkerRunning;
+
+		// DWM does not compose minimized windows and minimized clients stop presenting
+		// frames, so their thumbnails freeze. Minimized clients are periodically 'woken up'
+		// (restored without activation for a moment, then minimized back) to refresh them
+		private readonly HashSet<IntPtr> _pendingWakeHandles = new HashSet<IntPtr>();
+		private readonly Dictionary<IntPtr, long> _minimizedClientWakeTimestamps = new Dictionary<IntPtr, long>();
 		#endregion
 
 		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory, IMouseHookService mouseHook)
@@ -354,10 +357,13 @@ namespace EveOPreview.Services
 			{
 				IntPtr[] minimizeHandles;
 				(IntPtr Handle, string Title) activation;
+				IntPtr wakeHandle = IntPtr.Zero;
 
 				lock (this._activationSyncRoot)
 				{
-					if ((this._pendingActivation.Handle == IntPtr.Zero) && (this._pendingMinimizeHandles.Count == 0))
+					if ((this._pendingActivation.Handle == IntPtr.Zero)
+						&& (this._pendingMinimizeHandles.Count == 0)
+						&& (this._pendingWakeHandles.Count == 0))
 					{
 						this._isActivationWorkerRunning = false;
 						return;
@@ -368,15 +374,28 @@ namespace EveOPreview.Services
 
 					activation = this._pendingActivation;
 					this._pendingActivation = (IntPtr.Zero, null);
+
+					// Wake-ups are background housekeeping: one per iteration and only when
+					// no user-driven activation is waiting, so switching stays responsive
+					if ((activation.Handle == IntPtr.Zero) && (minimizeHandles.Length == 0) && (this._pendingWakeHandles.Count > 0))
+					{
+						foreach (IntPtr handle in this._pendingWakeHandles)
+						{
+							wakeHandle = handle;
+							break;
+						}
+
+						this._pendingWakeHandles.Remove(wakeHandle);
+					}
+
+					this._isUserActivationExecuting = (activation.Handle != IntPtr.Zero) || (minimizeHandles.Length > 0);
 				}
 
 				try
 				{
-					foreach (IntPtr handle in minimizeHandles)
-					{
-						this._windowManager.MinimizeWindow(handle, this._configuration.WindowsAnimationStyle, false);
-					}
-
+					// The activation goes first: minimizing the foreground window vacates the
+					// foreground and Windows falls back to whatever is behind it, which shows up
+					// as a desktop flash. Raising the new client beforehand leaves no such gap
 					if (activation.Handle != IntPtr.Zero)
 					{
 #if LINUX
@@ -384,6 +403,24 @@ namespace EveOPreview.Services
 #else
 						this._windowManager.ActivateWindow(activation.Handle, this._configuration.WindowsAnimationStyle);
 #endif
+
+						// Restoring a minimized window is asynchronous, so the new client can
+						// still be on its way up. Minimizing the old one right now would
+						// uncover the desktop for exactly that moment
+						if (minimizeHandles.Length > 0)
+						{
+							this.WaitForClientWindowActivation(activation.Handle);
+						}
+					}
+
+					foreach (IntPtr handle in minimizeHandles)
+					{
+						this._windowManager.MinimizeWindow(handle, this._configuration.WindowsAnimationStyle, false);
+					}
+
+					if (wakeHandle != IntPtr.Zero)
+					{
+						this.WakeMinimizedClient(wakeHandle);
 					}
 				}
 				catch (Exception)
@@ -391,19 +428,101 @@ namespace EveOPreview.Services
 					// A failed window operation (f.e. the window was closed in the meantime)
 					// must not kill the worker loop
 				}
+				finally
+				{
+					lock (this._activationSyncRoot)
+					{
+						this._isUserActivationExecuting = false;
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Lets a minimized client render a couple of fresh frames for its thumbnail:
+		/// the window is restored without activation, given a moment to present and then
+		/// minimized back. Runs on the worker task
+		/// </summary>
+		private void WakeMinimizedClient(IntPtr handle)
+		{
+			const int WAKE_RENDER_TIME = 300;
+
+			// The user could have restored the window while this request sat in the queue
+			if (!this._windowManager.IsWindowMinimized(handle))
+			{
+				return;
+			}
+
+			int wakeStartTick = Environment.TickCount;
+
+			this._windowManager.RestoreWindowWithoutActivation(handle);
+
+			System.Threading.Thread.Sleep(WAKE_RENDER_TIME);
+
+			// The window owning the foreground now is honored only when actual user input
+			// happened during the wake (the user clicked / switched to it). Some windows
+			// activate themselves on restore - those are minimized back regardless
+			if ((this._windowManager.GetForegroundWindowHandle() == handle) && ThumbnailManager.WasUserInputAfter(wakeStartTick))
+			{
+				return;
+			}
+
+			this._windowManager.MinimizeWindow(handle, this._configuration.WindowsAnimationStyle, false);
+		}
+
+		private static bool WasUserInputAfter(int startTick)
+		{
+			User32NativeMethods.LASTINPUTINFO lastInput = new User32NativeMethods.LASTINPUTINFO
+			{
+				cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<User32NativeMethods.LASTINPUTINFO>()
+			};
+
+			if (!User32NativeMethods.GetLastInputInfo(ref lastInput))
+			{
+				return false;
+			}
+
+			// Tick counts wrap around, so the difference is compared in signed arithmetic
+			return unchecked((int)lastInput.dwTime - startTick) >= 0;
+		}
+
+		/// <summary>
+		/// Waits (on the worker task) until the requested window actually owns the foreground.
+		/// Gives up after a short timeout - an activation Windows refuses would block the
+		/// worker otherwise
+		/// </summary>
+		private void WaitForClientWindowActivation(IntPtr handle)
+		{
+			const int ACTIVATION_TIMEOUT = 200;
+			const int ACTIVATION_POLL_INTERVAL = 10;
+
+			for (int elapsed = 0; elapsed < ACTIVATION_TIMEOUT; elapsed += ACTIVATION_POLL_INTERVAL)
+			{
+				if (this._windowManager.GetForegroundWindowHandle() == handle)
+				{
+					return;
+				}
+
+				System.Threading.Thread.Sleep(ACTIVATION_POLL_INTERVAL);
 			}
 		}
 
 		// While a queued activation has not been executed yet the real foreground window
 		// lags behind this._activeClient, so the poll / WinEvent hook must not treat that
-		// stale foreground as a user-made switch
+		// stale foreground as a user-made switch. Background wake-ups of minimized clients
+		// deliberately do NOT count: they never change the foreground, and blocking the
+		// hook for their duration would delay the highlight on real alt+tab switches
 		private bool IsActivationInFlight()
 		{
 			lock (this._activationSyncRoot)
 			{
-				return this._isActivationWorkerRunning;
+				return this._isUserActivationExecuting
+					|| (this._pendingActivation.Handle != IntPtr.Zero)
+					|| (this._pendingMinimizeHandles.Count > 0);
 			}
 		}
+
+		private bool _isUserActivationExecuting;
 
 		public void MinimizeAllClients()
 		{
@@ -726,7 +845,12 @@ namespace EveOPreview.Services
 
 			foreach (IProcessInfo process in removedProcesses)
 			{
-				IThumbnailView view = this._thumbnailViews[process.Handle];
+				this._minimizedClientWakeTimestamps.Remove(process.Handle);
+
+				if (!this._thumbnailViews.TryGetValue(process.Handle, out IThumbnailView view))
+				{
+					continue;
+				}
 
 				this._thumbnailViews.Remove(view.Id);
 				if (view.Title != ThumbnailManager.DEFAULT_CLIENT_TITLE)
@@ -755,6 +879,12 @@ namespace EveOPreview.Services
 
 		private void RefreshThumbnails()
 		{
+			// Pick up refresh period changes made in the settings UI without a restart
+			if (this._thumbnailUpdateTimer.Interval.TotalMilliseconds != this._configuration.ThumbnailRefreshPeriod)
+			{
+				this._thumbnailUpdateTimer.Interval = TimeSpan.FromMilliseconds(this._configuration.ThumbnailRefreshPeriod);
+			}
+
 			// TODO Split this method
 			IntPtr foregroundWindowHandle = this._windowManager.GetForegroundWindowHandle();
 
@@ -913,6 +1043,74 @@ namespace EveOPreview.Services
 			}
 
 			this.EnableViewEvents();
+
+			this.EnqueueDueMinimizedClientWakes(hideAllThumbnails);
+		}
+
+		/// <summary>
+		/// Schedules a wake-up for every minimized client whose thumbnail got stale.
+		/// The countdown starts when a client is first seen minimized, so each of them
+		/// is refreshed every MinimizedClientsRefreshPeriod seconds while it stays down
+		/// </summary>
+		private void EnqueueDueMinimizedClientWakes(bool areThumbnailsHidden)
+		{
+			int period = this._configuration.MinimizedClientsRefreshPeriod;
+
+			// Nothing to refresh when the feature is off or no thumbnails are on the screen
+			if ((period <= 0) || areThumbnailsHidden)
+			{
+				return;
+			}
+
+			long now = Environment.TickCount64;
+
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				if (!this._windowManager.IsWindowMinimized(entry.Key))
+				{
+					// The window renders on its own while it is not minimized
+					this._minimizedClientWakeTimestamps.Remove(entry.Key);
+					continue;
+				}
+
+				if (this._configuration.IsThumbnailDisabled(entry.Value.Title))
+				{
+					continue;
+				}
+
+				if (!this._minimizedClientWakeTimestamps.TryGetValue(entry.Key, out long lastWake))
+				{
+					// Just minimized: the thumbnail still shows the latest frame
+					this._minimizedClientWakeTimestamps[entry.Key] = now;
+					continue;
+				}
+
+				if (now - lastWake < period * 1000L)
+				{
+					continue;
+				}
+
+				this._minimizedClientWakeTimestamps[entry.Key] = now;
+				this.QueueMinimizedClientWake(entry.Key);
+			}
+		}
+
+		private void QueueMinimizedClientWake(IntPtr handle)
+		{
+			bool startWorker;
+
+			lock (this._activationSyncRoot)
+			{
+				this._pendingWakeHandles.Add(handle);
+
+				startWorker = !this._isActivationWorkerRunning;
+				this._isActivationWorkerRunning = true;
+			}
+
+			if (startWorker)
+			{
+				Task.Run(this.ProcessPendingActivations);
+			}
 		}
 
 		public void UpdateThumbnailsSize()
@@ -985,9 +1183,8 @@ namespace EveOPreview.Services
 				return;
 			}
 
-			// Minimize the currently active client if needed. Minimizing the foreground
-			// window makes Windows activate some other window, so the new client is
-			// re-activated right after it (both operations run on the worker task)
+			// Minimize the currently active client if needed. Both operations are handed to
+			// the worker task, which raises the new client before minimizing this one
 			if (this._configuration.MinimizeInactiveClients
 				&& (this._activeClient.Handle != IntPtr.Zero)
 				&& !this._configuration.IsPriorityClient(this._activeClient.Title))

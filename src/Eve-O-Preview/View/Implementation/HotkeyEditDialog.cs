@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using EveOPreview.Localization;
 using EveOPreview.UI.Hotkeys;
 
 namespace EveOPreview.View
@@ -85,7 +86,7 @@ namespace EveOPreview.View
 			this._editedHotkey = editedHotkey;
 			this._isEditMode = editedActionId != null;
 
-			this.Text = this._isEditMode ? "Edit hotkey" : "Add hotkey";
+			this.Text = this._isEditMode ? Strings.HotkeyDialog_EditTitle : Strings.HotkeyDialog_AddTitle;
 			this.FormBorderStyle = FormBorderStyle.FixedDialog;
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
@@ -94,7 +95,7 @@ namespace EveOPreview.View
 			this.AutoScaleMode = AutoScaleMode.Font;
 			this.AutoScaleDimensions = new SizeF(7F, 15F);
 
-			this._actionLabel = new Label { Text = "Action", AutoSize = true };
+			this._actionLabel = new Label { Text = Strings.HotkeyDialog_Action, AutoSize = true };
 
 			this._actionCombo = new ComboBox
 			{
@@ -110,8 +111,8 @@ namespace EveOPreview.View
 				DropDownStyle = ComboBoxStyle.DropDownList,
 				Size = new Size(336, 23)
 			};
-			this._directionCombo.Items.Add("Forward");
-			this._directionCombo.Items.Add("Backward");
+			this._directionCombo.Items.Add(Strings.HotkeyDialog_Forward);
+			this._directionCombo.Items.Add(Strings.HotkeyDialog_Backward);
 			this._directionCombo.SelectedIndex = 0;
 
 			this._clientCombo = new ComboBox
@@ -130,13 +131,13 @@ namespace EveOPreview.View
 				this._clientCombo.SelectedIndex = 0;
 			}
 
-			this._captureLabel = new Label { Text = "Hotkey (press keys or mouse buttons / wheel, Esc clears)", AutoSize = true };
+			this._captureLabel = new Label { Text = Strings.HotkeyDialog_CaptureLabel, AutoSize = true };
 
 			this._captureBox = new TextBox
 			{
 				Size = new Size(336, 23),
 				ReadOnly = true,
-				PlaceholderText = "Press a key or mouse combination..."
+				PlaceholderText = Strings.HotkeyDialog_CapturePlaceholder
 			};
 			this._captureBox.KeyDown += this.CaptureBox_KeyDown_Handler;
 			this._captureBox.MouseDown += this.CaptureBox_MouseDown_Handler;
@@ -144,10 +145,10 @@ namespace EveOPreview.View
 
 			this._statusLabel = new Label { Size = new Size(336, 30), ForeColor = SystemColors.GrayText };
 
-			this._okButton = new Button { Text = this._isEditMode ? "Save" : "Add", Size = new Size(75, 27) };
+			this._okButton = new Button { Text = this._isEditMode ? Strings.HotkeyDialog_Save : Strings.HotkeyDialog_Add, Size = new Size(75, 27) };
 			this._okButton.Click += this.OkButton_Click_Handler;
 
-			this._cancelButton = new Button { Text = "Cancel", Size = new Size(75, 27), DialogResult = DialogResult.Cancel };
+			this._cancelButton = new Button { Text = Strings.Common_Cancel, Size = new Size(75, 27), DialogResult = DialogResult.Cancel };
 			this.CancelButton = this._cancelButton;
 
 			this.Controls.Add(this._actionLabel);
@@ -229,7 +230,7 @@ namespace EveOPreview.View
 				{
 					if (cycleGroups.Add(groupName))
 					{
-						this._actionCombo.Items.Add(new ActionItem(null, groupName, false, "Cycle group: " + groupName));
+						this._actionCombo.Items.Add(new ActionItem(null, groupName, false, string.Format(Strings.HotkeyDialog_CycleGroupItem, groupName)));
 					}
 
 					continue;
@@ -247,7 +248,7 @@ namespace EveOPreview.View
 
 			if (hasClientActions || (this._clientCombo.Items.Count > 0))
 			{
-				this._actionCombo.Items.Insert(0, new ActionItem(null, null, true, "Activate a specific client"));
+				this._actionCombo.Items.Insert(0, new ActionItem(null, null, true, Strings.HotkeyDialog_ActivateClientItem));
 			}
 
 			if (this._actionCombo.Items.Count > 0)
@@ -280,11 +281,11 @@ namespace EveOPreview.View
 
 			if (this._isDirectionVisible)
 			{
-				this._subSelectorLabel.Text = "Cycle direction";
+				this._subSelectorLabel.Text = Strings.HotkeyDialog_Direction;
 			}
 			else if (this._isClientVisible)
 			{
-				this._subSelectorLabel.Text = "Client window";
+				this._subSelectorLabel.Text = Strings.HotkeyDialog_ClientWindow;
 			}
 
 			this.LayoutControls();
@@ -389,7 +390,7 @@ namespace EveOPreview.View
 
 			this._captureBox.ForeColor = this._hasConflict ? Color.Firebrick : SystemColors.WindowText;
 			this._statusLabel.ForeColor = this._hasConflict ? Color.Firebrick : SystemColors.GrayText;
-			this._statusLabel.Text = this._hasConflict ? "This combination is already used by: " + conflictingAction : string.Empty;
+			this._statusLabel.Text = this._hasConflict ? string.Format(Strings.HotkeyDialog_ConflictWith, conflictingAction) : string.Empty;
 		}
 
 		private void OkButton_Click_Handler(object sender, EventArgs e)
@@ -397,7 +398,7 @@ namespace EveOPreview.View
 			if (string.IsNullOrEmpty(this._capturedBinding))
 			{
 				this._statusLabel.ForeColor = Color.Firebrick;
-				this._statusLabel.Text = "Press a key or mouse combination first";
+				this._statusLabel.Text = Strings.HotkeyDialog_NoBinding;
 				return;
 			}
 
@@ -416,7 +417,7 @@ namespace EveOPreview.View
 				if (!(this._actionCombo.SelectedItem is ActionItem action))
 				{
 					this._statusLabel.ForeColor = Color.Firebrick;
-					this._statusLabel.Text = "Select an action first";
+					this._statusLabel.Text = Strings.HotkeyDialog_NoAction;
 					return;
 				}
 
@@ -425,7 +426,7 @@ namespace EveOPreview.View
 					if (!(this._clientCombo.SelectedItem is string client))
 					{
 						this._statusLabel.ForeColor = Color.Firebrick;
-						this._statusLabel.Text = "Select a client window first";
+						this._statusLabel.Text = Strings.HotkeyDialog_NoClient;
 						return;
 					}
 

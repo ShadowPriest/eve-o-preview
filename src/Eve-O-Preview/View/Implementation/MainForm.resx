@@ -139,7 +139,10 @@
   <data name="GeneralSettingsPanel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="label4.GenerateMember" type="System.Boolean, mscorlib">
+  <data name="ClientWindowsTabPage.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="ClientWindowsPanel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="ThumbnailTabPage.GenerateMember" type="System.Boolean, mscorlib">
@@ -148,16 +151,34 @@
   <data name="ThumbnailSettingsPanel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="HeigthLabel.GenerateMember" type="System.Boolean, mscorlib">
+  <data name="PreviewSubTabControl.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="PreviewGeneralSubPage.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="PreviewLayoutSubPage.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="PreviewZoomSubPage.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="PreviewGeneralTablePanel.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="PreviewLayoutTablePanel.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="PreviewZoomTablePanel.GenerateMember" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="HeightLabel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="WidthLabel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="OpacityLabel.GenerateMember" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="ZoomSettingsPanel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="ZoomFactorLabel.GenerateMember" type="System.Boolean, mscorlib">
@@ -195,16 +216,6 @@
   </data>
   <data name="DescriptionLabel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="DescriptionLabel.Text" xml:space="preserve">
-    <value>An advanced task switcher for EVE Online clients.
-
-The program does NOT
-• modify EVE Online interface
-• display modified EVE Online interface
-• broadcast any keyboard or mouse events
-• interact with EVE Online except of;
-    - resizing or bringing it to the foreground</value>
   </data>
   <data name="NameLabel.GenerateMember" type="System.Boolean, mscorlib">
     <value>False</value>

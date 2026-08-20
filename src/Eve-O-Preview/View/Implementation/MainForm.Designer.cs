@@ -38,14 +38,29 @@ namespace EveOPreview.View
 			ToolStripSeparator SeparatorMenuItem;
 			TabControl ContentTabControl;
 			TabPage GeneralTabPage;
-			Panel GeneralSettingsPanel;
-			Label label4;
+			TableLayoutPanel GeneralSettingsPanel;
+			TabPage ClientWindowsTabPage;
+			TableLayoutPanel ClientWindowsPanel;
 			TabPage ThumbnailTabPage;
 			Panel ThumbnailSettingsPanel;
-			Label HeigthLabel;
+			TabControl PreviewSubTabControl;
+			TabPage PreviewGeneralSubPage;
+			TabPage PreviewVisualSubPage;
+			TabPage PreviewRenderingSubPage;
+			TabPage PreviewLayoutSubPage;
+			TabPage PreviewZoomSubPage;
+			TableLayoutPanel PreviewGeneralTablePanel;
+			TableLayoutPanel PreviewVisualTablePanel;
+			TableLayoutPanel PreviewRenderingTablePanel;
+			Label ThumbnailRefreshPeriodLabel;
+			Label MinimizedRefreshPeriodLabel;
+			Label MinimizedRefreshHintLabel;
+			Label MinimizedRenderingNoteLabel;
+			TableLayoutPanel PreviewLayoutTablePanel;
+			TableLayoutPanel PreviewZoomTablePanel;
+			Label HeightLabel;
 			Label WidthLabel;
 			Label OpacityLabel;
-			Panel ZoomSettingsPanel;
 			Label ZoomFactorLabel;
 			Label ZoomAnchorLabel;
 			TabPage OverlayTabPage;
@@ -70,7 +85,10 @@ namespace EveOPreview.View
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			Label NameLabel;
 			HideCaptionOnClientsCheckBox = new CheckBox();
-			AnimationStyleCombo = new ComboBox();
+			LanguageLabel = new Label();
+			LanguageCombo = new ComboBox();
+			LanguageRestartHintLabel = new Label();
+			DisableAnimationCheckBox = new CheckBox();
 			MinimizeInactiveClientsCheckBox = new CheckBox();
 			EnableClientLayoutTrackingCheckBox = new CheckBox();
 			HideActiveClientThumbnailCheckBox = new CheckBox();
@@ -78,7 +96,7 @@ namespace EveOPreview.View
 			HideThumbnailsOnLostFocusCheckBox = new CheckBox();
 			EnablePerClientThumbnailsLayoutsCheckBox = new CheckBox();
 			MinimizeToTrayCheckBox = new CheckBox();
-			label1 = new Label();
+			PreventPreviewColorLabel = new Label();
 			PreventPreviewColorButton = new Panel();
 			PreventPreviewsCheckBox = new CheckBox();
 			ThumbnailSnapToGridCheckBox = new CheckBox();
@@ -91,21 +109,19 @@ namespace EveOPreview.View
 			ThumbnailsWidthNumericEdit = new NumericUpDown();
 			ThumbnailsHeightNumericEdit = new NumericUpDown();
 			ThumbnailOpacityTrackBar = new TrackBar();
-			ZoomTabPage = new TabPage();
 			ZoomAnchorPanel = new Panel();
-			ZoomAanchorNWRadioButton = new RadioButton();
-			ZoomAanchorNRadioButton = new RadioButton();
-			ZoomAanchorNERadioButton = new RadioButton();
-			ZoomAanchorWRadioButton = new RadioButton();
-			ZoomAanchorSERadioButton = new RadioButton();
-			ZoomAanchorCRadioButton = new RadioButton();
-			ZoomAanchorSRadioButton = new RadioButton();
-			ZoomAanchorERadioButton = new RadioButton();
-			ZoomAanchorSWRadioButton = new RadioButton();
+			ZoomAnchorNWRadioButton = new RadioButton();
+			ZoomAnchorNRadioButton = new RadioButton();
+			ZoomAnchorNERadioButton = new RadioButton();
+			ZoomAnchorWRadioButton = new RadioButton();
+			ZoomAnchorSERadioButton = new RadioButton();
+			ZoomAnchorCRadioButton = new RadioButton();
+			ZoomAnchorSRadioButton = new RadioButton();
+			ZoomAnchorERadioButton = new RadioButton();
+			ZoomAnchorSWRadioButton = new RadioButton();
 			EnableThumbnailZoomCheckBox = new CheckBox();
 			ThumbnailZoomFactorNumericEdit = new NumericUpDown();
-			label5 = new Label();
-			panel2 = new Panel();
+			CycleGroupIndicatorPanel = new Panel();
 			CycleGroupIndicatorNWRadioButton = new RadioButton();
 			CycleGroupIndicatorNRadioButton = new RadioButton();
 			CycleGroupIndicatorNERadioButton = new RadioButton();
@@ -117,10 +133,10 @@ namespace EveOPreview.View
 			CycleGroupIndicatorSWRadioButton = new RadioButton();
 			LabelOverlayLabelFont = new Label();
 			btnLabelFont = new Button();
-			label3 = new Label();
-			label2 = new Label();
+			OverlayLabelPositionLabel = new Label();
+			OverlayLabelColorLabel = new Label();
 			OverlayLabelColorButton = new Panel();
-			panel1 = new Panel();
+			OverlayLabelAnchorPanel = new Panel();
 			OverlayLabelNWRadioButton = new RadioButton();
 			OverlayLabelNRadioButton = new RadioButton();
 			OverlayLabelNERadioButton = new RadioButton();
@@ -181,14 +197,31 @@ namespace EveOPreview.View
 			SeparatorMenuItem = new ToolStripSeparator();
 			ContentTabControl = new TabControl();
 			GeneralTabPage = new TabPage();
-			GeneralSettingsPanel = new Panel();
-			label4 = new Label();
+			GeneralSettingsPanel = new TableLayoutPanel();
+			ClientWindowsTabPage = new TabPage();
+			ClientWindowsPanel = new TableLayoutPanel();
 			ThumbnailTabPage = new TabPage();
 			ThumbnailSettingsPanel = new Panel();
-			HeigthLabel = new Label();
+			PreviewSubTabControl = new TabControl();
+			PreviewGeneralSubPage = new TabPage();
+			PreviewVisualSubPage = new TabPage();
+			PreviewRenderingSubPage = new TabPage();
+			PreviewLayoutSubPage = new TabPage();
+			PreviewZoomSubPage = new TabPage();
+			PreviewGeneralTablePanel = new TableLayoutPanel();
+			PreviewVisualTablePanel = new TableLayoutPanel();
+			PreviewRenderingTablePanel = new TableLayoutPanel();
+			ThumbnailRefreshPeriodLabel = new Label();
+			ThumbnailRefreshPeriodNumericEdit = new NumericUpDown();
+			MinimizedRefreshPeriodLabel = new Label();
+			MinimizedClientsRefreshPeriodNumericEdit = new NumericUpDown();
+			MinimizedRefreshHintLabel = new Label();
+			MinimizedRenderingNoteLabel = new Label();
+			PreviewLayoutTablePanel = new TableLayoutPanel();
+			PreviewZoomTablePanel = new TableLayoutPanel();
+			HeightLabel = new Label();
 			WidthLabel = new Label();
 			OpacityLabel = new Label();
-			ZoomSettingsPanel = new Panel();
 			ZoomFactorLabel = new Label();
 			ZoomAnchorLabel = new Label();
 			OverlayTabPage = new TabPage();
@@ -213,16 +246,29 @@ namespace EveOPreview.View
 			ContentTabControl.SuspendLayout();
 			GeneralTabPage.SuspendLayout();
 			GeneralSettingsPanel.SuspendLayout();
+			ClientWindowsTabPage.SuspendLayout();
+			ClientWindowsPanel.SuspendLayout();
 			ThumbnailTabPage.SuspendLayout();
 			ThumbnailSettingsPanel.SuspendLayout();
+			PreviewSubTabControl.SuspendLayout();
+			PreviewGeneralSubPage.SuspendLayout();
+			PreviewVisualSubPage.SuspendLayout();
+			PreviewRenderingSubPage.SuspendLayout();
+			PreviewLayoutSubPage.SuspendLayout();
+			PreviewZoomSubPage.SuspendLayout();
+			PreviewGeneralTablePanel.SuspendLayout();
+			PreviewVisualTablePanel.SuspendLayout();
+			PreviewRenderingTablePanel.SuspendLayout();
+			PreviewLayoutTablePanel.SuspendLayout();
+			PreviewZoomTablePanel.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)ThumbnailRefreshPeriodNumericEdit).BeginInit();
+			((System.ComponentModel.ISupportInitialize)MinimizedClientsRefreshPeriodNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailSnapToGridSizeYNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ActiveClientHighlightThicknessNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailSnapToGridSizeXNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailsWidthNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailsHeightNumericEdit).BeginInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailOpacityTrackBar).BeginInit();
-			ZoomTabPage.SuspendLayout();
-			ZoomSettingsPanel.SuspendLayout();
 			ZoomAnchorPanel.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)ThumbnailZoomFactorNumericEdit).BeginInit();
 			OverlayTabPage.SuspendLayout();
@@ -234,8 +280,8 @@ namespace EveOPreview.View
 			OverlayGroupNameSubPage.SuspendLayout();
 			CycleGroupNameFontPreviewPanel.SuspendLayout();
 			OverlayBorderSubPage.SuspendLayout();
-			panel2.SuspendLayout();
-			panel1.SuspendLayout();
+			CycleGroupIndicatorPanel.SuspendLayout();
+			OverlayLabelAnchorPanel.SuspendLayout();
 			ClientsTabPage.SuspendLayout();
 			ClientsPanel.SuspendLayout();
 			CycleGroupsTabPage.SuspendLayout();
@@ -279,7 +325,7 @@ namespace EveOPreview.View
 			ContentTabControl.Controls.Add(GeneralTabPage);
 			ContentTabControl.Controls.Add(ThumbnailTabPage);
 			ContentTabControl.Controls.Add(OverlayTabPage);
-			ContentTabControl.Controls.Add(ZoomTabPage);
+			ContentTabControl.Controls.Add(ClientWindowsTabPage);
 			ContentTabControl.Controls.Add(ClientsTabPage);
 			ContentTabControl.Controls.Add(CycleGroupsTabPage);
 			ContentTabControl.Controls.Add(HotkeysTabPage);
@@ -298,7 +344,7 @@ namespace EveOPreview.View
 			ContentTabControl.DrawItem += ContentTabControl_DrawItem;
 			// 
 			// GeneralTabPage
-			// 
+			//
 			GeneralTabPage.BackColor = SystemColors.Control;
 			GeneralTabPage.Controls.Add(GeneralSettingsPanel);
 			GeneralTabPage.Location = new Point(124, 4);
@@ -308,153 +354,156 @@ namespace EveOPreview.View
 			GeneralTabPage.Size = new Size(327, 243);
 			GeneralTabPage.TabIndex = 0;
 			GeneralTabPage.Text = "General";
-			// 
+			//
 			// GeneralSettingsPanel
-			// 
-			GeneralSettingsPanel.Controls.Add(HideCaptionOnClientsCheckBox);
-			GeneralSettingsPanel.Controls.Add(label4);
-			GeneralSettingsPanel.Controls.Add(AnimationStyleCombo);
-			GeneralSettingsPanel.Controls.Add(MinimizeInactiveClientsCheckBox);
-			GeneralSettingsPanel.Controls.Add(EnableClientLayoutTrackingCheckBox);
-			GeneralSettingsPanel.Controls.Add(HideActiveClientThumbnailCheckBox);
-			GeneralSettingsPanel.Controls.Add(ShowThumbnailsAlwaysOnTopCheckBox);
-			GeneralSettingsPanel.Controls.Add(HideThumbnailsOnLostFocusCheckBox);
-			GeneralSettingsPanel.Controls.Add(EnablePerClientThumbnailsLayoutsCheckBox);
-			GeneralSettingsPanel.Controls.Add(MinimizeToTrayCheckBox);
+			//
+			GeneralSettingsPanel.ColumnCount = 2;
+			GeneralSettingsPanel.ColumnStyles.Add(new ColumnStyle());
+			GeneralSettingsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			GeneralSettingsPanel.Controls.Add(MinimizeToTrayCheckBox, 0, 0);
+			GeneralSettingsPanel.Controls.Add(LanguageLabel, 0, 1);
+			GeneralSettingsPanel.Controls.Add(LanguageCombo, 1, 1);
+			GeneralSettingsPanel.Controls.Add(LanguageRestartHintLabel, 0, 2);
 			GeneralSettingsPanel.Dock = DockStyle.Fill;
 			GeneralSettingsPanel.Location = new Point(4, 4);
 			GeneralSettingsPanel.Margin = new Padding(4);
 			GeneralSettingsPanel.Name = "GeneralSettingsPanel";
+			GeneralSettingsPanel.Padding = new Padding(4);
+			GeneralSettingsPanel.RowCount = 4;
+			GeneralSettingsPanel.RowStyles.Add(new RowStyle());
+			GeneralSettingsPanel.RowStyles.Add(new RowStyle());
+			GeneralSettingsPanel.RowStyles.Add(new RowStyle());
+			GeneralSettingsPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 			GeneralSettingsPanel.Size = new Size(319, 235);
 			GeneralSettingsPanel.TabIndex = 18;
-			// 
-			// HideCaptionOnClientsCheckBox
-			// 
-			HideCaptionOnClientsCheckBox.AutoSize = true;
-			HideCaptionOnClientsCheckBox.Location = new Point(9, 121);
-			HideCaptionOnClientsCheckBox.Margin = new Padding(4);
-			HideCaptionOnClientsCheckBox.Name = "HideCaptionOnClientsCheckBox";
-			HideCaptionOnClientsCheckBox.Size = new Size(168, 19);
-			HideCaptionOnClientsCheckBox.TabIndex = 28;
-			HideCaptionOnClientsCheckBox.Text = "Hide caption bar on clients";
-			HideCaptionOnClientsCheckBox.UseVisualStyleBackColor = true;
-			HideCaptionOnClientsCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// label4
-			// 
-			label4.AutoSize = true;
-			label4.Location = new Point(6, 96);
-			label4.Margin = new Padding(4, 0, 4, 0);
-			label4.Name = "label4";
-			label4.Size = new Size(91, 15);
-			label4.TabIndex = 27;
-			label4.Text = "Animation Style";
-			// 
-			// AnimationStyleCombo
-			// 
-			AnimationStyleCombo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-			AnimationStyleCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-			AnimationStyleCombo.FormattingEnabled = true;
-			AnimationStyleCombo.Location = new Point(105, 93);
-			AnimationStyleCombo.Margin = new Padding(4);
-			AnimationStyleCombo.Name = "AnimationStyleCombo";
-			AnimationStyleCombo.Size = new Size(177, 23);
-			AnimationStyleCombo.TabIndex = 26;
-			AnimationStyleCombo.SelectedIndexChanged += OptionChanged_Handler;
-			// 
-			// MinimizeInactiveClientsCheckBox
-			// 
-			MinimizeInactiveClientsCheckBox.AutoSize = true;
-			MinimizeInactiveClientsCheckBox.Location = new Point(9, 73);
-			MinimizeInactiveClientsCheckBox.Margin = new Padding(4);
-			MinimizeInactiveClientsCheckBox.Name = "MinimizeInactiveClientsCheckBox";
-			MinimizeInactiveClientsCheckBox.Size = new Size(178, 19);
-			MinimizeInactiveClientsCheckBox.TabIndex = 24;
-			MinimizeInactiveClientsCheckBox.Text = "Minimize inactive EVE clients";
-			MinimizeInactiveClientsCheckBox.UseVisualStyleBackColor = true;
-			MinimizeInactiveClientsCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// EnableClientLayoutTrackingCheckBox
-			// 
-			EnableClientLayoutTrackingCheckBox.AutoSize = true;
-			EnableClientLayoutTrackingCheckBox.Location = new Point(9, 30);
-			EnableClientLayoutTrackingCheckBox.Margin = new Padding(4);
-			EnableClientLayoutTrackingCheckBox.Name = "EnableClientLayoutTrackingCheckBox";
-			EnableClientLayoutTrackingCheckBox.Size = new Size(137, 19);
-			EnableClientLayoutTrackingCheckBox.TabIndex = 19;
-			EnableClientLayoutTrackingCheckBox.Text = "Track client locations";
-			EnableClientLayoutTrackingCheckBox.UseVisualStyleBackColor = true;
-			EnableClientLayoutTrackingCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// HideActiveClientThumbnailCheckBox
-			// 
-			HideActiveClientThumbnailCheckBox.AutoSize = true;
-			HideActiveClientThumbnailCheckBox.Checked = true;
-			HideActiveClientThumbnailCheckBox.CheckState = CheckState.Checked;
-			HideActiveClientThumbnailCheckBox.Location = new Point(9, 52);
-			HideActiveClientThumbnailCheckBox.Margin = new Padding(4);
-			HideActiveClientThumbnailCheckBox.Name = "HideActiveClientThumbnailCheckBox";
-			HideActiveClientThumbnailCheckBox.Size = new Size(197, 19);
-			HideActiveClientThumbnailCheckBox.TabIndex = 20;
-			HideActiveClientThumbnailCheckBox.Text = "Hide preview of active EVE client";
-			HideActiveClientThumbnailCheckBox.UseVisualStyleBackColor = true;
-			HideActiveClientThumbnailCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ShowThumbnailsAlwaysOnTopCheckBox
-			// 
-			ShowThumbnailsAlwaysOnTopCheckBox.AutoSize = true;
-			ShowThumbnailsAlwaysOnTopCheckBox.Checked = true;
-			ShowThumbnailsAlwaysOnTopCheckBox.CheckState = CheckState.Checked;
-			ShowThumbnailsAlwaysOnTopCheckBox.Location = new Point(9, 142);
-			ShowThumbnailsAlwaysOnTopCheckBox.Margin = new Padding(4);
-			ShowThumbnailsAlwaysOnTopCheckBox.Name = "ShowThumbnailsAlwaysOnTopCheckBox";
-			ShowThumbnailsAlwaysOnTopCheckBox.RightToLeft = RightToLeft.No;
-			ShowThumbnailsAlwaysOnTopCheckBox.Size = new Size(148, 19);
-			ShowThumbnailsAlwaysOnTopCheckBox.TabIndex = 21;
-			ShowThumbnailsAlwaysOnTopCheckBox.Text = "Previews always on top";
-			ShowThumbnailsAlwaysOnTopCheckBox.UseVisualStyleBackColor = true;
-			ShowThumbnailsAlwaysOnTopCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// HideThumbnailsOnLostFocusCheckBox
-			// 
-			HideThumbnailsOnLostFocusCheckBox.AutoSize = true;
-			HideThumbnailsOnLostFocusCheckBox.Checked = true;
-			HideThumbnailsOnLostFocusCheckBox.CheckState = CheckState.Checked;
-			HideThumbnailsOnLostFocusCheckBox.Location = new Point(9, 163);
-			HideThumbnailsOnLostFocusCheckBox.Margin = new Padding(4);
-			HideThumbnailsOnLostFocusCheckBox.Name = "HideThumbnailsOnLostFocusCheckBox";
-			HideThumbnailsOnLostFocusCheckBox.Size = new Size(252, 19);
-			HideThumbnailsOnLostFocusCheckBox.TabIndex = 22;
-			HideThumbnailsOnLostFocusCheckBox.Text = "Hide previews when EVE client is not active";
-			HideThumbnailsOnLostFocusCheckBox.UseVisualStyleBackColor = true;
-			HideThumbnailsOnLostFocusCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// EnablePerClientThumbnailsLayoutsCheckBox
-			// 
-			EnablePerClientThumbnailsLayoutsCheckBox.AutoSize = true;
-			EnablePerClientThumbnailsLayoutsCheckBox.Checked = true;
-			EnablePerClientThumbnailsLayoutsCheckBox.CheckState = CheckState.Checked;
-			EnablePerClientThumbnailsLayoutsCheckBox.Location = new Point(9, 185);
-			EnablePerClientThumbnailsLayoutsCheckBox.Margin = new Padding(4);
-			EnablePerClientThumbnailsLayoutsCheckBox.Name = "EnablePerClientThumbnailsLayoutsCheckBox";
-			EnablePerClientThumbnailsLayoutsCheckBox.Size = new Size(200, 19);
-			EnablePerClientThumbnailsLayoutsCheckBox.TabIndex = 23;
-			EnablePerClientThumbnailsLayoutsCheckBox.Text = "Unique layout for each EVE client";
-			EnablePerClientThumbnailsLayoutsCheckBox.UseVisualStyleBackColor = true;
-			EnablePerClientThumbnailsLayoutsCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
+			//
 			// MinimizeToTrayCheckBox
-			// 
+			//
+			GeneralSettingsPanel.SetColumnSpan(MinimizeToTrayCheckBox, 2);
 			MinimizeToTrayCheckBox.AutoSize = true;
-			MinimizeToTrayCheckBox.Location = new Point(9, 8);
 			MinimizeToTrayCheckBox.Margin = new Padding(4);
 			MinimizeToTrayCheckBox.Name = "MinimizeToTrayCheckBox";
-			MinimizeToTrayCheckBox.Size = new Size(155, 19);
-			MinimizeToTrayCheckBox.TabIndex = 18;
+			MinimizeToTrayCheckBox.TabIndex = 0;
 			MinimizeToTrayCheckBox.Text = "Minimize to System Tray";
 			MinimizeToTrayCheckBox.UseVisualStyleBackColor = true;
 			MinimizeToTrayCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
+			//
+			// LanguageLabel
+			//
+			LanguageLabel.Anchor = AnchorStyles.Left;
+			LanguageLabel.AutoSize = true;
+			LanguageLabel.Margin = new Padding(4, 12, 8, 0);
+			LanguageLabel.Name = "LanguageLabel";
+			LanguageLabel.TabIndex = 1;
+			LanguageLabel.Text = "Language";
+			//
+			// LanguageCombo
+			//
+			LanguageCombo.Anchor = AnchorStyles.Left;
+			LanguageCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+			LanguageCombo.Margin = new Padding(4, 8, 4, 4);
+			LanguageCombo.Name = "LanguageCombo";
+			LanguageCombo.Size = new Size(160, 23);
+			LanguageCombo.TabIndex = 2;
+			LanguageCombo.SelectedIndexChanged += LanguageChanged_Handler;
+			//
+			// LanguageRestartHintLabel
+			//
+			GeneralSettingsPanel.SetColumnSpan(LanguageRestartHintLabel, 2);
+			LanguageRestartHintLabel.AutoSize = true;
+			LanguageRestartHintLabel.ForeColor = SystemColors.GrayText;
+			LanguageRestartHintLabel.Margin = new Padding(4, 2, 4, 4);
+			LanguageRestartHintLabel.Name = "LanguageRestartHintLabel";
+			LanguageRestartHintLabel.TabIndex = 3;
+			LanguageRestartHintLabel.Text = "Takes effect after restart";
+			LanguageRestartHintLabel.Visible = false;
+			//
+			// ClientWindowsTabPage
+			//
+			ClientWindowsTabPage.BackColor = SystemColors.Control;
+			ClientWindowsTabPage.Controls.Add(ClientWindowsPanel);
+			ClientWindowsTabPage.Location = new Point(124, 4);
+			ClientWindowsTabPage.Margin = new Padding(4);
+			ClientWindowsTabPage.Name = "ClientWindowsTabPage";
+			ClientWindowsTabPage.Padding = new Padding(4);
+			ClientWindowsTabPage.Size = new Size(327, 243);
+			ClientWindowsTabPage.TabIndex = 8;
+			ClientWindowsTabPage.Text = "Client Windows";
+			//
+			// ClientWindowsPanel
+			//
+			ClientWindowsPanel.ColumnCount = 1;
+			ClientWindowsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			ClientWindowsPanel.Controls.Add(EnableClientLayoutTrackingCheckBox, 0, 0);
+			ClientWindowsPanel.Controls.Add(MinimizeInactiveClientsCheckBox, 0, 1);
+			ClientWindowsPanel.Controls.Add(HideCaptionOnClientsCheckBox, 0, 2);
+			ClientWindowsPanel.Controls.Add(DisableAnimationCheckBox, 0, 3);
+			ClientWindowsPanel.Controls.Add(MinimizedRenderingNoteLabel, 0, 4);
+			ClientWindowsPanel.Dock = DockStyle.Fill;
+			ClientWindowsPanel.Location = new Point(4, 4);
+			ClientWindowsPanel.Margin = new Padding(4);
+			ClientWindowsPanel.Name = "ClientWindowsPanel";
+			ClientWindowsPanel.Padding = new Padding(4);
+			ClientWindowsPanel.RowCount = 6;
+			ClientWindowsPanel.RowStyles.Add(new RowStyle());
+			ClientWindowsPanel.RowStyles.Add(new RowStyle());
+			ClientWindowsPanel.RowStyles.Add(new RowStyle());
+			ClientWindowsPanel.RowStyles.Add(new RowStyle());
+			ClientWindowsPanel.RowStyles.Add(new RowStyle());
+			ClientWindowsPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			ClientWindowsPanel.Size = new Size(319, 235);
+			ClientWindowsPanel.TabIndex = 0;
+			//
+			// EnableClientLayoutTrackingCheckBox
+			//
+			EnableClientLayoutTrackingCheckBox.AutoSize = true;
+			EnableClientLayoutTrackingCheckBox.Margin = new Padding(4);
+			EnableClientLayoutTrackingCheckBox.Name = "EnableClientLayoutTrackingCheckBox";
+			EnableClientLayoutTrackingCheckBox.TabIndex = 0;
+			EnableClientLayoutTrackingCheckBox.Text = "Track client locations";
+			EnableClientLayoutTrackingCheckBox.UseVisualStyleBackColor = true;
+			EnableClientLayoutTrackingCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// MinimizeInactiveClientsCheckBox
+			//
+			MinimizeInactiveClientsCheckBox.AutoSize = true;
+			MinimizeInactiveClientsCheckBox.Margin = new Padding(4);
+			MinimizeInactiveClientsCheckBox.Name = "MinimizeInactiveClientsCheckBox";
+			MinimizeInactiveClientsCheckBox.TabIndex = 1;
+			MinimizeInactiveClientsCheckBox.Text = "Minimize inactive EVE clients";
+			MinimizeInactiveClientsCheckBox.UseVisualStyleBackColor = true;
+			MinimizeInactiveClientsCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// HideCaptionOnClientsCheckBox
+			//
+			HideCaptionOnClientsCheckBox.AutoSize = true;
+			HideCaptionOnClientsCheckBox.Margin = new Padding(4);
+			HideCaptionOnClientsCheckBox.Name = "HideCaptionOnClientsCheckBox";
+			HideCaptionOnClientsCheckBox.TabIndex = 2;
+			HideCaptionOnClientsCheckBox.Text = "Hide caption bar on clients";
+			HideCaptionOnClientsCheckBox.UseVisualStyleBackColor = true;
+			HideCaptionOnClientsCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// DisableAnimationCheckBox
+			//
+			DisableAnimationCheckBox.AutoSize = true;
+			DisableAnimationCheckBox.Margin = new Padding(4);
+			DisableAnimationCheckBox.Name = "DisableAnimationCheckBox";
+			DisableAnimationCheckBox.TabIndex = 3;
+			DisableAnimationCheckBox.Text = "Disable minimize/restore animation";
+			DisableAnimationCheckBox.UseVisualStyleBackColor = true;
+			DisableAnimationCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// MinimizedRenderingNoteLabel
+			//
+			MinimizedRenderingNoteLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			MinimizedRenderingNoteLabel.AutoSize = true;
+			MinimizedRenderingNoteLabel.ForeColor = SystemColors.GrayText;
+			MinimizedRenderingNoteLabel.Margin = new Padding(4, 12, 4, 0);
+			MinimizedRenderingNoteLabel.Name = "MinimizedRenderingNoteLabel";
+			MinimizedRenderingNoteLabel.TabIndex = 4;
+			MinimizedRenderingNoteLabel.Text = "Windows does not render minimized windows in real time, so their previews are refreshed periodically instead - the interval is set on the Previews > Rendering tab.";
+			//
 			// ThumbnailTabPage
 			// 
 			ThumbnailTabPage.BackColor = SystemColors.Control;
@@ -465,414 +514,662 @@ namespace EveOPreview.View
 			ThumbnailTabPage.Padding = new Padding(4);
 			ThumbnailTabPage.Size = new Size(327, 243);
 			ThumbnailTabPage.TabIndex = 1;
-			ThumbnailTabPage.Text = "Preview";
+			ThumbnailTabPage.Text = "Previews";
 			// 
 			// ThumbnailSettingsPanel
 			// 
-			ThumbnailSettingsPanel.Controls.Add(label1);
-			ThumbnailSettingsPanel.Controls.Add(PreventPreviewColorButton);
-			ThumbnailSettingsPanel.Controls.Add(PreventPreviewsCheckBox);
-			ThumbnailSettingsPanel.Controls.Add(ThumbnailSnapToGridCheckBox);
-			ThumbnailSettingsPanel.Controls.Add(ThumbnailSnapToGridSizeYNumericEdit);
-			ThumbnailSettingsPanel.Controls.Add(SnapYLabel);
-			ThumbnailSettingsPanel.Controls.Add(ThumbnailSnapToGridSizeXNumericEdit);
-			ThumbnailSettingsPanel.Controls.Add(SnapXLabel);
-			ThumbnailSettingsPanel.Controls.Add(LockThumbnailLocationCheckbox);
-			ThumbnailSettingsPanel.Controls.Add(HeigthLabel);
-			ThumbnailSettingsPanel.Controls.Add(WidthLabel);
-			ThumbnailSettingsPanel.Controls.Add(ThumbnailsWidthNumericEdit);
-			ThumbnailSettingsPanel.Controls.Add(ThumbnailsHeightNumericEdit);
-			ThumbnailSettingsPanel.Controls.Add(ThumbnailOpacityTrackBar);
-			ThumbnailSettingsPanel.Controls.Add(OpacityLabel);
+			ThumbnailSettingsPanel.Controls.Add(PreviewSubTabControl);
 			ThumbnailSettingsPanel.Dock = DockStyle.Fill;
 			ThumbnailSettingsPanel.Location = new Point(4, 4);
 			ThumbnailSettingsPanel.Margin = new Padding(4);
 			ThumbnailSettingsPanel.Name = "ThumbnailSettingsPanel";
+			ThumbnailSettingsPanel.Padding = new Padding(2, 0, 0, 0);
 			ThumbnailSettingsPanel.Size = new Size(319, 235);
 			ThumbnailSettingsPanel.TabIndex = 19;
-			// 
-			// label1
-			// 
-			label1.AutoSize = true;
-			label1.Location = new Point(175, 169);
-			label1.Margin = new Padding(4, 0, 4, 0);
-			label1.Name = "label1";
-			label1.Size = new Size(36, 15);
-			label1.TabIndex = 35;
-			label1.Text = "Color";
-			// 
-			// PreventPreviewColorButton
-			// 
-			PreventPreviewColorButton.BorderStyle = BorderStyle.FixedSingle;
-			PreventPreviewColorButton.Location = new Point(218, 168);
-			PreventPreviewColorButton.Margin = new Padding(4);
-			PreventPreviewColorButton.Name = "PreventPreviewColorButton";
-			PreventPreviewColorButton.Size = new Size(58, 19);
-			PreventPreviewColorButton.TabIndex = 34;
-			PreventPreviewColorButton.Click += PreventPreviewColorButton_Click;
-			// 
-			// PreventPreviewsCheckBox
-			// 
-			PreventPreviewsCheckBox.AutoSize = true;
-			PreventPreviewsCheckBox.Location = new Point(13, 168);
-			PreventPreviewsCheckBox.Margin = new Padding(4);
-			PreventPreviewsCheckBox.Name = "PreventPreviewsCheckBox";
-			PreventPreviewsCheckBox.Size = new Size(151, 19);
-			PreventPreviewsCheckBox.TabIndex = 33;
-			PreventPreviewsCheckBox.Text = "Do not display previews";
-			PreventPreviewsCheckBox.UseVisualStyleBackColor = true;
-			PreventPreviewsCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ThumbnailSnapToGridCheckBox
-			// 
-			ThumbnailSnapToGridCheckBox.AutoSize = true;
-			ThumbnailSnapToGridCheckBox.Location = new Point(13, 120);
-			ThumbnailSnapToGridCheckBox.Margin = new Padding(4);
-			ThumbnailSnapToGridCheckBox.Name = "ThumbnailSnapToGridCheckBox";
-			ThumbnailSnapToGridCheckBox.Size = new Size(152, 19);
-			ThumbnailSnapToGridCheckBox.TabIndex = 32;
-			ThumbnailSnapToGridCheckBox.Text = "Thumbnail Snap to Grid";
-			ThumbnailSnapToGridCheckBox.UseVisualStyleBackColor = true;
-			ThumbnailSnapToGridCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ThumbnailSnapToGridSizeYNumericEdit
-			// 
-			ThumbnailSnapToGridSizeYNumericEdit.BackColor = SystemColors.Window;
-			ThumbnailSnapToGridSizeYNumericEdit.BorderStyle = BorderStyle.FixedSingle;
-			ThumbnailSnapToGridSizeYNumericEdit.CausesValidation = false;
-			ThumbnailSnapToGridSizeYNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-			ThumbnailSnapToGridSizeYNumericEdit.Location = new Point(152, 141);
-			ThumbnailSnapToGridSizeYNumericEdit.Margin = new Padding(4);
-			ThumbnailSnapToGridSizeYNumericEdit.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
-			ThumbnailSnapToGridSizeYNumericEdit.Name = "ThumbnailSnapToGridSizeYNumericEdit";
-			ThumbnailSnapToGridSizeYNumericEdit.Size = new Size(56, 23);
-			ThumbnailSnapToGridSizeYNumericEdit.TabIndex = 31;
-			ThumbnailSnapToGridSizeYNumericEdit.Value = new decimal(new int[] { 100, 0, 0, 0 });
-			ThumbnailSnapToGridSizeYNumericEdit.ValueChanged += OptionChanged_Handler;
-			// 
-			// SnapYLabel
-			// 
-			SnapYLabel.AutoSize = true;
-			SnapYLabel.Location = new Point(128, 143);
-			SnapYLabel.Margin = new Padding(4, 0, 4, 0);
-			SnapYLabel.Name = "SnapYLabel";
-			SnapYLabel.Size = new Size(14, 15);
-			SnapYLabel.TabIndex = 30;
-			SnapYLabel.Text = "Y";
-			// 
-			// ThumbnailSnapToGridSizeXNumericEdit
-			// 
-			ThumbnailSnapToGridSizeXNumericEdit.BackColor = SystemColors.Window;
-			ThumbnailSnapToGridSizeXNumericEdit.BorderStyle = BorderStyle.FixedSingle;
-			ThumbnailSnapToGridSizeXNumericEdit.CausesValidation = false;
-			ThumbnailSnapToGridSizeXNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-			ThumbnailSnapToGridSizeXNumericEdit.Location = new Point(65, 141);
-			ThumbnailSnapToGridSizeXNumericEdit.Margin = new Padding(4);
-			ThumbnailSnapToGridSizeXNumericEdit.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
-			ThumbnailSnapToGridSizeXNumericEdit.Name = "ThumbnailSnapToGridSizeXNumericEdit";
-			ThumbnailSnapToGridSizeXNumericEdit.Size = new Size(56, 23);
-			ThumbnailSnapToGridSizeXNumericEdit.TabIndex = 29;
-			ThumbnailSnapToGridSizeXNumericEdit.Value = new decimal(new int[] { 100, 0, 0, 0 });
-			ThumbnailSnapToGridSizeXNumericEdit.ValueChanged += OptionChanged_Handler;
-			// 
-			// SnapXLabel
-			// 
-			SnapXLabel.AutoSize = true;
-			SnapXLabel.Location = new Point(9, 143);
-			SnapXLabel.Margin = new Padding(4, 0, 4, 0);
-			SnapXLabel.Name = "SnapXLabel";
-			SnapXLabel.Size = new Size(43, 15);
-			SnapXLabel.TabIndex = 28;
-			SnapXLabel.Text = "Snap X";
-			// 
-			// LockThumbnailLocationCheckbox
-			// 
-			LockThumbnailLocationCheckbox.AutoSize = true;
-			LockThumbnailLocationCheckbox.Location = new Point(13, 94);
-			LockThumbnailLocationCheckbox.Margin = new Padding(4);
-			LockThumbnailLocationCheckbox.Name = "LockThumbnailLocationCheckbox";
-			LockThumbnailLocationCheckbox.Size = new Size(161, 19);
-			LockThumbnailLocationCheckbox.TabIndex = 26;
-			LockThumbnailLocationCheckbox.Text = "Lock Thumbnail Location";
-			LockThumbnailLocationCheckbox.UseVisualStyleBackColor = true;
-			LockThumbnailLocationCheckbox.CheckedChanged += OptionChanged_Handler;
-			// 
-			// HeigthLabel
-			// 
-			HeigthLabel.AutoSize = true;
-			HeigthLabel.Location = new Point(9, 66);
-			HeigthLabel.Margin = new Padding(4, 0, 4, 0);
-			HeigthLabel.Name = "HeigthLabel";
-			HeigthLabel.Size = new Size(104, 15);
-			HeigthLabel.TabIndex = 24;
-			HeigthLabel.Text = "Thumbnail Height";
-			// 
-			// WidthLabel
-			// 
-			WidthLabel.AutoSize = true;
-			WidthLabel.Location = new Point(9, 38);
-			WidthLabel.Margin = new Padding(4, 0, 4, 0);
-			WidthLabel.Name = "WidthLabel";
-			WidthLabel.Size = new Size(100, 15);
-			WidthLabel.TabIndex = 23;
-			WidthLabel.Text = "Thumbnail Width";
-			// 
-			// ThumbnailsWidthNumericEdit
-			// 
-			ThumbnailsWidthNumericEdit.BackColor = SystemColors.Window;
-			ThumbnailsWidthNumericEdit.BorderStyle = BorderStyle.FixedSingle;
-			ThumbnailsWidthNumericEdit.CausesValidation = false;
-			ThumbnailsWidthNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-			ThumbnailsWidthNumericEdit.Location = new Point(122, 36);
-			ThumbnailsWidthNumericEdit.Margin = new Padding(4);
-			ThumbnailsWidthNumericEdit.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
-			ThumbnailsWidthNumericEdit.Name = "ThumbnailsWidthNumericEdit";
-			ThumbnailsWidthNumericEdit.Size = new Size(56, 23);
-			ThumbnailsWidthNumericEdit.TabIndex = 21;
-			ThumbnailsWidthNumericEdit.Value = new decimal(new int[] { 100, 0, 0, 0 });
-			ThumbnailsWidthNumericEdit.ValueChanged += ThumbnailSizeChanged_Handler;
-			// 
-			// ThumbnailsHeightNumericEdit
-			// 
-			ThumbnailsHeightNumericEdit.BackColor = SystemColors.Window;
-			ThumbnailsHeightNumericEdit.BorderStyle = BorderStyle.FixedSingle;
-			ThumbnailsHeightNumericEdit.CausesValidation = false;
-			ThumbnailsHeightNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-			ThumbnailsHeightNumericEdit.Location = new Point(122, 64);
-			ThumbnailsHeightNumericEdit.Margin = new Padding(4);
-			ThumbnailsHeightNumericEdit.Maximum = new decimal(new int[] { 99999999, 0, 0, 0 });
-			ThumbnailsHeightNumericEdit.Name = "ThumbnailsHeightNumericEdit";
-			ThumbnailsHeightNumericEdit.Size = new Size(56, 23);
-			ThumbnailsHeightNumericEdit.TabIndex = 22;
-			ThumbnailsHeightNumericEdit.Value = new decimal(new int[] { 70, 0, 0, 0 });
-			ThumbnailsHeightNumericEdit.ValueChanged += ThumbnailSizeChanged_Handler;
-			// 
+			//
+			// PreviewSubTabControl
+			//
+			PreviewSubTabControl.Controls.Add(PreviewGeneralSubPage);
+			PreviewSubTabControl.Controls.Add(PreviewVisualSubPage);
+			PreviewSubTabControl.Controls.Add(PreviewRenderingSubPage);
+			PreviewSubTabControl.Controls.Add(PreviewLayoutSubPage);
+			PreviewSubTabControl.Controls.Add(PreviewZoomSubPage);
+			PreviewSubTabControl.Dock = DockStyle.Fill;
+			PreviewSubTabControl.Location = new Point(2, 0);
+			PreviewSubTabControl.Name = "PreviewSubTabControl";
+			PreviewSubTabControl.SelectedIndex = 0;
+			PreviewSubTabControl.Size = new Size(317, 235);
+			PreviewSubTabControl.TabIndex = 0;
+			//
+			// PreviewGeneralSubPage
+			//
+			PreviewGeneralSubPage.BackColor = SystemColors.Control;
+			PreviewGeneralSubPage.Controls.Add(PreviewGeneralTablePanel);
+			PreviewGeneralSubPage.Location = new Point(4, 24);
+			PreviewGeneralSubPage.Name = "PreviewGeneralSubPage";
+			PreviewGeneralSubPage.Padding = new Padding(3);
+			PreviewGeneralSubPage.Size = new Size(309, 207);
+			PreviewGeneralSubPage.TabIndex = 0;
+			PreviewGeneralSubPage.Text = "General";
+			//
+			// PreviewGeneralTablePanel
+			//
+			PreviewGeneralTablePanel.ColumnCount = 2;
+			PreviewGeneralTablePanel.ColumnStyles.Add(new ColumnStyle());
+			PreviewGeneralTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			PreviewGeneralTablePanel.Controls.Add(HideActiveClientThumbnailCheckBox, 0, 0);
+			PreviewGeneralTablePanel.Controls.Add(ShowThumbnailsAlwaysOnTopCheckBox, 0, 1);
+			PreviewGeneralTablePanel.Controls.Add(HideThumbnailsOnLostFocusCheckBox, 0, 2);
+			PreviewGeneralTablePanel.Dock = DockStyle.Fill;
+			PreviewGeneralTablePanel.Location = new Point(3, 3);
+			PreviewGeneralTablePanel.Name = "PreviewGeneralTablePanel";
+			PreviewGeneralTablePanel.Padding = new Padding(6);
+			PreviewGeneralTablePanel.RowCount = 4;
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle());
+			PreviewGeneralTablePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			PreviewGeneralTablePanel.Size = new Size(303, 201);
+			PreviewGeneralTablePanel.TabIndex = 0;
+			//
+			// HideActiveClientThumbnailCheckBox
+			//
+			PreviewGeneralTablePanel.SetColumnSpan(HideActiveClientThumbnailCheckBox, 2);
+			HideActiveClientThumbnailCheckBox.AutoSize = true;
+			HideActiveClientThumbnailCheckBox.Checked = true;
+			HideActiveClientThumbnailCheckBox.CheckState = CheckState.Checked;
+			HideActiveClientThumbnailCheckBox.Margin = new Padding(4);
+			HideActiveClientThumbnailCheckBox.Name = "HideActiveClientThumbnailCheckBox";
+			HideActiveClientThumbnailCheckBox.TabIndex = 0;
+			HideActiveClientThumbnailCheckBox.Text = "Hide preview of active EVE client";
+			HideActiveClientThumbnailCheckBox.UseVisualStyleBackColor = true;
+			HideActiveClientThumbnailCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// ShowThumbnailsAlwaysOnTopCheckBox
+			//
+			PreviewGeneralTablePanel.SetColumnSpan(ShowThumbnailsAlwaysOnTopCheckBox, 2);
+			ShowThumbnailsAlwaysOnTopCheckBox.AutoSize = true;
+			ShowThumbnailsAlwaysOnTopCheckBox.Checked = true;
+			ShowThumbnailsAlwaysOnTopCheckBox.CheckState = CheckState.Checked;
+			ShowThumbnailsAlwaysOnTopCheckBox.Margin = new Padding(4);
+			ShowThumbnailsAlwaysOnTopCheckBox.Name = "ShowThumbnailsAlwaysOnTopCheckBox";
+			ShowThumbnailsAlwaysOnTopCheckBox.RightToLeft = RightToLeft.No;
+			ShowThumbnailsAlwaysOnTopCheckBox.TabIndex = 1;
+			ShowThumbnailsAlwaysOnTopCheckBox.Text = "Previews always on top";
+			ShowThumbnailsAlwaysOnTopCheckBox.UseVisualStyleBackColor = true;
+			ShowThumbnailsAlwaysOnTopCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// HideThumbnailsOnLostFocusCheckBox
+			//
+			PreviewGeneralTablePanel.SetColumnSpan(HideThumbnailsOnLostFocusCheckBox, 2);
+			HideThumbnailsOnLostFocusCheckBox.AutoSize = true;
+			HideThumbnailsOnLostFocusCheckBox.Checked = true;
+			HideThumbnailsOnLostFocusCheckBox.CheckState = CheckState.Checked;
+			HideThumbnailsOnLostFocusCheckBox.Margin = new Padding(4);
+			HideThumbnailsOnLostFocusCheckBox.Name = "HideThumbnailsOnLostFocusCheckBox";
+			HideThumbnailsOnLostFocusCheckBox.TabIndex = 2;
+			HideThumbnailsOnLostFocusCheckBox.Text = "Hide previews when EVE client is not active";
+			HideThumbnailsOnLostFocusCheckBox.UseVisualStyleBackColor = true;
+			HideThumbnailsOnLostFocusCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// OpacityLabel
+			//
+			OpacityLabel.Anchor = AnchorStyles.Left;
+			OpacityLabel.AutoSize = true;
+			OpacityLabel.Margin = new Padding(4, 0, 8, 0);
+			OpacityLabel.Name = "OpacityLabel";
+			OpacityLabel.TabIndex = 3;
+			OpacityLabel.Text = "Opacity";
+			//
 			// ThumbnailOpacityTrackBar
-			// 
-			ThumbnailOpacityTrackBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+			//
+			ThumbnailOpacityTrackBar.Anchor = AnchorStyles.Left | AnchorStyles.Right;
 			ThumbnailOpacityTrackBar.AutoSize = false;
 			ThumbnailOpacityTrackBar.LargeChange = 10;
-			ThumbnailOpacityTrackBar.Location = new Point(71, 7);
 			ThumbnailOpacityTrackBar.Margin = new Padding(4);
 			ThumbnailOpacityTrackBar.Maximum = 100;
 			ThumbnailOpacityTrackBar.Minimum = 20;
 			ThumbnailOpacityTrackBar.Name = "ThumbnailOpacityTrackBar";
-			ThumbnailOpacityTrackBar.Size = new Size(223, 25);
-			ThumbnailOpacityTrackBar.TabIndex = 20;
+			ThumbnailOpacityTrackBar.Size = new Size(180, 28);
+			ThumbnailOpacityTrackBar.TabIndex = 4;
 			ThumbnailOpacityTrackBar.TickFrequency = 10;
 			ThumbnailOpacityTrackBar.Value = 20;
 			ThumbnailOpacityTrackBar.ValueChanged += OptionChanged_Handler;
-			// 
-			// OpacityLabel
-			// 
-			OpacityLabel.AutoSize = true;
-			OpacityLabel.Location = new Point(9, 10);
-			OpacityLabel.Margin = new Padding(4, 0, 4, 0);
-			OpacityLabel.Name = "OpacityLabel";
-			OpacityLabel.Size = new Size(48, 15);
-			OpacityLabel.TabIndex = 19;
-			OpacityLabel.Text = "Opacity";
 			//
-			// ZoomTabPage
+			// PreventPreviewsCheckBox
 			//
-			ZoomTabPage.BackColor = SystemColors.Control;
-			ZoomTabPage.Controls.Add(ZoomSettingsPanel);
-			ZoomTabPage.Location = new Point(124, 4);
-			ZoomTabPage.Margin = new Padding(4);
-			ZoomTabPage.Name = "ZoomTabPage";
-			ZoomTabPage.Size = new Size(327, 243);
-			ZoomTabPage.TabIndex = 2;
-			ZoomTabPage.Text = "Zoom";
-			// 
-			// ZoomSettingsPanel
-			// 
-			ZoomSettingsPanel.Controls.Add(ZoomFactorLabel);
-			ZoomSettingsPanel.Controls.Add(ZoomAnchorPanel);
-			ZoomSettingsPanel.Controls.Add(ZoomAnchorLabel);
-			ZoomSettingsPanel.Controls.Add(EnableThumbnailZoomCheckBox);
-			ZoomSettingsPanel.Controls.Add(ThumbnailZoomFactorNumericEdit);
-			ZoomSettingsPanel.Dock = DockStyle.Fill;
-			ZoomSettingsPanel.Location = new Point(0, 0);
-			ZoomSettingsPanel.Margin = new Padding(4);
-			ZoomSettingsPanel.Name = "ZoomSettingsPanel";
-			ZoomSettingsPanel.Size = new Size(327, 243);
-			ZoomSettingsPanel.TabIndex = 36;
-			// 
-			// ZoomFactorLabel
-			// 
-			ZoomFactorLabel.AutoSize = true;
-			ZoomFactorLabel.Location = new Point(9, 38);
-			ZoomFactorLabel.Margin = new Padding(4, 0, 4, 0);
-			ZoomFactorLabel.Name = "ZoomFactorLabel";
-			ZoomFactorLabel.Size = new Size(75, 15);
-			ZoomFactorLabel.TabIndex = 39;
-			ZoomFactorLabel.Text = "Zoom Factor";
-			// 
-			// ZoomAnchorPanel
-			// 
-			ZoomAnchorPanel.BorderStyle = BorderStyle.FixedSingle;
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorNWRadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorNRadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorNERadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorWRadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorSERadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorCRadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorSRadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorERadioButton);
-			ZoomAnchorPanel.Controls.Add(ZoomAanchorSWRadioButton);
-			ZoomAnchorPanel.Location = new Point(94, 62);
-			ZoomAnchorPanel.Margin = new Padding(4);
-			ZoomAnchorPanel.Name = "ZoomAnchorPanel";
-			ZoomAnchorPanel.Size = new Size(90, 84);
-			ZoomAnchorPanel.TabIndex = 38;
-			// 
-			// ZoomAanchorNWRadioButton
-			// 
-			ZoomAanchorNWRadioButton.AutoSize = true;
-			ZoomAanchorNWRadioButton.Location = new Point(4, 4);
-			ZoomAanchorNWRadioButton.Margin = new Padding(4);
-			ZoomAanchorNWRadioButton.Name = "ZoomAanchorNWRadioButton";
-			ZoomAanchorNWRadioButton.Size = new Size(14, 13);
-			ZoomAanchorNWRadioButton.TabIndex = 0;
-			ZoomAanchorNWRadioButton.TabStop = true;
-			ZoomAanchorNWRadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorNWRadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorNRadioButton
-			// 
-			ZoomAanchorNRadioButton.AutoSize = true;
-			ZoomAanchorNRadioButton.Location = new Point(36, 4);
-			ZoomAanchorNRadioButton.Margin = new Padding(4);
-			ZoomAanchorNRadioButton.Name = "ZoomAanchorNRadioButton";
-			ZoomAanchorNRadioButton.Size = new Size(14, 13);
-			ZoomAanchorNRadioButton.TabIndex = 1;
-			ZoomAanchorNRadioButton.TabStop = true;
-			ZoomAanchorNRadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorNRadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorNERadioButton
-			// 
-			ZoomAanchorNERadioButton.AutoSize = true;
-			ZoomAanchorNERadioButton.Location = new Point(69, 4);
-			ZoomAanchorNERadioButton.Margin = new Padding(4);
-			ZoomAanchorNERadioButton.Name = "ZoomAanchorNERadioButton";
-			ZoomAanchorNERadioButton.Size = new Size(14, 13);
-			ZoomAanchorNERadioButton.TabIndex = 2;
-			ZoomAanchorNERadioButton.TabStop = true;
-			ZoomAanchorNERadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorNERadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorWRadioButton
-			// 
-			ZoomAanchorWRadioButton.AutoSize = true;
-			ZoomAanchorWRadioButton.Location = new Point(4, 34);
-			ZoomAanchorWRadioButton.Margin = new Padding(4);
-			ZoomAanchorWRadioButton.Name = "ZoomAanchorWRadioButton";
-			ZoomAanchorWRadioButton.Size = new Size(14, 13);
-			ZoomAanchorWRadioButton.TabIndex = 3;
-			ZoomAanchorWRadioButton.TabStop = true;
-			ZoomAanchorWRadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorWRadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorSERadioButton
-			// 
-			ZoomAanchorSERadioButton.AutoSize = true;
-			ZoomAanchorSERadioButton.Location = new Point(69, 64);
-			ZoomAanchorSERadioButton.Margin = new Padding(4);
-			ZoomAanchorSERadioButton.Name = "ZoomAanchorSERadioButton";
-			ZoomAanchorSERadioButton.Size = new Size(14, 13);
-			ZoomAanchorSERadioButton.TabIndex = 8;
-			ZoomAanchorSERadioButton.TabStop = true;
-			ZoomAanchorSERadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorSERadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorCRadioButton
-			// 
-			ZoomAanchorCRadioButton.AutoSize = true;
-			ZoomAanchorCRadioButton.Location = new Point(36, 34);
-			ZoomAanchorCRadioButton.Margin = new Padding(4);
-			ZoomAanchorCRadioButton.Name = "ZoomAanchorCRadioButton";
-			ZoomAanchorCRadioButton.Size = new Size(14, 13);
-			ZoomAanchorCRadioButton.TabIndex = 4;
-			ZoomAanchorCRadioButton.TabStop = true;
-			ZoomAanchorCRadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorCRadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorSRadioButton
-			// 
-			ZoomAanchorSRadioButton.AutoSize = true;
-			ZoomAanchorSRadioButton.Location = new Point(36, 64);
-			ZoomAanchorSRadioButton.Margin = new Padding(4);
-			ZoomAanchorSRadioButton.Name = "ZoomAanchorSRadioButton";
-			ZoomAanchorSRadioButton.Size = new Size(14, 13);
-			ZoomAanchorSRadioButton.TabIndex = 7;
-			ZoomAanchorSRadioButton.TabStop = true;
-			ZoomAanchorSRadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorSRadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorERadioButton
-			// 
-			ZoomAanchorERadioButton.AutoSize = true;
-			ZoomAanchorERadioButton.Location = new Point(69, 34);
-			ZoomAanchorERadioButton.Margin = new Padding(4);
-			ZoomAanchorERadioButton.Name = "ZoomAanchorERadioButton";
-			ZoomAanchorERadioButton.Size = new Size(14, 13);
-			ZoomAanchorERadioButton.TabIndex = 5;
-			ZoomAanchorERadioButton.TabStop = true;
-			ZoomAanchorERadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorERadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAanchorSWRadioButton
-			// 
-			ZoomAanchorSWRadioButton.AutoSize = true;
-			ZoomAanchorSWRadioButton.Location = new Point(4, 64);
-			ZoomAanchorSWRadioButton.Margin = new Padding(4);
-			ZoomAanchorSWRadioButton.Name = "ZoomAanchorSWRadioButton";
-			ZoomAanchorSWRadioButton.Size = new Size(14, 13);
-			ZoomAanchorSWRadioButton.TabIndex = 6;
-			ZoomAanchorSWRadioButton.TabStop = true;
-			ZoomAanchorSWRadioButton.UseVisualStyleBackColor = true;
-			ZoomAanchorSWRadioButton.CheckedChanged += OptionChanged_Handler;
-			// 
-			// ZoomAnchorLabel
-			// 
-			ZoomAnchorLabel.AutoSize = true;
-			ZoomAnchorLabel.Location = new Point(9, 66);
-			ZoomAnchorLabel.Margin = new Padding(4, 0, 4, 0);
-			ZoomAnchorLabel.Name = "ZoomAnchorLabel";
-			ZoomAnchorLabel.Size = new Size(46, 15);
-			ZoomAnchorLabel.TabIndex = 40;
-			ZoomAnchorLabel.Text = "Anchor";
-			// 
+			PreviewVisualTablePanel.SetColumnSpan(PreventPreviewsCheckBox, 2);
+			PreventPreviewsCheckBox.AutoSize = true;
+			PreventPreviewsCheckBox.Margin = new Padding(4);
+			PreventPreviewsCheckBox.Name = "PreventPreviewsCheckBox";
+			PreventPreviewsCheckBox.TabIndex = 5;
+			PreventPreviewsCheckBox.Text = "Do not display previews";
+			PreventPreviewsCheckBox.UseVisualStyleBackColor = true;
+			PreventPreviewsCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// PreventPreviewColorLabel
+			//
+			PreventPreviewColorLabel.Anchor = AnchorStyles.Left;
+			PreventPreviewColorLabel.AutoSize = true;
+			PreventPreviewColorLabel.Margin = new Padding(4, 0, 8, 0);
+			PreventPreviewColorLabel.Name = "PreventPreviewColorLabel";
+			PreventPreviewColorLabel.TabIndex = 6;
+			PreventPreviewColorLabel.Text = "Placeholder color";
+			//
+			// PreventPreviewColorButton
+			//
+			PreventPreviewColorButton.Anchor = AnchorStyles.Left;
+			PreventPreviewColorButton.BorderStyle = BorderStyle.FixedSingle;
+			PreventPreviewColorButton.Margin = new Padding(4);
+			PreventPreviewColorButton.Name = "PreventPreviewColorButton";
+			PreventPreviewColorButton.Size = new Size(72, 21);
+			PreventPreviewColorButton.TabIndex = 7;
+			PreventPreviewColorButton.Click += PreventPreviewColorButton_Click;
+			//
+			// PreviewVisualSubPage
+			//
+			PreviewVisualSubPage.BackColor = SystemColors.Control;
+			PreviewVisualSubPage.Controls.Add(PreviewVisualTablePanel);
+			PreviewVisualSubPage.Location = new Point(4, 24);
+			PreviewVisualSubPage.Name = "PreviewVisualSubPage";
+			PreviewVisualSubPage.Padding = new Padding(3);
+			PreviewVisualSubPage.Size = new Size(309, 207);
+			PreviewVisualSubPage.TabIndex = 3;
+			PreviewVisualSubPage.Text = "Visualization";
+			//
+			// PreviewVisualTablePanel
+			//
+			PreviewVisualTablePanel.ColumnCount = 2;
+			PreviewVisualTablePanel.ColumnStyles.Add(new ColumnStyle());
+			PreviewVisualTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			PreviewVisualTablePanel.Controls.Add(OpacityLabel, 0, 0);
+			PreviewVisualTablePanel.Controls.Add(ThumbnailOpacityTrackBar, 1, 0);
+			PreviewVisualTablePanel.Controls.Add(PreventPreviewsCheckBox, 0, 1);
+			PreviewVisualTablePanel.Controls.Add(PreventPreviewColorLabel, 0, 2);
+			PreviewVisualTablePanel.Controls.Add(PreventPreviewColorButton, 1, 2);
+			PreviewVisualTablePanel.Dock = DockStyle.Fill;
+			PreviewVisualTablePanel.Location = new Point(3, 3);
+			PreviewVisualTablePanel.Name = "PreviewVisualTablePanel";
+			PreviewVisualTablePanel.Padding = new Padding(6);
+			PreviewVisualTablePanel.RowCount = 4;
+			PreviewVisualTablePanel.RowStyles.Add(new RowStyle());
+			PreviewVisualTablePanel.RowStyles.Add(new RowStyle());
+			PreviewVisualTablePanel.RowStyles.Add(new RowStyle());
+			PreviewVisualTablePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			PreviewVisualTablePanel.Size = new Size(303, 201);
+			PreviewVisualTablePanel.TabIndex = 0;
+			//
+			// PreviewRenderingSubPage
+			//
+			PreviewRenderingSubPage.BackColor = SystemColors.Control;
+			PreviewRenderingSubPage.Controls.Add(PreviewRenderingTablePanel);
+			PreviewRenderingSubPage.Location = new Point(4, 24);
+			PreviewRenderingSubPage.Name = "PreviewRenderingSubPage";
+			PreviewRenderingSubPage.Padding = new Padding(3);
+			PreviewRenderingSubPage.Size = new Size(309, 207);
+			PreviewRenderingSubPage.TabIndex = 4;
+			PreviewRenderingSubPage.Text = "Rendering";
+			//
+			// PreviewRenderingTablePanel
+			//
+			PreviewRenderingTablePanel.ColumnCount = 2;
+			PreviewRenderingTablePanel.ColumnStyles.Add(new ColumnStyle());
+			PreviewRenderingTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshPeriodLabel, 0, 0);
+			PreviewRenderingTablePanel.Controls.Add(ThumbnailRefreshPeriodNumericEdit, 1, 0);
+			PreviewRenderingTablePanel.Controls.Add(MinimizedRefreshPeriodLabel, 0, 1);
+			PreviewRenderingTablePanel.Controls.Add(MinimizedClientsRefreshPeriodNumericEdit, 1, 1);
+			PreviewRenderingTablePanel.Controls.Add(MinimizedRefreshHintLabel, 0, 2);
+			PreviewRenderingTablePanel.Dock = DockStyle.Fill;
+			PreviewRenderingTablePanel.Location = new Point(3, 3);
+			PreviewRenderingTablePanel.Name = "PreviewRenderingTablePanel";
+			PreviewRenderingTablePanel.Padding = new Padding(6);
+			PreviewRenderingTablePanel.RowCount = 4;
+			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
+			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
+			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle());
+			PreviewRenderingTablePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			PreviewRenderingTablePanel.Size = new Size(303, 201);
+			PreviewRenderingTablePanel.TabIndex = 0;
+			//
+			// ThumbnailRefreshPeriodLabel
+			//
+			ThumbnailRefreshPeriodLabel.Anchor = AnchorStyles.Left;
+			ThumbnailRefreshPeriodLabel.AutoSize = true;
+			ThumbnailRefreshPeriodLabel.Margin = new Padding(4, 0, 8, 0);
+			ThumbnailRefreshPeriodLabel.Name = "ThumbnailRefreshPeriodLabel";
+			ThumbnailRefreshPeriodLabel.TabIndex = 0;
+			ThumbnailRefreshPeriodLabel.Text = "Preview refresh period (ms)";
+			//
+			// ThumbnailRefreshPeriodNumericEdit
+			//
+			ThumbnailRefreshPeriodNumericEdit.Anchor = AnchorStyles.Left;
+			ThumbnailRefreshPeriodNumericEdit.BackColor = SystemColors.Window;
+			ThumbnailRefreshPeriodNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			ThumbnailRefreshPeriodNumericEdit.CausesValidation = false;
+			ThumbnailRefreshPeriodNumericEdit.Increment = new decimal(new int[] { 50, 0, 0, 0 });
+			ThumbnailRefreshPeriodNumericEdit.Margin = new Padding(4);
+			ThumbnailRefreshPeriodNumericEdit.Minimum = new decimal(new int[] { 300, 0, 0, 0 });
+			ThumbnailRefreshPeriodNumericEdit.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
+			ThumbnailRefreshPeriodNumericEdit.Name = "ThumbnailRefreshPeriodNumericEdit";
+			ThumbnailRefreshPeriodNumericEdit.Size = new Size(72, 23);
+			ThumbnailRefreshPeriodNumericEdit.TabIndex = 1;
+			ThumbnailRefreshPeriodNumericEdit.Value = new decimal(new int[] { 500, 0, 0, 0 });
+			ThumbnailRefreshPeriodNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// MinimizedRefreshPeriodLabel
+			//
+			MinimizedRefreshPeriodLabel.Anchor = AnchorStyles.Left;
+			MinimizedRefreshPeriodLabel.AutoSize = true;
+			MinimizedRefreshPeriodLabel.Margin = new Padding(4, 0, 8, 0);
+			MinimizedRefreshPeriodLabel.Name = "MinimizedRefreshPeriodLabel";
+			MinimizedRefreshPeriodLabel.TabIndex = 2;
+			MinimizedRefreshPeriodLabel.Text = "Minimized clients refresh period (s)";
+			//
+			// MinimizedClientsRefreshPeriodNumericEdit
+			//
+			MinimizedClientsRefreshPeriodNumericEdit.Anchor = AnchorStyles.Left;
+			MinimizedClientsRefreshPeriodNumericEdit.BackColor = SystemColors.Window;
+			MinimizedClientsRefreshPeriodNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			MinimizedClientsRefreshPeriodNumericEdit.CausesValidation = false;
+			MinimizedClientsRefreshPeriodNumericEdit.Margin = new Padding(4);
+			MinimizedClientsRefreshPeriodNumericEdit.Maximum = new decimal(new int[] { 300, 0, 0, 0 });
+			MinimizedClientsRefreshPeriodNumericEdit.Name = "MinimizedClientsRefreshPeriodNumericEdit";
+			MinimizedClientsRefreshPeriodNumericEdit.Size = new Size(72, 23);
+			MinimizedClientsRefreshPeriodNumericEdit.TabIndex = 3;
+			MinimizedClientsRefreshPeriodNumericEdit.Value = new decimal(new int[] { 5, 0, 0, 0 });
+			MinimizedClientsRefreshPeriodNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// MinimizedRefreshHintLabel
+			//
+			PreviewRenderingTablePanel.SetColumnSpan(MinimizedRefreshHintLabel, 2);
+			MinimizedRefreshHintLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			MinimizedRefreshHintLabel.AutoSize = true;
+			MinimizedRefreshHintLabel.ForeColor = SystemColors.GrayText;
+			MinimizedRefreshHintLabel.Margin = new Padding(4, 12, 4, 0);
+			MinimizedRefreshHintLabel.Name = "MinimizedRefreshHintLabel";
+			MinimizedRefreshHintLabel.TabIndex = 4;
+			MinimizedRefreshHintLabel.Text = "These intervals drive the background refresh of minimized clients: Windows cannot render a minimized window in real time, so it is briefly woken up on this schedule to redraw its preview. 0 disables the refresh.";
+			//
+			// PreviewLayoutSubPage
+			//
+			PreviewLayoutSubPage.BackColor = SystemColors.Control;
+			PreviewLayoutSubPage.Controls.Add(PreviewLayoutTablePanel);
+			PreviewLayoutSubPage.Location = new Point(4, 24);
+			PreviewLayoutSubPage.Name = "PreviewLayoutSubPage";
+			PreviewLayoutSubPage.Padding = new Padding(3);
+			PreviewLayoutSubPage.Size = new Size(309, 207);
+			PreviewLayoutSubPage.TabIndex = 1;
+			PreviewLayoutSubPage.Text = "Layout";
+			//
+			// PreviewLayoutTablePanel
+			//
+			PreviewLayoutTablePanel.ColumnCount = 2;
+			PreviewLayoutTablePanel.ColumnStyles.Add(new ColumnStyle());
+			PreviewLayoutTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			PreviewLayoutTablePanel.Controls.Add(WidthLabel, 0, 0);
+			PreviewLayoutTablePanel.Controls.Add(ThumbnailsWidthNumericEdit, 1, 0);
+			PreviewLayoutTablePanel.Controls.Add(HeightLabel, 0, 1);
+			PreviewLayoutTablePanel.Controls.Add(ThumbnailsHeightNumericEdit, 1, 1);
+			PreviewLayoutTablePanel.Controls.Add(LockThumbnailLocationCheckbox, 0, 2);
+			PreviewLayoutTablePanel.Controls.Add(EnablePerClientThumbnailsLayoutsCheckBox, 0, 3);
+			PreviewLayoutTablePanel.Controls.Add(ThumbnailSnapToGridCheckBox, 0, 4);
+			PreviewLayoutTablePanel.Controls.Add(SnapXLabel, 0, 5);
+			PreviewLayoutTablePanel.Controls.Add(ThumbnailSnapToGridSizeXNumericEdit, 1, 5);
+			PreviewLayoutTablePanel.Controls.Add(SnapYLabel, 0, 6);
+			PreviewLayoutTablePanel.Controls.Add(ThumbnailSnapToGridSizeYNumericEdit, 1, 6);
+			PreviewLayoutTablePanel.Dock = DockStyle.Fill;
+			PreviewLayoutTablePanel.Location = new Point(3, 3);
+			PreviewLayoutTablePanel.Name = "PreviewLayoutTablePanel";
+			PreviewLayoutTablePanel.Padding = new Padding(6);
+			PreviewLayoutTablePanel.RowCount = 8;
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle());
+			PreviewLayoutTablePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			PreviewLayoutTablePanel.Size = new Size(303, 201);
+			PreviewLayoutTablePanel.TabIndex = 0;
+			//
+			// WidthLabel
+			//
+			WidthLabel.Anchor = AnchorStyles.Left;
+			WidthLabel.AutoSize = true;
+			WidthLabel.Margin = new Padding(4, 0, 8, 0);
+			WidthLabel.Name = "WidthLabel";
+			WidthLabel.TabIndex = 0;
+			WidthLabel.Text = "Preview width";
+			//
+			// ThumbnailsWidthNumericEdit
+			//
+			ThumbnailsWidthNumericEdit.Anchor = AnchorStyles.Left;
+			ThumbnailsWidthNumericEdit.BackColor = SystemColors.Window;
+			ThumbnailsWidthNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			ThumbnailsWidthNumericEdit.CausesValidation = false;
+			ThumbnailsWidthNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
+			ThumbnailsWidthNumericEdit.Margin = new Padding(4);
+			ThumbnailsWidthNumericEdit.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
+			ThumbnailsWidthNumericEdit.Name = "ThumbnailsWidthNumericEdit";
+			ThumbnailsWidthNumericEdit.Size = new Size(72, 23);
+			ThumbnailsWidthNumericEdit.TabIndex = 1;
+			ThumbnailsWidthNumericEdit.Value = new decimal(new int[] { 100, 0, 0, 0 });
+			ThumbnailsWidthNumericEdit.ValueChanged += ThumbnailSizeChanged_Handler;
+			//
+			// HeightLabel
+			//
+			HeightLabel.Anchor = AnchorStyles.Left;
+			HeightLabel.AutoSize = true;
+			HeightLabel.Margin = new Padding(4, 0, 8, 0);
+			HeightLabel.Name = "HeightLabel";
+			HeightLabel.TabIndex = 2;
+			HeightLabel.Text = "Preview height";
+			//
+			// ThumbnailsHeightNumericEdit
+			//
+			ThumbnailsHeightNumericEdit.Anchor = AnchorStyles.Left;
+			ThumbnailsHeightNumericEdit.BackColor = SystemColors.Window;
+			ThumbnailsHeightNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			ThumbnailsHeightNumericEdit.CausesValidation = false;
+			ThumbnailsHeightNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
+			ThumbnailsHeightNumericEdit.Margin = new Padding(4);
+			ThumbnailsHeightNumericEdit.Maximum = new decimal(new int[] { 99999999, 0, 0, 0 });
+			ThumbnailsHeightNumericEdit.Name = "ThumbnailsHeightNumericEdit";
+			ThumbnailsHeightNumericEdit.Size = new Size(72, 23);
+			ThumbnailsHeightNumericEdit.TabIndex = 3;
+			ThumbnailsHeightNumericEdit.Value = new decimal(new int[] { 70, 0, 0, 0 });
+			ThumbnailsHeightNumericEdit.ValueChanged += ThumbnailSizeChanged_Handler;
+			//
+			// LockThumbnailLocationCheckbox
+			//
+			PreviewLayoutTablePanel.SetColumnSpan(LockThumbnailLocationCheckbox, 2);
+			LockThumbnailLocationCheckbox.AutoSize = true;
+			LockThumbnailLocationCheckbox.Margin = new Padding(4, 8, 4, 4);
+			LockThumbnailLocationCheckbox.Name = "LockThumbnailLocationCheckbox";
+			LockThumbnailLocationCheckbox.TabIndex = 4;
+			LockThumbnailLocationCheckbox.Text = "Lock preview location";
+			LockThumbnailLocationCheckbox.UseVisualStyleBackColor = true;
+			LockThumbnailLocationCheckbox.CheckedChanged += OptionChanged_Handler;
+			//
+			// EnablePerClientThumbnailsLayoutsCheckBox
+			//
+			PreviewLayoutTablePanel.SetColumnSpan(EnablePerClientThumbnailsLayoutsCheckBox, 2);
+			EnablePerClientThumbnailsLayoutsCheckBox.AutoSize = true;
+			EnablePerClientThumbnailsLayoutsCheckBox.Checked = true;
+			EnablePerClientThumbnailsLayoutsCheckBox.CheckState = CheckState.Checked;
+			EnablePerClientThumbnailsLayoutsCheckBox.Margin = new Padding(4);
+			EnablePerClientThumbnailsLayoutsCheckBox.Name = "EnablePerClientThumbnailsLayoutsCheckBox";
+			EnablePerClientThumbnailsLayoutsCheckBox.TabIndex = 5;
+			EnablePerClientThumbnailsLayoutsCheckBox.Text = "Unique layout for each EVE client";
+			EnablePerClientThumbnailsLayoutsCheckBox.UseVisualStyleBackColor = true;
+			EnablePerClientThumbnailsLayoutsCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// ThumbnailSnapToGridCheckBox
+			//
+			PreviewLayoutTablePanel.SetColumnSpan(ThumbnailSnapToGridCheckBox, 2);
+			ThumbnailSnapToGridCheckBox.AutoSize = true;
+			ThumbnailSnapToGridCheckBox.Margin = new Padding(4);
+			ThumbnailSnapToGridCheckBox.Name = "ThumbnailSnapToGridCheckBox";
+			ThumbnailSnapToGridCheckBox.TabIndex = 6;
+			ThumbnailSnapToGridCheckBox.Text = "Snap previews to grid";
+			ThumbnailSnapToGridCheckBox.UseVisualStyleBackColor = true;
+			ThumbnailSnapToGridCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// SnapXLabel
+			//
+			SnapXLabel.Anchor = AnchorStyles.Left;
+			SnapXLabel.AutoSize = true;
+			SnapXLabel.Margin = new Padding(20, 0, 8, 0);
+			SnapXLabel.Name = "SnapXLabel";
+			SnapXLabel.TabIndex = 7;
+			SnapXLabel.Text = "Grid step X";
+			//
+			// ThumbnailSnapToGridSizeXNumericEdit
+			//
+			ThumbnailSnapToGridSizeXNumericEdit.Anchor = AnchorStyles.Left;
+			ThumbnailSnapToGridSizeXNumericEdit.BackColor = SystemColors.Window;
+			ThumbnailSnapToGridSizeXNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			ThumbnailSnapToGridSizeXNumericEdit.CausesValidation = false;
+			ThumbnailSnapToGridSizeXNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
+			ThumbnailSnapToGridSizeXNumericEdit.Margin = new Padding(4);
+			ThumbnailSnapToGridSizeXNumericEdit.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
+			ThumbnailSnapToGridSizeXNumericEdit.Name = "ThumbnailSnapToGridSizeXNumericEdit";
+			ThumbnailSnapToGridSizeXNumericEdit.Size = new Size(72, 23);
+			ThumbnailSnapToGridSizeXNumericEdit.TabIndex = 8;
+			ThumbnailSnapToGridSizeXNumericEdit.Value = new decimal(new int[] { 100, 0, 0, 0 });
+			ThumbnailSnapToGridSizeXNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// SnapYLabel
+			//
+			SnapYLabel.Anchor = AnchorStyles.Left;
+			SnapYLabel.AutoSize = true;
+			SnapYLabel.Margin = new Padding(20, 0, 8, 0);
+			SnapYLabel.Name = "SnapYLabel";
+			SnapYLabel.TabIndex = 9;
+			SnapYLabel.Text = "Grid step Y";
+			//
+			// ThumbnailSnapToGridSizeYNumericEdit
+			//
+			ThumbnailSnapToGridSizeYNumericEdit.Anchor = AnchorStyles.Left;
+			ThumbnailSnapToGridSizeYNumericEdit.BackColor = SystemColors.Window;
+			ThumbnailSnapToGridSizeYNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			ThumbnailSnapToGridSizeYNumericEdit.CausesValidation = false;
+			ThumbnailSnapToGridSizeYNumericEdit.Increment = new decimal(new int[] { 10, 0, 0, 0 });
+			ThumbnailSnapToGridSizeYNumericEdit.Margin = new Padding(4);
+			ThumbnailSnapToGridSizeYNumericEdit.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
+			ThumbnailSnapToGridSizeYNumericEdit.Name = "ThumbnailSnapToGridSizeYNumericEdit";
+			ThumbnailSnapToGridSizeYNumericEdit.Size = new Size(72, 23);
+			ThumbnailSnapToGridSizeYNumericEdit.TabIndex = 10;
+			ThumbnailSnapToGridSizeYNumericEdit.Value = new decimal(new int[] { 100, 0, 0, 0 });
+			ThumbnailSnapToGridSizeYNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// PreviewZoomSubPage
+			//
+			PreviewZoomSubPage.BackColor = SystemColors.Control;
+			PreviewZoomSubPage.Controls.Add(PreviewZoomTablePanel);
+			PreviewZoomSubPage.Location = new Point(4, 24);
+			PreviewZoomSubPage.Name = "PreviewZoomSubPage";
+			PreviewZoomSubPage.Padding = new Padding(3);
+			PreviewZoomSubPage.Size = new Size(309, 207);
+			PreviewZoomSubPage.TabIndex = 2;
+			PreviewZoomSubPage.Text = "Zoom";
+			//
+			// PreviewZoomTablePanel
+			//
+			PreviewZoomTablePanel.ColumnCount = 2;
+			PreviewZoomTablePanel.ColumnStyles.Add(new ColumnStyle());
+			PreviewZoomTablePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			PreviewZoomTablePanel.Controls.Add(EnableThumbnailZoomCheckBox, 0, 0);
+			PreviewZoomTablePanel.Controls.Add(ZoomFactorLabel, 0, 1);
+			PreviewZoomTablePanel.Controls.Add(ThumbnailZoomFactorNumericEdit, 1, 1);
+			PreviewZoomTablePanel.Controls.Add(ZoomAnchorLabel, 0, 2);
+			PreviewZoomTablePanel.Controls.Add(ZoomAnchorPanel, 1, 2);
+			PreviewZoomTablePanel.Dock = DockStyle.Fill;
+			PreviewZoomTablePanel.Location = new Point(3, 3);
+			PreviewZoomTablePanel.Name = "PreviewZoomTablePanel";
+			PreviewZoomTablePanel.Padding = new Padding(6);
+			PreviewZoomTablePanel.RowCount = 4;
+			PreviewZoomTablePanel.RowStyles.Add(new RowStyle());
+			PreviewZoomTablePanel.RowStyles.Add(new RowStyle());
+			PreviewZoomTablePanel.RowStyles.Add(new RowStyle());
+			PreviewZoomTablePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			PreviewZoomTablePanel.Size = new Size(303, 201);
+			PreviewZoomTablePanel.TabIndex = 0;
+			//
 			// EnableThumbnailZoomCheckBox
-			// 
+			//
+			PreviewZoomTablePanel.SetColumnSpan(EnableThumbnailZoomCheckBox, 2);
 			EnableThumbnailZoomCheckBox.AutoSize = true;
 			EnableThumbnailZoomCheckBox.Checked = true;
 			EnableThumbnailZoomCheckBox.CheckState = CheckState.Checked;
-			EnableThumbnailZoomCheckBox.Location = new Point(9, 8);
 			EnableThumbnailZoomCheckBox.Margin = new Padding(4);
 			EnableThumbnailZoomCheckBox.Name = "EnableThumbnailZoomCheckBox";
 			EnableThumbnailZoomCheckBox.RightToLeft = RightToLeft.No;
-			EnableThumbnailZoomCheckBox.Size = new Size(108, 19);
-			EnableThumbnailZoomCheckBox.TabIndex = 36;
+			EnableThumbnailZoomCheckBox.TabIndex = 0;
 			EnableThumbnailZoomCheckBox.Text = "Zoom on hover";
 			EnableThumbnailZoomCheckBox.UseVisualStyleBackColor = true;
 			EnableThumbnailZoomCheckBox.CheckedChanged += OptionChanged_Handler;
-			// 
+			//
+			// ZoomFactorLabel
+			//
+			ZoomFactorLabel.Anchor = AnchorStyles.Left;
+			ZoomFactorLabel.AutoSize = true;
+			ZoomFactorLabel.Margin = new Padding(4, 0, 8, 0);
+			ZoomFactorLabel.Name = "ZoomFactorLabel";
+			ZoomFactorLabel.TabIndex = 1;
+			ZoomFactorLabel.Text = "Zoom factor";
+			//
 			// ThumbnailZoomFactorNumericEdit
-			// 
+			//
+			ThumbnailZoomFactorNumericEdit.Anchor = AnchorStyles.Left;
 			ThumbnailZoomFactorNumericEdit.BackColor = SystemColors.Window;
 			ThumbnailZoomFactorNumericEdit.BorderStyle = BorderStyle.FixedSingle;
-			ThumbnailZoomFactorNumericEdit.Location = new Point(94, 36);
 			ThumbnailZoomFactorNumericEdit.Margin = new Padding(4);
 			ThumbnailZoomFactorNumericEdit.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
 			ThumbnailZoomFactorNumericEdit.Minimum = new decimal(new int[] { 2, 0, 0, 0 });
 			ThumbnailZoomFactorNumericEdit.Name = "ThumbnailZoomFactorNumericEdit";
-			ThumbnailZoomFactorNumericEdit.Size = new Size(44, 23);
-			ThumbnailZoomFactorNumericEdit.TabIndex = 37;
+			ThumbnailZoomFactorNumericEdit.Size = new Size(72, 23);
+			ThumbnailZoomFactorNumericEdit.TabIndex = 2;
 			ThumbnailZoomFactorNumericEdit.Value = new decimal(new int[] { 2, 0, 0, 0 });
 			ThumbnailZoomFactorNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// ZoomAnchorLabel
+			//
+			ZoomAnchorLabel.Anchor = AnchorStyles.Left;
+			ZoomAnchorLabel.AutoSize = true;
+			ZoomAnchorLabel.Margin = new Padding(4, 0, 8, 0);
+			ZoomAnchorLabel.Name = "ZoomAnchorLabel";
+			ZoomAnchorLabel.TabIndex = 3;
+			ZoomAnchorLabel.Text = "Anchor";
+			//
+			// ZoomAnchorPanel
+			//
+			ZoomAnchorPanel.Anchor = AnchorStyles.Left;
+			ZoomAnchorPanel.BorderStyle = BorderStyle.FixedSingle;
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorNWRadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorNRadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorNERadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorWRadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorSERadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorCRadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorSRadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorERadioButton);
+			ZoomAnchorPanel.Controls.Add(ZoomAnchorSWRadioButton);
+			ZoomAnchorPanel.Margin = new Padding(4);
+			ZoomAnchorPanel.Name = "ZoomAnchorPanel";
+			ZoomAnchorPanel.Size = new Size(90, 84);
+			ZoomAnchorPanel.TabIndex = 4;
 			// 
+			// ZoomAnchorNWRadioButton
+			// 
+			ZoomAnchorNWRadioButton.AutoSize = true;
+			ZoomAnchorNWRadioButton.Location = new Point(4, 4);
+			ZoomAnchorNWRadioButton.Margin = new Padding(4);
+			ZoomAnchorNWRadioButton.Name = "ZoomAnchorNWRadioButton";
+			ZoomAnchorNWRadioButton.Size = new Size(14, 13);
+			ZoomAnchorNWRadioButton.TabIndex = 0;
+			ZoomAnchorNWRadioButton.TabStop = true;
+			ZoomAnchorNWRadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorNWRadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorNRadioButton
+			// 
+			ZoomAnchorNRadioButton.AutoSize = true;
+			ZoomAnchorNRadioButton.Location = new Point(36, 4);
+			ZoomAnchorNRadioButton.Margin = new Padding(4);
+			ZoomAnchorNRadioButton.Name = "ZoomAnchorNRadioButton";
+			ZoomAnchorNRadioButton.Size = new Size(14, 13);
+			ZoomAnchorNRadioButton.TabIndex = 1;
+			ZoomAnchorNRadioButton.TabStop = true;
+			ZoomAnchorNRadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorNRadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorNERadioButton
+			// 
+			ZoomAnchorNERadioButton.AutoSize = true;
+			ZoomAnchorNERadioButton.Location = new Point(69, 4);
+			ZoomAnchorNERadioButton.Margin = new Padding(4);
+			ZoomAnchorNERadioButton.Name = "ZoomAnchorNERadioButton";
+			ZoomAnchorNERadioButton.Size = new Size(14, 13);
+			ZoomAnchorNERadioButton.TabIndex = 2;
+			ZoomAnchorNERadioButton.TabStop = true;
+			ZoomAnchorNERadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorNERadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorWRadioButton
+			// 
+			ZoomAnchorWRadioButton.AutoSize = true;
+			ZoomAnchorWRadioButton.Location = new Point(4, 34);
+			ZoomAnchorWRadioButton.Margin = new Padding(4);
+			ZoomAnchorWRadioButton.Name = "ZoomAnchorWRadioButton";
+			ZoomAnchorWRadioButton.Size = new Size(14, 13);
+			ZoomAnchorWRadioButton.TabIndex = 3;
+			ZoomAnchorWRadioButton.TabStop = true;
+			ZoomAnchorWRadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorWRadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorSERadioButton
+			// 
+			ZoomAnchorSERadioButton.AutoSize = true;
+			ZoomAnchorSERadioButton.Location = new Point(69, 64);
+			ZoomAnchorSERadioButton.Margin = new Padding(4);
+			ZoomAnchorSERadioButton.Name = "ZoomAnchorSERadioButton";
+			ZoomAnchorSERadioButton.Size = new Size(14, 13);
+			ZoomAnchorSERadioButton.TabIndex = 8;
+			ZoomAnchorSERadioButton.TabStop = true;
+			ZoomAnchorSERadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorSERadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorCRadioButton
+			// 
+			ZoomAnchorCRadioButton.AutoSize = true;
+			ZoomAnchorCRadioButton.Location = new Point(36, 34);
+			ZoomAnchorCRadioButton.Margin = new Padding(4);
+			ZoomAnchorCRadioButton.Name = "ZoomAnchorCRadioButton";
+			ZoomAnchorCRadioButton.Size = new Size(14, 13);
+			ZoomAnchorCRadioButton.TabIndex = 4;
+			ZoomAnchorCRadioButton.TabStop = true;
+			ZoomAnchorCRadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorCRadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorSRadioButton
+			// 
+			ZoomAnchorSRadioButton.AutoSize = true;
+			ZoomAnchorSRadioButton.Location = new Point(36, 64);
+			ZoomAnchorSRadioButton.Margin = new Padding(4);
+			ZoomAnchorSRadioButton.Name = "ZoomAnchorSRadioButton";
+			ZoomAnchorSRadioButton.Size = new Size(14, 13);
+			ZoomAnchorSRadioButton.TabIndex = 7;
+			ZoomAnchorSRadioButton.TabStop = true;
+			ZoomAnchorSRadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorSRadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorERadioButton
+			// 
+			ZoomAnchorERadioButton.AutoSize = true;
+			ZoomAnchorERadioButton.Location = new Point(69, 34);
+			ZoomAnchorERadioButton.Margin = new Padding(4);
+			ZoomAnchorERadioButton.Name = "ZoomAnchorERadioButton";
+			ZoomAnchorERadioButton.Size = new Size(14, 13);
+			ZoomAnchorERadioButton.TabIndex = 5;
+			ZoomAnchorERadioButton.TabStop = true;
+			ZoomAnchorERadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorERadioButton.CheckedChanged += OptionChanged_Handler;
+			// 
+			// ZoomAnchorSWRadioButton
+			// 
+			ZoomAnchorSWRadioButton.AutoSize = true;
+			ZoomAnchorSWRadioButton.Location = new Point(4, 64);
+			ZoomAnchorSWRadioButton.Margin = new Padding(4);
+			ZoomAnchorSWRadioButton.Name = "ZoomAnchorSWRadioButton";
+			ZoomAnchorSWRadioButton.Size = new Size(14, 13);
+			ZoomAnchorSWRadioButton.TabIndex = 6;
+			ZoomAnchorSWRadioButton.TabStop = true;
+			ZoomAnchorSWRadioButton.UseVisualStyleBackColor = true;
+			ZoomAnchorSWRadioButton.CheckedChanged += OptionChanged_Handler;
+			//
 			// OverlayTabPage
 			// 
 			OverlayTabPage.BackColor = SystemColors.Control;
@@ -925,11 +1222,11 @@ namespace EveOPreview.View
 			//
 			OverlayWindowNameSubPage.BackColor = SystemColors.Control;
 			OverlayWindowNameSubPage.Controls.Add(ShowClientNameCheckBox);
-			OverlayWindowNameSubPage.Controls.Add(label2);
+			OverlayWindowNameSubPage.Controls.Add(OverlayLabelColorLabel);
 			OverlayWindowNameSubPage.Controls.Add(OverlayLabelColorButton);
 			OverlayWindowNameSubPage.Controls.Add(btnLabelFont);
-			OverlayWindowNameSubPage.Controls.Add(label3);
-			OverlayWindowNameSubPage.Controls.Add(panel1);
+			OverlayWindowNameSubPage.Controls.Add(OverlayLabelPositionLabel);
+			OverlayWindowNameSubPage.Controls.Add(OverlayLabelAnchorPanel);
 			OverlayWindowNameSubPage.Controls.Add(OverlayLabelFontPreviewPanel);
 			OverlayLabelFontPreviewPanel.Controls.Add(LabelOverlayLabelFont);
 			OverlayWindowNameSubPage.Location = new Point(4, 24);
@@ -947,7 +1244,7 @@ namespace EveOPreview.View
 			OverlayGroupNameSubPage.Controls.Add(CycleGroupNameColorButton);
 			OverlayGroupNameSubPage.Controls.Add(btnCycleGroupNameFont);
 			OverlayGroupNameSubPage.Controls.Add(CycleGroupNamePositionLabel);
-			OverlayGroupNameSubPage.Controls.Add(panel2);
+			OverlayGroupNameSubPage.Controls.Add(CycleGroupIndicatorPanel);
 			OverlayGroupNameSubPage.Controls.Add(CycleGroupNameFontPreviewPanel);
 			CycleGroupNameFontPreviewPanel.Controls.Add(LabelCycleGroupNameFont);
 			OverlayGroupNameSubPage.Location = new Point(4, 24);
@@ -1068,36 +1365,25 @@ namespace EveOPreview.View
 			OverlayBorderSubPage.Size = new Size(309, 286);
 			OverlayBorderSubPage.TabIndex = 3;
 			OverlayBorderSubPage.Text = "Border";
+			//
+			// CycleGroupIndicatorPanel
 			// 
-			// label5
-			// 
-			label5.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			label5.AutoSize = true;
-			label5.Location = new Point(224, 12);
-			label5.Margin = new Padding(4, 0, 4, 0);
-			label5.Name = "label5";
-			label5.Size = new Size(168, 15);
-			label5.TabIndex = 47;
-			label5.Text = "Position";
-			// 
-			// panel2
-			// 
-			panel2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			panel2.BorderStyle = BorderStyle.FixedSingle;
-			panel2.Controls.Add(CycleGroupIndicatorNWRadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorNRadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorNERadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorWRadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorSERadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorCRadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorSRadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorERadioButton);
-			panel2.Controls.Add(CycleGroupIndicatorSWRadioButton);
-			panel2.Location = new Point(224, 31);
-			panel2.Margin = new Padding(4);
-			panel2.Name = "panel2";
-			panel2.Size = new Size(73, 66);
-			panel2.TabIndex = 46;
+			CycleGroupIndicatorPanel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+			CycleGroupIndicatorPanel.BorderStyle = BorderStyle.FixedSingle;
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorNWRadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorNRadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorNERadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorWRadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorSERadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorCRadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorSRadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorERadioButton);
+			CycleGroupIndicatorPanel.Controls.Add(CycleGroupIndicatorSWRadioButton);
+			CycleGroupIndicatorPanel.Location = new Point(224, 31);
+			CycleGroupIndicatorPanel.Margin = new Padding(4);
+			CycleGroupIndicatorPanel.Name = "CycleGroupIndicatorPanel";
+			CycleGroupIndicatorPanel.Size = new Size(73, 66);
+			CycleGroupIndicatorPanel.TabIndex = 46;
 			// 
 			// CycleGroupIndicatorNWRadioButton
 			// 
@@ -1228,26 +1514,26 @@ namespace EveOPreview.View
 			btnLabelFont.UseVisualStyleBackColor = true;
 			btnLabelFont.Click += btnLabelFont_Click;
 			// 
-			// label3
+			// OverlayLabelPositionLabel
 			// 
-			label3.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			label3.AutoSize = true;
-			label3.Location = new Point(224, 12);
-			label3.Margin = new Padding(4, 0, 4, 0);
-			label3.Name = "label3";
-			label3.Size = new Size(50, 15);
-			label3.TabIndex = 43;
-			label3.Text = "Position";
+			OverlayLabelPositionLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+			OverlayLabelPositionLabel.AutoSize = true;
+			OverlayLabelPositionLabel.Location = new Point(224, 12);
+			OverlayLabelPositionLabel.Margin = new Padding(4, 0, 4, 0);
+			OverlayLabelPositionLabel.Name = "OverlayLabelPositionLabel";
+			OverlayLabelPositionLabel.Size = new Size(50, 15);
+			OverlayLabelPositionLabel.TabIndex = 43;
+			OverlayLabelPositionLabel.Text = "Position";
 			// 
-			// label2
+			// OverlayLabelColorLabel
 			// 
-			label2.AutoSize = true;
-			label2.Location = new Point(12, 47);
-			label2.Margin = new Padding(4, 0, 4, 0);
-			label2.Name = "label2";
-			label2.Size = new Size(36, 15);
-			label2.TabIndex = 42;
-			label2.Text = "Color";
+			OverlayLabelColorLabel.AutoSize = true;
+			OverlayLabelColorLabel.Location = new Point(12, 47);
+			OverlayLabelColorLabel.Margin = new Padding(4, 0, 4, 0);
+			OverlayLabelColorLabel.Name = "OverlayLabelColorLabel";
+			OverlayLabelColorLabel.Size = new Size(36, 15);
+			OverlayLabelColorLabel.TabIndex = 42;
+			OverlayLabelColorLabel.Text = "Color";
 			// 
 			// OverlayLabelColorButton
 			// 
@@ -1259,24 +1545,24 @@ namespace EveOPreview.View
 			OverlayLabelColorButton.TabIndex = 41;
 			OverlayLabelColorButton.Click += OverlayLabelColorButton_Click;
 			// 
-			// panel1
+			// OverlayLabelAnchorPanel
 			// 
-			panel1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			panel1.BorderStyle = BorderStyle.FixedSingle;
-			panel1.Controls.Add(OverlayLabelNWRadioButton);
-			panel1.Controls.Add(OverlayLabelNRadioButton);
-			panel1.Controls.Add(OverlayLabelNERadioButton);
-			panel1.Controls.Add(OverlayLabelWRadioButton);
-			panel1.Controls.Add(OverlayLabelSERadioButton);
-			panel1.Controls.Add(OverlayLabelCRadioButton);
-			panel1.Controls.Add(OverlayLabelSRadioButton);
-			panel1.Controls.Add(OverlayLabelERadioButton);
-			panel1.Controls.Add(OverlayLabelSWRadioButton);
-			panel1.Location = new Point(224, 31);
-			panel1.Margin = new Padding(4);
-			panel1.Name = "panel1";
-			panel1.Size = new Size(73, 66);
-			panel1.TabIndex = 39;
+			OverlayLabelAnchorPanel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+			OverlayLabelAnchorPanel.BorderStyle = BorderStyle.FixedSingle;
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelNWRadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelNRadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelNERadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelWRadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelSERadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelCRadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelSRadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelERadioButton);
+			OverlayLabelAnchorPanel.Controls.Add(OverlayLabelSWRadioButton);
+			OverlayLabelAnchorPanel.Location = new Point(224, 31);
+			OverlayLabelAnchorPanel.Margin = new Padding(4);
+			OverlayLabelAnchorPanel.Name = "OverlayLabelAnchorPanel";
+			OverlayLabelAnchorPanel.Size = new Size(73, 66);
+			OverlayLabelAnchorPanel.TabIndex = 39;
 			// 
 			// OverlayLabelNWRadioButton
 			// 
@@ -1895,7 +2181,7 @@ namespace EveOPreview.View
 			DescriptionLabel.Padding = new Padding(9, 4, 9, 4);
 			DescriptionLabel.Size = new Size(304, 167);
 			DescriptionLabel.TabIndex = 5;
-			DescriptionLabel.Text = resources.GetString("DescriptionLabel.Text");
+			// The text comes from the localization resources
 			// 
 			// VersionLabel
 			// 
@@ -1929,7 +2215,7 @@ namespace EveOPreview.View
 			DocumentationLink.Size = new Size(306, 38);
 			DocumentationLink.TabIndex = 2;
 			DocumentationLink.TabStop = true;
-			DocumentationLink.Text = "to be set from prresenter to be set from prresenter to be set from prresenter to be set from prresenter";
+			// The URL itself is filled in by the presenter
 			DocumentationLink.LinkClicked += DocumentationLinkClicked_Handler;
 			// 
 			// NotifyIcon
@@ -1983,18 +2269,35 @@ namespace EveOPreview.View
 			GeneralTabPage.ResumeLayout(false);
 			GeneralSettingsPanel.ResumeLayout(false);
 			GeneralSettingsPanel.PerformLayout();
+			ClientWindowsTabPage.ResumeLayout(false);
+			ClientWindowsPanel.ResumeLayout(false);
+			ClientWindowsPanel.PerformLayout();
 			ThumbnailTabPage.ResumeLayout(false);
 			ThumbnailSettingsPanel.ResumeLayout(false);
-			ThumbnailSettingsPanel.PerformLayout();
+			PreviewSubTabControl.ResumeLayout(false);
+			PreviewGeneralSubPage.ResumeLayout(false);
+			PreviewGeneralTablePanel.ResumeLayout(false);
+			PreviewGeneralTablePanel.PerformLayout();
+			PreviewVisualSubPage.ResumeLayout(false);
+			PreviewVisualTablePanel.ResumeLayout(false);
+			PreviewVisualTablePanel.PerformLayout();
+			PreviewRenderingSubPage.ResumeLayout(false);
+			PreviewRenderingTablePanel.ResumeLayout(false);
+			PreviewRenderingTablePanel.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)ThumbnailRefreshPeriodNumericEdit).EndInit();
+			((System.ComponentModel.ISupportInitialize)MinimizedClientsRefreshPeriodNumericEdit).EndInit();
+			PreviewLayoutSubPage.ResumeLayout(false);
+			PreviewLayoutTablePanel.ResumeLayout(false);
+			PreviewLayoutTablePanel.PerformLayout();
+			PreviewZoomSubPage.ResumeLayout(false);
+			PreviewZoomTablePanel.ResumeLayout(false);
+			PreviewZoomTablePanel.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)ThumbnailSnapToGridSizeYNumericEdit).EndInit();
 			((System.ComponentModel.ISupportInitialize)ActiveClientHighlightThicknessNumericEdit).EndInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailSnapToGridSizeXNumericEdit).EndInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailsWidthNumericEdit).EndInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailsHeightNumericEdit).EndInit();
 			((System.ComponentModel.ISupportInitialize)ThumbnailOpacityTrackBar).EndInit();
-			ZoomTabPage.ResumeLayout(false);
-			ZoomSettingsPanel.ResumeLayout(false);
-			ZoomSettingsPanel.PerformLayout();
 			ZoomAnchorPanel.ResumeLayout(false);
 			ZoomAnchorPanel.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)ThumbnailZoomFactorNumericEdit).EndInit();
@@ -2013,10 +2316,10 @@ namespace EveOPreview.View
 			CycleGroupNameFontPreviewPanel.PerformLayout();
 			OverlayBorderSubPage.ResumeLayout(false);
 			OverlayBorderSubPage.PerformLayout();
-			panel2.ResumeLayout(false);
-			panel2.PerformLayout();
-			panel1.ResumeLayout(false);
-			panel1.PerformLayout();
+			CycleGroupIndicatorPanel.ResumeLayout(false);
+			CycleGroupIndicatorPanel.PerformLayout();
+			OverlayLabelAnchorPanel.ResumeLayout(false);
+			OverlayLabelAnchorPanel.PerformLayout();
 			ClientsTabPage.ResumeLayout(false);
 			ClientsPanel.ResumeLayout(false);
 			ClientsPanel.PerformLayout();
@@ -2037,7 +2340,6 @@ namespace EveOPreview.View
 		#endregion
 		private NotifyIcon NotifyIcon;
 		private ContextMenuStrip TrayMenu;
-		private TabPage ZoomTabPage;
 		private CheckBox EnableClientLayoutTrackingCheckBox;
 		private CheckBox HideActiveClientThumbnailCheckBox;
 		private CheckBox ShowThumbnailsAlwaysOnTopCheckBox;
@@ -2045,18 +2347,20 @@ namespace EveOPreview.View
 		private CheckBox EnablePerClientThumbnailsLayoutsCheckBox;
 		private CheckBox MinimizeToTrayCheckBox;
 		private NumericUpDown ThumbnailsWidthNumericEdit;
+		private NumericUpDown ThumbnailRefreshPeriodNumericEdit;
+		private NumericUpDown MinimizedClientsRefreshPeriodNumericEdit;
 		private NumericUpDown ThumbnailsHeightNumericEdit;
 		private TrackBar ThumbnailOpacityTrackBar;
 		private Panel ZoomAnchorPanel;
-		private RadioButton ZoomAanchorNWRadioButton;
-		private RadioButton ZoomAanchorNRadioButton;
-		private RadioButton ZoomAanchorNERadioButton;
-		private RadioButton ZoomAanchorWRadioButton;
-		private RadioButton ZoomAanchorSERadioButton;
-		private RadioButton ZoomAanchorCRadioButton;
-		private RadioButton ZoomAanchorSRadioButton;
-		private RadioButton ZoomAanchorERadioButton;
-		private RadioButton ZoomAanchorSWRadioButton;
+		private RadioButton ZoomAnchorNWRadioButton;
+		private RadioButton ZoomAnchorNRadioButton;
+		private RadioButton ZoomAnchorNERadioButton;
+		private RadioButton ZoomAnchorWRadioButton;
+		private RadioButton ZoomAnchorSERadioButton;
+		private RadioButton ZoomAnchorCRadioButton;
+		private RadioButton ZoomAnchorSRadioButton;
+		private RadioButton ZoomAnchorERadioButton;
+		private RadioButton ZoomAnchorSWRadioButton;
 		private CheckBox EnableThumbnailZoomCheckBox;
 		private NumericUpDown ThumbnailZoomFactorNumericEdit;
 		private Label HighlightColorLabel;
@@ -2074,10 +2378,10 @@ namespace EveOPreview.View
         private NumericUpDown ThumbnailSnapToGridSizeXNumericEdit;
         private Label SnapXLabel;
         private CheckBox ThumbnailSnapToGridCheckBox;
-        private Label label3;
-        private Label label2;
+        private Label OverlayLabelPositionLabel;
+        private Label OverlayLabelColorLabel;
         private Panel OverlayLabelColorButton;
-        private Panel panel1;
+        private Panel OverlayLabelAnchorPanel;
         private RadioButton OverlayLabelNWRadioButton;
         private RadioButton OverlayLabelNRadioButton;
         private RadioButton OverlayLabelNERadioButton;
@@ -2087,15 +2391,17 @@ namespace EveOPreview.View
         private RadioButton OverlayLabelSRadioButton;
         private RadioButton OverlayLabelERadioButton;
         private RadioButton OverlayLabelSWRadioButton;
-		private ComboBox AnimationStyleCombo;
+		private CheckBox DisableAnimationCheckBox;
+		private Label LanguageLabel;
+		private ComboBox LanguageCombo;
+		private Label LanguageRestartHintLabel;
 		private CheckBox HideCaptionOnClientsCheckBox;
 		private Button btnLabelFont;
 		private Label LabelOverlayLabelFont;
 		private CheckBox PreventPreviewsCheckBox;
-		private Label label1;
+		private Label PreventPreviewColorLabel;
 		private Panel PreventPreviewColorButton;
-		private Label label5;
-		private Panel panel2;
+		private Panel CycleGroupIndicatorPanel;
 		private RadioButton CycleGroupIndicatorNWRadioButton;
 		private RadioButton CycleGroupIndicatorNRadioButton;
 		private RadioButton CycleGroupIndicatorNERadioButton;

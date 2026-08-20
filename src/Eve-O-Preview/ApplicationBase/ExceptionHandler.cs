@@ -34,6 +34,21 @@ namespace EveOPreview
 			};
 		}
 
+		// The resource lookup is the one part of this handler that can fail on its own
+		// (a missing satellite assembly, a broken resource stream), so the English text
+		// stays available as a fallback
+		private static string GetExceptionMessage()
+		{
+			try
+			{
+				return Localization.Strings.Crash_Message;
+			}
+			catch (Exception)
+			{
+				return ExceptionHandler.EXCEPTION_MESSAGE;
+			}
+		}
+
 		private void ExceptionEventHandler(Exception exception)
 		{
 			try
@@ -41,7 +56,7 @@ namespace EveOPreview
 				String exceptionMessage = exception.ToString();
 				File.WriteAllText(ExceptionHandler.EXCEPTION_DUMP_FILE_NAME, exceptionMessage);
 
-				MessageBox.Show(ExceptionHandler.EXCEPTION_MESSAGE, @"EVE-O-Preview", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBox.Show(ExceptionHandler.GetExceptionMessage(), @"EVE-O-Preview", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 			catch
 			{
