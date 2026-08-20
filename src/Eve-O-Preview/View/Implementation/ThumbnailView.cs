@@ -289,6 +289,7 @@ namespace EveOPreview.View
 
 			this._isOverlayVisible = false;
 			this._overlay?.Hide();
+			this._aggroFrame?.Clear();
 			base.Hide();
 		}
 
@@ -298,6 +299,7 @@ namespace EveOPreview.View
 
 			this.IsActive = false;
 			this.ReleaseOverlay();
+			this.ReleaseAggroFrame();
 			base.Close();
 		}
 
@@ -524,6 +526,55 @@ namespace EveOPreview.View
 		{
 			this.SetHighlight(false, 0);
 			this.Refresh(true);
+		}
+
+		// The flashing yellow/red 'aggro' frame driven by the game log monitor.
+		// The window is created lazily on the first alert and reused afterwards
+		private AggroFrameView _aggroFrame;
+
+		public void SetAggroFrame(AggroLevel level)
+		{
+			if ((level == AggroLevel.None) || !this.Visible)
+			{
+				this._aggroFrame?.Clear();
+				return;
+			}
+
+			if (this._aggroFrame == null)
+			{
+				this._aggroFrame = new AggroFrameView();
+			}
+
+			Color color = level == AggroLevel.Red ? this._config.AggroRedColor : this._config.AggroYellowColor;
+			this._aggroFrame.SetState(level, color, this._config.AggroFillPercent, new Rectangle(this.GetOverlayLocation(), this.ClientSize));
+		}
+
+		private void ReleaseAggroFrame()
+		{
+			if (this._aggroFrame == null)
+			{
+				return;
+			}
+
+			AggroFrameView frame = this._aggroFrame;
+			this._aggroFrame = null;
+
+			frame.Clear();
+			frame.Close();
+			frame.Dispose();
+		}
+
+		// Screen position of the thumbnail client area - the region the text overlay
+		// and the aggro frame both cover
+		private Point GetOverlayLocation()
+		{
+			Point location = this.Location;
+
+			int borderWidth = (this.Size.Width - this.ClientSize.Width) / 2;
+			location.X += borderWidth;
+			location.Y += (this.Size.Height - this.ClientSize.Height) - borderWidth;
+
+			return location;
 		}
 
 		// Set while the thumbnail is expanded by the hover zoom. Used to reset the zoom

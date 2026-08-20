@@ -67,6 +67,7 @@ namespace EveOPreview.Presenters
 			this.View.CycleGroupRenameRequested = this.RenameCycleGroup;
 			this.View.HotkeyCaptureModeChanged = this.ChangeHotkeyCaptureMode;
 			this.View.WindowSizeChanged = this.SaveWindowSize;
+			this.View.AggroTestRequested = this.TestAggroFrames;
 
 			this.View.IconName = this._configuration.IconName;
 		}
@@ -188,6 +189,13 @@ namespace EveOPreview.Presenters
 			this.View.CycleGroupNameOutlineThickness = this._configuration.CycleGroupNameOutlineThickness;
 			this.View.CycleGroupNameOutlineColor = this._configuration.CycleGroupNameOutlineColor;
 
+
+			this.View.EnableGameLogMonitor = this._configuration.EnableGameLogMonitor;
+			this.View.GameLogsFolder = this._configuration.GameLogsFolder;
+			this.View.EnableAggroFrames = this._configuration.EnableAggroFrames;
+			this.View.AggroYellowColor = this._configuration.AggroYellowColor;
+			this.View.AggroRedColor = this._configuration.AggroRedColor;
+			this.View.AggroFillPercent = this._configuration.AggroFillPercent;
 
 			this.View.IconName = this._configuration.IconName;
 
@@ -323,6 +331,13 @@ namespace EveOPreview.Presenters
 			this._configuration.CycleGroupNameOutlineEnabled = this.View.CycleGroupNameOutlineEnabled;
 			this._configuration.CycleGroupNameOutlineThickness = this.View.CycleGroupNameOutlineThickness;
 			this._configuration.CycleGroupNameOutlineColor = this.View.CycleGroupNameOutlineColor;
+
+			this._configuration.EnableGameLogMonitor = this.View.EnableGameLogMonitor;
+			this._configuration.GameLogsFolder = this.View.GameLogsFolder;
+			this._configuration.EnableAggroFrames = this.View.EnableAggroFrames;
+			this._configuration.AggroYellowColor = this.View.AggroYellowColor;
+			this._configuration.AggroRedColor = this.View.AggroRedColor;
+			this._configuration.AggroFillPercent = this.View.AggroFillPercent;
 
 			this._configuration.IconName = this.View.IconName;
 
@@ -776,6 +791,11 @@ namespace EveOPreview.Presenters
 		private async void ChangeHotkeyCaptureMode(bool isCapturing)
 		{
 			await this._mediator.Publish(new HotkeyCaptureModeChanged(isCapturing));
+		}
+
+		private async void TestAggroFrames()
+		{
+			await this._mediator.Publish(new TestAggroFrames());
 		}
 
 		private async void RemoveCycleGroup(string groupName)

@@ -454,4 +454,49 @@ The application started with default settings and will not save any settings unt
   <data name="Tray_Exit" xml:space="preserve">
     <value>Exit</value>
   </data>
+  <data name="Tab_GameLogs" xml:space="preserve">
+    <value>Game Logs</value>
+  </data>
+  <data name="GameLogs_Enable" xml:space="preserve">
+    <value>Read EVE combat logs (Gamelogs)</value>
+  </data>
+  <data name="GameLogs_Note" xml:space="preserve">
+    <value>The combat log files written by the game are used to highlight the previews of clients under NPC attack. The files are only read - nothing is ever sent to the game.</value>
+  </data>
+  <data name="GameLogs_Folder" xml:space="preserve">
+    <value>Log folder</value>
+  </data>
+  <data name="GameLogs_FolderHint" xml:space="preserve">
+    <value>Leave empty to use the default folder: Documents\EVE\logs\Gamelogs</value>
+  </data>
+  <data name="GameLogs_Browse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="OverlayTab_Aggro" xml:space="preserve">
+    <value>Aggro</value>
+  </data>
+  <data name="Aggro_Enable" xml:space="preserve">
+    <value>Show aggro frames on previews</value>
+  </data>
+  <data name="Aggro_YellowColor" xml:space="preserve">
+    <value>Under attack (yellow frame)</value>
+  </data>
+  <data name="Aggro_RedColor" xml:space="preserve">
+    <value>Taking damage (red frame)</value>
+  </data>
+  <data name="Aggro_FillPercent" xml:space="preserve">
+    <value>Fill depth, %</value>
+  </data>
+  <data name="Aggro_FillHint" xml:space="preserve">
+    <value>Gradient from the preview edges to its center: small values draw a thin border, 100 floods the whole preview.</value>
+  </data>
+  <data name="Aggro_Test" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="Aggro_LogsDisabledWarning" xml:space="preserve">
+    <value>Game log reading is disabled, so the aggro frames cannot work.</value>
+  </data>
+  <data name="Aggro_OpenLogSettings" xml:space="preserve">
+    <value>Open log settings</value>
+  </data>
 </root>

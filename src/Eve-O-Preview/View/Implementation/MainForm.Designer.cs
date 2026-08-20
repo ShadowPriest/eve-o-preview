@@ -92,6 +92,16 @@ namespace EveOPreview.View
 			Label CreditMaintLabel;
 			Label DocumentationLinkLabel;
 			Label DescriptionLabel;
+			TableLayoutPanel GameLogsPanel;
+			Label GameLogsNoteLabel;
+			Label GameLogsFolderLabel;
+			Panel GameLogsFolderRowPanel;
+			Label GameLogsFolderHintLabel;
+			Label AggroYellowColorLabel;
+			Label AggroRedColorLabel;
+			Label AggroFillPercentLabel;
+			Label AggroFillHintLabel;
+			Label AggroDisabledLabel;
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			Label NameLabel;
 			HideCaptionOnClientsCheckBox = new CheckBox();
@@ -275,6 +285,29 @@ namespace EveOPreview.View
 			DocumentationLinkLabel = new Label();
 			DescriptionLabel = new Label();
 			NameLabel = new Label();
+			GameLogsTabPage = new TabPage();
+			GameLogsPanel = new TableLayoutPanel();
+			EnableGameLogMonitorCheckBox = new CheckBox();
+			GameLogsNoteLabel = new Label();
+			GameLogsFolderLabel = new Label();
+			GameLogsFolderRowPanel = new Panel();
+			GameLogsFolderTextBox = new TextBox();
+			GameLogsFolderBrowseButton = new Button();
+			GameLogsFolderHintLabel = new Label();
+			OverlayAggroSubPage = new TabPage();
+			AggroSettingsPanel = new Panel();
+			AggroDisabledPanel = new Panel();
+			EnableAggroFramesCheckBox = new CheckBox();
+			AggroYellowColorLabel = new Label();
+			AggroYellowColorButton = new Panel();
+			AggroRedColorLabel = new Label();
+			AggroRedColorButton = new Panel();
+			AggroFillPercentLabel = new Label();
+			AggroFillPercentNumericEdit = new NumericUpDown();
+			AggroFillHintLabel = new Label();
+			AggroTestButton = new Button();
+			AggroDisabledLabel = new Label();
+			AggroGoToLogsButton = new Button();
 			ContentTabControl.SuspendLayout();
 			GeneralTabPage.SuspendLayout();
 			GeneralSettingsPanel.SuspendLayout();
@@ -327,6 +360,13 @@ namespace EveOPreview.View
 			HotkeysPanel.SuspendLayout();
 			AboutTabPage.SuspendLayout();
 			AboutPanel.SuspendLayout();
+			GameLogsTabPage.SuspendLayout();
+			GameLogsPanel.SuspendLayout();
+			GameLogsFolderRowPanel.SuspendLayout();
+			OverlayAggroSubPage.SuspendLayout();
+			AggroSettingsPanel.SuspendLayout();
+			AggroDisabledPanel.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)AggroFillPercentNumericEdit).BeginInit();
 			TrayMenu.SuspendLayout();
 			SuspendLayout();
 			// 
@@ -363,6 +403,7 @@ namespace EveOPreview.View
 			ContentTabControl.Controls.Add(ThumbnailTabPage);
 			ContentTabControl.Controls.Add(OverlayTabPage);
 			ContentTabControl.Controls.Add(ClientWindowsTabPage);
+			ContentTabControl.Controls.Add(GameLogsTabPage);
 			ContentTabControl.Controls.Add(ClientsTabPage);
 			ContentTabControl.Controls.Add(CycleGroupsTabPage);
 			ContentTabControl.Controls.Add(HotkeysTabPage);
@@ -540,6 +581,110 @@ namespace EveOPreview.View
 			MinimizedRenderingNoteLabel.Name = "MinimizedRenderingNoteLabel";
 			MinimizedRenderingNoteLabel.TabIndex = 4;
 			MinimizedRenderingNoteLabel.Text = "Windows does not render minimized windows in real time, so their previews are refreshed periodically instead - the interval is set on the Previews > Rendering tab.";
+			//
+			// GameLogsTabPage
+			//
+			GameLogsTabPage.BackColor = SystemColors.Control;
+			GameLogsTabPage.Controls.Add(GameLogsPanel);
+			GameLogsTabPage.Location = new Point(124, 4);
+			GameLogsTabPage.Margin = new Padding(4);
+			GameLogsTabPage.Name = "GameLogsTabPage";
+			GameLogsTabPage.Padding = new Padding(4);
+			GameLogsTabPage.Size = new Size(327, 243);
+			GameLogsTabPage.TabIndex = 9;
+			GameLogsTabPage.Text = "Game Logs";
+			//
+			// GameLogsPanel
+			//
+			GameLogsPanel.ColumnCount = 1;
+			GameLogsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+			GameLogsPanel.Controls.Add(EnableGameLogMonitorCheckBox, 0, 0);
+			GameLogsPanel.Controls.Add(GameLogsNoteLabel, 0, 1);
+			GameLogsPanel.Controls.Add(GameLogsFolderLabel, 0, 2);
+			GameLogsPanel.Controls.Add(GameLogsFolderRowPanel, 0, 3);
+			GameLogsPanel.Controls.Add(GameLogsFolderHintLabel, 0, 4);
+			GameLogsPanel.Dock = DockStyle.Fill;
+			GameLogsPanel.Location = new Point(4, 4);
+			GameLogsPanel.Margin = new Padding(4);
+			GameLogsPanel.Name = "GameLogsPanel";
+			GameLogsPanel.Padding = new Padding(4);
+			GameLogsPanel.RowCount = 6;
+			GameLogsPanel.RowStyles.Add(new RowStyle());
+			GameLogsPanel.RowStyles.Add(new RowStyle());
+			GameLogsPanel.RowStyles.Add(new RowStyle());
+			GameLogsPanel.RowStyles.Add(new RowStyle());
+			GameLogsPanel.RowStyles.Add(new RowStyle());
+			GameLogsPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+			GameLogsPanel.Size = new Size(319, 235);
+			GameLogsPanel.TabIndex = 0;
+			//
+			// EnableGameLogMonitorCheckBox
+			//
+			EnableGameLogMonitorCheckBox.AutoSize = true;
+			EnableGameLogMonitorCheckBox.Margin = new Padding(4);
+			EnableGameLogMonitorCheckBox.Name = "EnableGameLogMonitorCheckBox";
+			EnableGameLogMonitorCheckBox.TabIndex = 0;
+			EnableGameLogMonitorCheckBox.Text = "Read EVE combat logs (Gamelogs)";
+			EnableGameLogMonitorCheckBox.UseVisualStyleBackColor = true;
+			EnableGameLogMonitorCheckBox.CheckedChanged += EnableGameLogMonitorCheckBox_CheckedChanged;
+			//
+			// GameLogsNoteLabel
+			//
+			GameLogsNoteLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			GameLogsNoteLabel.AutoSize = true;
+			GameLogsNoteLabel.ForeColor = SystemColors.GrayText;
+			GameLogsNoteLabel.Margin = new Padding(24, 2, 4, 0);
+			GameLogsNoteLabel.Name = "GameLogsNoteLabel";
+			GameLogsNoteLabel.TabIndex = 1;
+			GameLogsNoteLabel.Text = "The combat log files written by the game are read to highlight the previews of clients under NPC attack. The files are only read - nothing is ever sent to the game.";
+			//
+			// GameLogsFolderLabel
+			//
+			GameLogsFolderLabel.AutoSize = true;
+			GameLogsFolderLabel.Margin = new Padding(4, 12, 4, 2);
+			GameLogsFolderLabel.Name = "GameLogsFolderLabel";
+			GameLogsFolderLabel.TabIndex = 2;
+			GameLogsFolderLabel.Text = "Log folder";
+			//
+			// GameLogsFolderRowPanel
+			//
+			GameLogsFolderRowPanel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			GameLogsFolderRowPanel.Controls.Add(GameLogsFolderTextBox);
+			GameLogsFolderRowPanel.Controls.Add(GameLogsFolderBrowseButton);
+			GameLogsFolderRowPanel.Margin = new Padding(4, 0, 4, 0);
+			GameLogsFolderRowPanel.Name = "GameLogsFolderRowPanel";
+			GameLogsFolderRowPanel.Size = new Size(303, 29);
+			GameLogsFolderRowPanel.TabIndex = 3;
+			//
+			// GameLogsFolderTextBox
+			//
+			GameLogsFolderTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+			GameLogsFolderTextBox.Location = new Point(0, 3);
+			GameLogsFolderTextBox.Name = "GameLogsFolderTextBox";
+			GameLogsFolderTextBox.Size = new Size(211, 23);
+			GameLogsFolderTextBox.TabIndex = 0;
+			GameLogsFolderTextBox.TextChanged += OptionChanged_Handler;
+			//
+			// GameLogsFolderBrowseButton
+			//
+			GameLogsFolderBrowseButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+			GameLogsFolderBrowseButton.Location = new Point(217, 2);
+			GameLogsFolderBrowseButton.Name = "GameLogsFolderBrowseButton";
+			GameLogsFolderBrowseButton.Size = new Size(84, 25);
+			GameLogsFolderBrowseButton.TabIndex = 1;
+			GameLogsFolderBrowseButton.Text = "Browse...";
+			GameLogsFolderBrowseButton.UseVisualStyleBackColor = true;
+			GameLogsFolderBrowseButton.Click += GameLogsFolderBrowseButton_Click;
+			//
+			// GameLogsFolderHintLabel
+			//
+			GameLogsFolderHintLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+			GameLogsFolderHintLabel.AutoSize = true;
+			GameLogsFolderHintLabel.ForeColor = SystemColors.GrayText;
+			GameLogsFolderHintLabel.Margin = new Padding(4, 2, 4, 0);
+			GameLogsFolderHintLabel.Name = "GameLogsFolderHintLabel";
+			GameLogsFolderHintLabel.TabIndex = 4;
+			GameLogsFolderHintLabel.Text = "Leave empty to use the default folder: Documents\\EVE\\logs\\Gamelogs";
 			//
 			// ThumbnailTabPage
 			// 
@@ -1414,6 +1559,7 @@ namespace EveOPreview.View
 			OverlaySubTabControl.Controls.Add(OverlayWindowNameSubPage);
 			OverlaySubTabControl.Controls.Add(OverlayGroupNameSubPage);
 			OverlaySubTabControl.Controls.Add(OverlayBorderSubPage);
+			OverlaySubTabControl.Controls.Add(OverlayAggroSubPage);
 			OverlaySubTabControl.Dock = DockStyle.Fill;
 			OverlaySubTabControl.Location = new Point(6, 4);
 			OverlaySubTabControl.Name = "OverlaySubTabControl";
@@ -1679,6 +1825,157 @@ namespace EveOPreview.View
 			OverlayBorderSubPage.Size = new Size(309, 286);
 			OverlayBorderSubPage.TabIndex = 3;
 			OverlayBorderSubPage.Text = "Border";
+			//
+			// OverlayAggroSubPage
+			//
+			OverlayAggroSubPage.BackColor = SystemColors.Control;
+			OverlayAggroSubPage.Controls.Add(AggroDisabledPanel);
+			OverlayAggroSubPage.Controls.Add(AggroSettingsPanel);
+			OverlayAggroSubPage.Location = new Point(4, 24);
+			OverlayAggroSubPage.Name = "OverlayAggroSubPage";
+			OverlayAggroSubPage.Padding = new Padding(3);
+			OverlayAggroSubPage.Size = new Size(309, 286);
+			OverlayAggroSubPage.TabIndex = 4;
+			OverlayAggroSubPage.Text = "Aggro";
+			//
+			// AggroSettingsPanel
+			//
+			AggroSettingsPanel.Controls.Add(EnableAggroFramesCheckBox);
+			AggroSettingsPanel.Controls.Add(AggroYellowColorButton);
+			AggroSettingsPanel.Controls.Add(AggroYellowColorLabel);
+			AggroSettingsPanel.Controls.Add(AggroRedColorButton);
+			AggroSettingsPanel.Controls.Add(AggroRedColorLabel);
+			AggroSettingsPanel.Controls.Add(AggroFillPercentLabel);
+			AggroSettingsPanel.Controls.Add(AggroFillPercentNumericEdit);
+			AggroSettingsPanel.Controls.Add(AggroFillHintLabel);
+			AggroSettingsPanel.Controls.Add(AggroTestButton);
+			AggroSettingsPanel.Dock = DockStyle.Fill;
+			AggroSettingsPanel.Location = new Point(3, 3);
+			AggroSettingsPanel.Name = "AggroSettingsPanel";
+			AggroSettingsPanel.Size = new Size(303, 280);
+			AggroSettingsPanel.TabIndex = 0;
+			//
+			// EnableAggroFramesCheckBox
+			//
+			EnableAggroFramesCheckBox.AutoSize = true;
+			EnableAggroFramesCheckBox.Location = new Point(8, 8);
+			EnableAggroFramesCheckBox.Margin = new Padding(4);
+			EnableAggroFramesCheckBox.Name = "EnableAggroFramesCheckBox";
+			EnableAggroFramesCheckBox.TabIndex = 0;
+			EnableAggroFramesCheckBox.Text = "Show aggro frames on previews";
+			EnableAggroFramesCheckBox.UseVisualStyleBackColor = true;
+			EnableAggroFramesCheckBox.CheckedChanged += OptionChanged_Handler;
+			//
+			// AggroYellowColorButton
+			//
+			AggroYellowColorButton.BorderStyle = BorderStyle.FixedSingle;
+			AggroYellowColorButton.Location = new Point(12, 40);
+			AggroYellowColorButton.Name = "AggroYellowColorButton";
+			AggroYellowColorButton.Size = new Size(16, 16);
+			AggroYellowColorButton.TabIndex = 1;
+			AggroYellowColorButton.Click += AggroYellowColorButton_Click;
+			//
+			// AggroYellowColorLabel
+			//
+			AggroYellowColorLabel.AutoSize = true;
+			AggroYellowColorLabel.Location = new Point(34, 41);
+			AggroYellowColorLabel.Name = "AggroYellowColorLabel";
+			AggroYellowColorLabel.TabIndex = 2;
+			AggroYellowColorLabel.Text = "Under attack (yellow frame)";
+			AggroYellowColorLabel.Click += AggroYellowColorButton_Click;
+			//
+			// AggroRedColorButton
+			//
+			AggroRedColorButton.BorderStyle = BorderStyle.FixedSingle;
+			AggroRedColorButton.Location = new Point(12, 64);
+			AggroRedColorButton.Name = "AggroRedColorButton";
+			AggroRedColorButton.Size = new Size(16, 16);
+			AggroRedColorButton.TabIndex = 3;
+			AggroRedColorButton.Click += AggroRedColorButton_Click;
+			//
+			// AggroRedColorLabel
+			//
+			AggroRedColorLabel.AutoSize = true;
+			AggroRedColorLabel.Location = new Point(34, 65);
+			AggroRedColorLabel.Name = "AggroRedColorLabel";
+			AggroRedColorLabel.TabIndex = 4;
+			AggroRedColorLabel.Text = "Taking damage (red frame)";
+			AggroRedColorLabel.Click += AggroRedColorButton_Click;
+			//
+			// AggroFillPercentLabel
+			//
+			AggroFillPercentLabel.AutoSize = true;
+			AggroFillPercentLabel.Location = new Point(8, 96);
+			AggroFillPercentLabel.Name = "AggroFillPercentLabel";
+			AggroFillPercentLabel.TabIndex = 5;
+			AggroFillPercentLabel.Text = "Fill depth, %";
+			//
+			// AggroFillPercentNumericEdit
+			//
+			AggroFillPercentNumericEdit.BackColor = SystemColors.Window;
+			AggroFillPercentNumericEdit.BorderStyle = BorderStyle.FixedSingle;
+			AggroFillPercentNumericEdit.CausesValidation = false;
+			AggroFillPercentNumericEdit.Location = new Point(160, 92);
+			AggroFillPercentNumericEdit.Margin = new Padding(4);
+			AggroFillPercentNumericEdit.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+			AggroFillPercentNumericEdit.Maximum = new decimal(new int[] { 100, 0, 0, 0 });
+			AggroFillPercentNumericEdit.Name = "AggroFillPercentNumericEdit";
+			AggroFillPercentNumericEdit.Size = new Size(60, 23);
+			AggroFillPercentNumericEdit.TabIndex = 6;
+			AggroFillPercentNumericEdit.Value = new decimal(new int[] { 20, 0, 0, 0 });
+			AggroFillPercentNumericEdit.ValueChanged += OptionChanged_Handler;
+			//
+			// AggroFillHintLabel
+			//
+			AggroFillHintLabel.AutoSize = true;
+			AggroFillHintLabel.ForeColor = SystemColors.GrayText;
+			AggroFillHintLabel.Location = new Point(8, 124);
+			AggroFillHintLabel.MaximumSize = new Size(290, 0);
+			AggroFillHintLabel.Name = "AggroFillHintLabel";
+			AggroFillHintLabel.TabIndex = 7;
+			AggroFillHintLabel.Text = "Gradient from the preview edges to its center: small values draw a thin border, 100 floods the whole preview.";
+			//
+			// AggroTestButton
+			//
+			AggroTestButton.Location = new Point(12, 180);
+			AggroTestButton.Margin = new Padding(2);
+			AggroTestButton.Name = "AggroTestButton";
+			AggroTestButton.Size = new Size(110, 27);
+			AggroTestButton.TabIndex = 8;
+			AggroTestButton.Text = "Test";
+			AggroTestButton.UseVisualStyleBackColor = true;
+			AggroTestButton.Click += AggroTestButton_Click;
+			//
+			// AggroDisabledPanel
+			//
+			AggroDisabledPanel.Controls.Add(AggroDisabledLabel);
+			AggroDisabledPanel.Controls.Add(AggroGoToLogsButton);
+			AggroDisabledPanel.Dock = DockStyle.Fill;
+			AggroDisabledPanel.Location = new Point(3, 3);
+			AggroDisabledPanel.Name = "AggroDisabledPanel";
+			AggroDisabledPanel.Size = new Size(303, 280);
+			AggroDisabledPanel.TabIndex = 1;
+			AggroDisabledPanel.Visible = false;
+			//
+			// AggroDisabledLabel
+			//
+			AggroDisabledLabel.AutoSize = true;
+			AggroDisabledLabel.Location = new Point(12, 16);
+			AggroDisabledLabel.MaximumSize = new Size(280, 0);
+			AggroDisabledLabel.Name = "AggroDisabledLabel";
+			AggroDisabledLabel.TabIndex = 0;
+			AggroDisabledLabel.Text = "Game log reading is disabled, so the aggro frames cannot work.";
+			//
+			// AggroGoToLogsButton
+			//
+			AggroGoToLogsButton.Location = new Point(12, 72);
+			AggroGoToLogsButton.Margin = new Padding(2);
+			AggroGoToLogsButton.Name = "AggroGoToLogsButton";
+			AggroGoToLogsButton.Size = new Size(180, 27);
+			AggroGoToLogsButton.TabIndex = 1;
+			AggroGoToLogsButton.Text = "Open log settings";
+			AggroGoToLogsButton.UseVisualStyleBackColor = true;
+			AggroGoToLogsButton.Click += AggroGoToLogsButton_Click;
 			//
 			// CycleGroupIndicatorPanel
 			// 
@@ -2651,6 +2948,17 @@ namespace EveOPreview.View
 			AboutTabPage.ResumeLayout(false);
 			AboutPanel.ResumeLayout(false);
 			AboutPanel.PerformLayout();
+			GameLogsTabPage.ResumeLayout(false);
+			GameLogsPanel.ResumeLayout(false);
+			GameLogsPanel.PerformLayout();
+			GameLogsFolderRowPanel.ResumeLayout(false);
+			GameLogsFolderRowPanel.PerformLayout();
+			OverlayAggroSubPage.ResumeLayout(false);
+			AggroSettingsPanel.ResumeLayout(false);
+			AggroSettingsPanel.PerformLayout();
+			AggroDisabledPanel.ResumeLayout(false);
+			AggroDisabledPanel.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)AggroFillPercentNumericEdit).EndInit();
 			TrayMenu.ResumeLayout(false);
 			ResumeLayout(false);
 
@@ -2777,5 +3085,18 @@ namespace EveOPreview.View
 		private Button CycleGroupRemoveClientButton;
 		private ComboBox CycleGroupAddClientCombo;
 		private Button CycleGroupAddClientButton;
+		private TabPage GameLogsTabPage;
+		private CheckBox EnableGameLogMonitorCheckBox;
+		private TextBox GameLogsFolderTextBox;
+		private Button GameLogsFolderBrowseButton;
+		private TabPage OverlayAggroSubPage;
+		private Panel AggroSettingsPanel;
+		private Panel AggroDisabledPanel;
+		private CheckBox EnableAggroFramesCheckBox;
+		private Panel AggroYellowColorButton;
+		private Panel AggroRedColorButton;
+		private NumericUpDown AggroFillPercentNumericEdit;
+		private Button AggroTestButton;
+		private Button AggroGoToLogsButton;
 	}
 }

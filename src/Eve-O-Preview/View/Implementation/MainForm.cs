@@ -589,6 +589,133 @@ namespace EveOPreview.View
 		}
 		private Font _OverlayLabelFont;
 
+		public bool EnableGameLogMonitor
+		{
+			get => this.EnableGameLogMonitorCheckBox.Checked;
+			set
+			{
+				this.EnableGameLogMonitorCheckBox.Checked = value;
+				this.RefreshAggroSubPage();
+			}
+		}
+
+		public string GameLogsFolder
+		{
+			get => this.GameLogsFolderTextBox.Text.Trim();
+			set => this.GameLogsFolderTextBox.Text = value ?? "";
+		}
+
+		public bool EnableAggroFrames
+		{
+			get => this.EnableAggroFramesCheckBox.Checked;
+			set => this.EnableAggroFramesCheckBox.Checked = value;
+		}
+
+		public Color AggroYellowColor
+		{
+			get => this._aggroYellowColor;
+			set
+			{
+				this._aggroYellowColor = value;
+				this.AggroYellowColorButton.BackColor = value;
+			}
+		}
+		private Color _aggroYellowColor;
+
+		public Color AggroRedColor
+		{
+			get => this._aggroRedColor;
+			set
+			{
+				this._aggroRedColor = value;
+				this.AggroRedColorButton.BackColor = value;
+			}
+		}
+		private Color _aggroRedColor;
+
+		public int AggroFillPercent
+		{
+			get => (int)this.AggroFillPercentNumericEdit.Value;
+			set => this.AggroFillPercentNumericEdit.Value = Math.Max(this.AggroFillPercentNumericEdit.Minimum, Math.Min(this.AggroFillPercentNumericEdit.Maximum, value));
+		}
+
+		// The aggro settings only make sense while the log reading is on; otherwise the
+		// page explains the dependency and offers a shortcut to the log settings
+		private void RefreshAggroSubPage()
+		{
+			bool logsEnabled = this.EnableGameLogMonitorCheckBox.Checked;
+
+			this.AggroSettingsPanel.Visible = logsEnabled;
+			this.AggroDisabledPanel.Visible = !logsEnabled;
+		}
+
+		private void EnableGameLogMonitorCheckBox_CheckedChanged(object sender, EventArgs e)
+		{
+			this.RefreshAggroSubPage();
+			this.OptionChanged_Handler(sender, e);
+		}
+
+		private void GameLogsFolderBrowseButton_Click(object sender, EventArgs e)
+		{
+			using (FolderBrowserDialog dialog = new FolderBrowserDialog())
+			{
+				string currentFolder = this.GameLogsFolder;
+				if ((currentFolder.Length > 0) && Directory.Exists(currentFolder))
+				{
+					dialog.SelectedPath = currentFolder;
+				}
+
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				// Assigning the text raises TextChanged, which saves the settings
+				this.GameLogsFolderTextBox.Text = dialog.SelectedPath;
+			}
+		}
+
+		private void AggroYellowColorButton_Click(object sender, EventArgs e)
+		{
+			using (ColorDialog dialog = new ColorDialog { Color = this.AggroYellowColor })
+			{
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.AggroYellowColor = dialog.Color;
+			}
+
+			this.OptionChanged_Handler(sender, e);
+		}
+
+		private void AggroRedColorButton_Click(object sender, EventArgs e)
+		{
+			using (ColorDialog dialog = new ColorDialog { Color = this.AggroRedColor })
+			{
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.AggroRedColor = dialog.Color;
+			}
+
+			this.OptionChanged_Handler(sender, e);
+		}
+
+		private void AggroTestButton_Click(object sender, EventArgs e)
+		{
+			this.AggroTestRequested?.Invoke();
+		}
+
+		private void AggroGoToLogsButton_Click(object sender, EventArgs e)
+		{
+			TabControl tabControl = (TabControl)this.Controls.Find("ContentTabControl", false).First();
+			tabControl.SelectedTab = this.GameLogsTabPage;
+		}
+
 		public Size WindowSize
 		{
 			get => this.WindowState == FormWindowState.Normal ? this.Size : this.RestoreBounds.Size;
@@ -829,6 +956,8 @@ namespace EveOPreview.View
 		public Action<bool> HotkeyCaptureModeChanged { get; set; }
 
 		public Action WindowSizeChanged { get; set; }
+
+		public Action AggroTestRequested { get; set; }
 
 		#region UI events
 		private void ContentTabControl_DrawItem(object sender, DrawItemEventArgs e)
@@ -1478,6 +1607,7 @@ namespace EveOPreview.View
 				["ClientsTabPage"] = Strings.Tab_ActiveClients,
 				["CycleGroupsTabPage"] = Strings.Tab_CycleGroups,
 				["HotkeysTabPage"] = Strings.Tab_Hotkeys,
+				["GameLogsTabPage"] = Strings.Tab_GameLogs,
 				["AboutTabPage"] = Strings.Tab_About,
 
 				["MinimizeToTrayCheckBox"] = Strings.General_MinimizeToTray,
@@ -1549,6 +1679,22 @@ namespace EveOPreview.View
 				["EnableActiveClientHighlightCheckBox"] = Strings.Overlay_HighlightActiveClient,
 				["HighlightColorLabel"] = Strings.Overlay_Color,
 				["ActiveFrameThicknessLabel"] = Strings.Overlay_BorderThickness,
+
+				["EnableGameLogMonitorCheckBox"] = Strings.GameLogs_Enable,
+				["GameLogsNoteLabel"] = Strings.GameLogs_Note,
+				["GameLogsFolderLabel"] = Strings.GameLogs_Folder,
+				["GameLogsFolderBrowseButton"] = Strings.GameLogs_Browse,
+				["GameLogsFolderHintLabel"] = Strings.GameLogs_FolderHint,
+
+				["OverlayAggroSubPage"] = Strings.OverlayTab_Aggro,
+				["EnableAggroFramesCheckBox"] = Strings.Aggro_Enable,
+				["AggroYellowColorLabel"] = Strings.Aggro_YellowColor,
+				["AggroRedColorLabel"] = Strings.Aggro_RedColor,
+				["AggroFillPercentLabel"] = Strings.Aggro_FillPercent,
+				["AggroFillHintLabel"] = Strings.Aggro_FillHint,
+				["AggroTestButton"] = Strings.Aggro_Test,
+				["AggroDisabledLabel"] = Strings.Aggro_LogsDisabledWarning,
+				["AggroGoToLogsButton"] = Strings.Aggro_OpenLogSettings,
 
 				["ThumbnailsListLabel"] = Strings.Clients_ListLabel,
 				["ClientCycleGroupLabel"] = Strings.Clients_CycleGroup,

@@ -171,7 +171,51 @@ namespace EveOPreview.Services.Interop
 
 		public const uint SWP_NOSIZE = 0x0001;
 		public const uint SWP_NOMOVE = 0x0002;
+		public const uint SWP_NOZORDER = 0x0004;
 		public const uint SWP_NOACTIVATE = 0x0010;
 		public const uint SWP_SHOWWINDOW = 0x0040;
+
+		// Per-pixel alpha layered window support (used by the aggro frame overlay)
+		public const int ULW_ALPHA = 0x0002;
+		public const byte AC_SRC_OVER = 0x00;
+		public const byte AC_SRC_ALPHA = 0x01;
+
+		[StructLayout(LayoutKind.Sequential)]
+		public struct POINT
+		{
+			public int X;
+			public int Y;
+
+			public POINT(int x, int y)
+			{
+				this.X = x;
+				this.Y = y;
+			}
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		public struct SIZE
+		{
+			public int Width;
+			public int Height;
+
+			public SIZE(int width, int height)
+			{
+				this.Width = width;
+				this.Height = height;
+			}
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		public struct BLENDFUNCTION
+		{
+			public byte BlendOp;
+			public byte BlendFlags;
+			public byte SourceConstantAlpha;
+			public byte AlphaFormat;
+		}
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public static extern bool UpdateLayeredWindow(IntPtr hWnd, IntPtr hdcDst, ref POINT pptDst, ref SIZE psize, IntPtr hdcSrc, ref POINT pptSrc, uint crKey, ref BLENDFUNCTION pblend, int dwFlags);
 	}
 }

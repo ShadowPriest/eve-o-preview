@@ -29,6 +29,7 @@ namespace EveOPreview.View
 		void SetTopMost(bool enableTopmost);
 		void SetHighlight();
 		void SetHighlight(bool enabled, int width);
+		void SetAggroFrame(AggroLevel level);
 		bool IsPreventPreviews();
 		void SetPreventPreviews();
 		void ZoomIn(ViewZoomAnchor anchor, int zoomFactor);

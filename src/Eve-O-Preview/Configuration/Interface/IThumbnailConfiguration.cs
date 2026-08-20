@@ -87,6 +87,20 @@ namespace EveOPreview.Configuration
 		Point LoginThumbnailLocation { get; set; }
 		Size MainWindowSize { get; set; }
 
+		/// <summary>Master switch of the game log reading (Documents\EVE\logs\Gamelogs)</summary>
+		bool EnableGameLogMonitor { get; set; }
+
+		/// <summary>Game log folder override; an empty value means the default Documents\EVE\logs\Gamelogs</summary>
+		string GameLogsFolder { get; set; }
+
+		/// <summary>Flashing yellow/red frames on the previews of clients under NPC attack</summary>
+		bool EnableAggroFrames { get; set; }
+		Color AggroYellowColor { get; set; }
+		Color AggroRedColor { get; set; }
+
+		/// <summary>How deep the edge-to-center gradient reaches: 100 fills the whole preview</summary>
+		int AggroFillPercent { get; set; }
+
 		Point GetThumbnailLocation(string currentClient, string activeClient, Point defaultLocation);
 		Size GetThumbnailSize(string currentClient, string activeClient, Size defaultSize);
 		ZoomAnchor GetZoomAnchor(string currentClient, ZoomAnchor defaultZoomAnchor);

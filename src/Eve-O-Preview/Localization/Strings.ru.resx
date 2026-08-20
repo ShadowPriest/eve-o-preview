@@ -454,4 +454,49 @@
   <data name="Tray_Exit" xml:space="preserve">
     <value>Выход</value>
   </data>
+  <data name="Tab_GameLogs" xml:space="preserve">
+    <value>Логи игры</value>
+  </data>
+  <data name="GameLogs_Enable" xml:space="preserve">
+    <value>Читать боевые логи EVE (Gamelogs)</value>
+  </data>
+  <data name="GameLogs_Note" xml:space="preserve">
+    <value>По боевым логам, которые пишет сама игра, подсвечиваются превью персонажей, атакуемых NPC. Файлы только читаются — в игру ничего не передаётся.</value>
+  </data>
+  <data name="GameLogs_Folder" xml:space="preserve">
+    <value>Папка логов</value>
+  </data>
+  <data name="GameLogs_FolderHint" xml:space="preserve">
+    <value>Оставьте пустым, чтобы использовать папку по умолчанию: Документы\EVE\logs\Gamelogs</value>
+  </data>
+  <data name="GameLogs_Browse" xml:space="preserve">
+    <value>Обзор...</value>
+  </data>
+  <data name="OverlayTab_Aggro" xml:space="preserve">
+    <value>Агрессия</value>
+  </data>
+  <data name="Aggro_Enable" xml:space="preserve">
+    <value>Показывать рамки агрессии на превью</value>
+  </data>
+  <data name="Aggro_YellowColor" xml:space="preserve">
+    <value>Вас атакуют (жёлтая рамка)</value>
+  </data>
+  <data name="Aggro_RedColor" xml:space="preserve">
+    <value>По вам попадают (красная рамка)</value>
+  </data>
+  <data name="Aggro_FillPercent" xml:space="preserve">
+    <value>Заполнение, %</value>
+  </data>
+  <data name="Aggro_FillHint" xml:space="preserve">
+    <value>Градиент от краёв превью к центру: малые значения дают тонкую рамку, 100 — заливку всего превью.</value>
+  </data>
+  <data name="Aggro_Test" xml:space="preserve">
+    <value>Тест</value>
+  </data>
+  <data name="Aggro_LogsDisabledWarning" xml:space="preserve">
+    <value>Чтение логов игры отключено — рамки агрессии не работают.</value>
+  </data>
+  <data name="Aggro_OpenLogSettings" xml:space="preserve">
+    <value>Настроить чтение логов</value>
+  </data>
 </root>

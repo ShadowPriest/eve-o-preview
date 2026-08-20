@@ -132,6 +132,7 @@ namespace EveOPreview
 
 			// Application services
 			container.Register<IThumbnailManager>();
+			container.Register<IGameLogMonitor>();
 			container.Register<IThumbnailViewFactory>();
 			container.Register<IThumbnailDescription>();
 

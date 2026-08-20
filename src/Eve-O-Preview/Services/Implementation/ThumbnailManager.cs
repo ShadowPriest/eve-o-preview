@@ -71,9 +71,11 @@ namespace EveOPreview.Services
 		// (restored without activation for a moment, then minimized back) to refresh them
 		private readonly HashSet<IntPtr> _pendingWakeHandles = new HashSet<IntPtr>();
 		private readonly Dictionary<IntPtr, long> _minimizedClientWakeTimestamps = new Dictionary<IntPtr, long>();
+
+		private readonly IGameLogMonitor _gameLogMonitor;
 		#endregion
 
-		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory, IMouseHookService mouseHook)
+		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory, IMouseHookService mouseHook, IGameLogMonitor gameLogMonitor)
 		{
 			this._mediator = mediator;
 			this._mouseHook = mouseHook;
@@ -81,6 +83,7 @@ namespace EveOPreview.Services
 			this._windowManager = windowManager;
 			this._configuration = configuration;
 			this._thumbnailViewFactory = factory;
+			this._gameLogMonitor = gameLogMonitor;
 
 			this._activeClient = (IntPtr.Zero, ThumbnailManager.DEFAULT_CLIENT_TITLE);
 
@@ -736,6 +739,12 @@ namespace EveOPreview.Services
 		{
 			this._thumbnailUpdateTimer.Start();
 
+			// Fresh aggro events light the frame up immediately instead of waiting
+			// for the next refresh tick. The monitor raises the event on its worker
+			// thread, so it is marshaled to the UI thread here
+			this._gameLogMonitor.AggroChanged += this.GameLogMonitorAggroChanged;
+			this._gameLogMonitor.Start();
+
 			// The refresh timer only polls the foreground window every ThumbnailRefreshPeriod ms,
 			// which makes the active client highlight lag on Alt+Tab / direct window clicks.
 			// A WinEvent hook delivers the foreground change instantly instead
@@ -754,6 +763,9 @@ namespace EveOPreview.Services
 		public void Stop()
 		{
 			this._thumbnailUpdateTimer.Stop();
+
+			this._gameLogMonitor.AggroChanged -= this.GameLogMonitorAggroChanged;
+			this._gameLogMonitor.Stop();
 
 			if (this._foregroundHook != IntPtr.Zero)
 			{
@@ -812,10 +824,14 @@ namespace EveOPreview.Services
 			{
 				previousActiveView.SetHighlight(false, this._configuration.ActiveClientHighlightThickness);
 				previousActiveView.Refresh(false);
+				previousActiveView.SetAggroFrame(this.ComputeAggroLevel(previousActiveView));
 			}
 
 			newActiveView.SetHighlight(this._configuration.EnableActiveClientHighlight, this._configuration.ActiveClientHighlightThickness);
 			newActiveView.Refresh(false);
+
+			// The frame disappears the moment its client becomes the active one
+			newActiveView.SetAggroFrame(AggroLevel.None);
 		}
 
 		private void ThumbnailUpdateTimerTick(object sender, EventArgs e)
@@ -823,6 +839,76 @@ namespace EveOPreview.Services
 			this.UpdateThumbnailsList();
 			this.RefreshThumbnails();
 		}
+
+		#region Aggro frames
+		private void GameLogMonitorAggroChanged(string characterName)
+		{
+			// Raised on the log monitor worker thread; the frame windows are UI objects
+			this._thumbnailUpdateTimer.Dispatcher.BeginInvoke(() => this.ApplyAggroFrames(characterName));
+		}
+
+		/// <summary>Pushes the current aggro state to the matching thumbnails (null = to all of them)</summary>
+		private void ApplyAggroFrames(string characterName)
+		{
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				IThumbnailView view = entry.Value;
+
+				if ((characterName != null) && !string.Equals(ThumbnailManager.GetCharacterName(view.Title), characterName, StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
+				view.SetAggroFrame(this.ComputeAggroLevel(view));
+			}
+		}
+
+		private AggroLevel ComputeAggroLevel(IThumbnailView view)
+		{
+			if (!this._configuration.EnableGameLogMonitor || !this._configuration.EnableAggroFrames)
+			{
+				return AggroLevel.None;
+			}
+
+			// The active client needs no alert - the user is already looking at it
+			if (view.Id == this._activeClient.Handle)
+			{
+				return AggroLevel.None;
+			}
+
+			if (!this.IsManageableThumbnail(view))
+			{
+				return AggroLevel.None;
+			}
+
+			return this._gameLogMonitor.GetAggro(ThumbnailManager.GetCharacterName(view.Title));
+		}
+
+		// The window title is 'EVE - Character Name'; the log files identify the
+		// character by the bare name
+		private static string GetCharacterName(string title)
+		{
+			const string EVE_PREFIX = "EVE - ";
+			const string FRONTIER_PREFIX = "EVE Frontier - ";
+
+			if (title == null)
+			{
+				return null;
+			}
+
+			if (title.StartsWith(EVE_PREFIX, StringComparison.Ordinal))
+			{
+				return title.Substring(EVE_PREFIX.Length);
+			}
+
+			if (title.StartsWith(FRONTIER_PREFIX, StringComparison.Ordinal))
+			{
+				return title.Substring(FRONTIER_PREFIX.Length);
+			}
+
+			return title;
+		}
+		#endregion
 
 		// Single-flight guard for the background process scan: touched only on the UI thread
 		private bool _isProcessScanRunning;
@@ -1139,6 +1225,7 @@ namespace EveOPreview.Services
 
 				view.IsOverlayEnabled = this._configuration.ShowThumbnailOverlays;
 				view.SetCycleGroupName(this.GetCycleGroupNames(view.Title));
+				view.SetAggroFrame(this.ComputeAggroLevel(view));
 
 				view.SetHighlight(
 					this._configuration.EnableActiveClientHighlight && (view.Id == this._activeClient.Handle), 

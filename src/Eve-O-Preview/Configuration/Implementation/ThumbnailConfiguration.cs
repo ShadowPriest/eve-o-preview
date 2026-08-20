@@ -137,6 +137,13 @@ namespace EveOPreview.Configuration.Implementation
 			this.IconName = "";
 			this.Language = LanguageManager.SYSTEM_LANGUAGE;
 
+			this.EnableGameLogMonitor = false;
+			this.GameLogsFolder = "";
+			this.EnableAggroFrames = true;
+			this.AggroYellowColor = Color.Gold;
+			this.AggroRedColor = Color.Red;
+			this.AggroFillPercent = 20;
+
 			this.LoginThumbnailLocation = new Point(5, 5);
 
 			this.MainWindowSize = Size.Empty;
@@ -361,6 +368,13 @@ namespace EveOPreview.Configuration.Implementation
 		[JsonProperty("MainWindowSize")]
 		public Size MainWindowSize { get; set; }
 
+		public bool EnableGameLogMonitor { get; set; }
+		public string GameLogsFolder { get; set; }
+		public bool EnableAggroFrames { get; set; }
+		public Color AggroYellowColor { get; set; }
+		public Color AggroRedColor { get; set; }
+		public int AggroFillPercent { get; set; }
+
 		[JsonProperty]
 		private Dictionary<string, Dictionary<string, Point>> PerClientLayout { get; set; }
 		[JsonProperty]
@@ -557,6 +571,8 @@ namespace EveOPreview.Configuration.Implementation
 			this.ThumbnailOpacity = ThumbnailConfiguration.ApplyRestrictions((int)(this.ThumbnailOpacity * 100.00), 20, 100) / 100.00;
 			this.ThumbnailZoomFactor = ThumbnailConfiguration.ApplyRestrictions(this.ThumbnailZoomFactor, 2, 10);
 			this.ActiveClientHighlightThickness = ThumbnailConfiguration.ApplyRestrictions(this.ActiveClientHighlightThickness, 1, 6);
+			this.AggroFillPercent = ThumbnailConfiguration.ApplyRestrictions(this.AggroFillPercent, 1, 100);
+			this.GameLogsFolder = this.GameLogsFolder ?? "";
 			this.Language = LanguageManager.Normalize(this.Language);
 
 			this.EnsureAppearance();
@@ -591,6 +607,16 @@ namespace EveOPreview.Configuration.Implementation
 			if (this.PreventPreviewColor.IsEmpty)
 			{
 				this.PreventPreviewColor = Color.Purple;
+			}
+
+			if (this.AggroYellowColor.IsEmpty)
+			{
+				this.AggroYellowColor = Color.Gold;
+			}
+
+			if (this.AggroRedColor.IsEmpty)
+			{
+				this.AggroRedColor = Color.Red;
 			}
 		}
 

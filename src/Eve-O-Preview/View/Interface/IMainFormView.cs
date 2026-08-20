@@ -73,6 +73,13 @@ namespace EveOPreview.View
 
 		Size WindowSize { get; set; }
 
+		bool EnableGameLogMonitor { get; set; }
+		string GameLogsFolder { get; set; }
+		bool EnableAggroFrames { get; set; }
+		Color AggroYellowColor { get; set; }
+		Color AggroRedColor { get; set; }
+		int AggroFillPercent { get; set; }
+
 		void SetDocumentationUrl(string url);
 		void SetVersionInfo(string version);
 		void SetThumbnailSizeLimitations(Size minimumSize, Size maximumSize);
@@ -110,5 +117,6 @@ namespace EveOPreview.View
 		Action<string, string> CycleGroupRenameRequested { get; set; }
 		Action<bool> HotkeyCaptureModeChanged { get; set; }
 		Action WindowSizeChanged { get; set; }
+		Action AggroTestRequested { get; set; }
 	}
 }
