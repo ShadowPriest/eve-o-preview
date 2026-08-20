@@ -23,6 +23,12 @@ namespace EveOPreview.View
 		void SetSizeLimitations(Size minimumSize, Size maximumSize);
 		void SetOpacity(double opacity);
 		void SetFrames(bool enable);
+
+		/// <summary>
+		/// Re-reads the preview settings of this client (its own ones where it has them,
+		/// the global ones everywhere else)
+		/// </summary>
+		void RefreshPreviewSettings();
 		void SetOverlayLabel();
 		void SetCycleGroupIndicator(bool displayCycleGroup, ZoomAnchor anchor);
 		void SetCycleGroupName(string groupName);

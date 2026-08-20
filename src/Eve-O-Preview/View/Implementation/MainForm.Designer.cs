@@ -77,6 +77,12 @@ namespace EveOPreview.View
 			Panel OverlaySettingsPanel;
 			Label ActiveFrameThicknessLabel;
 			TabPage ClientsTabPage;
+			TabControl ClientsSubTabControl;
+			TabPage ClientsActiveSubPage;
+			TabPage CharactersSubPage;
+			Panel CharactersPanel;
+			Label CharacterFilterLabel;
+			Label CharacterGroupLabel;
 			Panel ClientsPanel;
 			Label ThumbnailsListLabel;
 			Label ClientCycleGroupLabel;
@@ -269,6 +275,23 @@ namespace EveOPreview.View
 			OverlayTabPage = new TabPage();
 			OverlaySettingsPanel = new Panel();
 			ClientsTabPage = new TabPage();
+			ClientsSubTabControl = new TabControl();
+			ClientsActiveSubPage = new TabPage();
+			CharactersSubPage = new TabPage();
+			CharactersPanel = new Panel();
+			CharacterFilterLabel = new Label();
+			CharacterGroupLabel = new Label();
+			CharactersTree = new TreeView();
+			CharacterFilterEdit = new TextBox();
+			CharacterGroupCombo = new ComboBox();
+			CharacterManageAsWholeCheckBox = new CheckBox();
+			CharacterRenameGroupButton = new Button();
+			CharacterUngroupButton = new Button();
+			CharacterForgetButton = new Button();
+			CharacterPreviewSettingsButton = new Button();
+			CharacterGroupColorButton = new Panel();
+			CycleGroupWholeAccountCheckBox = new CheckBox();
+			CharacterSuggestGroupsButton = new Button();
 			ClientsPanel = new Panel();
 			ThumbnailsListLabel = new Label();
 			ClientCycleGroupLabel = new Label();
@@ -353,6 +376,10 @@ namespace EveOPreview.View
 			CycleGroupIndicatorPanel.SuspendLayout();
 			OverlayLabelAnchorPanel.SuspendLayout();
 			ClientsTabPage.SuspendLayout();
+			ClientsSubTabControl.SuspendLayout();
+			ClientsActiveSubPage.SuspendLayout();
+			CharactersSubPage.SuspendLayout();
+			CharactersPanel.SuspendLayout();
 			ClientsPanel.SuspendLayout();
 			CycleGroupsTabPage.SuspendLayout();
 			CycleGroupsPanel.SuspendLayout();
@@ -2388,13 +2415,209 @@ namespace EveOPreview.View
 			// ClientsTabPage
 			// 
 			ClientsTabPage.BackColor = SystemColors.Control;
-			ClientsTabPage.Controls.Add(ClientsPanel);
+			ClientsTabPage.Controls.Add(ClientsSubTabControl);
 			ClientsTabPage.Location = new Point(124, 4);
 			ClientsTabPage.Margin = new Padding(4);
 			ClientsTabPage.Name = "ClientsTabPage";
 			ClientsTabPage.Size = new Size(327, 322);
 			ClientsTabPage.TabIndex = 4;
-			ClientsTabPage.Text = "Active Clients";
+			ClientsTabPage.Text = "Clients";
+			//
+			// ClientsSubTabControl
+			//
+			ClientsSubTabControl.Controls.Add(ClientsActiveSubPage);
+			ClientsSubTabControl.Controls.Add(CharactersSubPage);
+			ClientsSubTabControl.Dock = DockStyle.Fill;
+			ClientsSubTabControl.Location = new Point(0, 0);
+			ClientsSubTabControl.Name = "ClientsSubTabControl";
+			ClientsSubTabControl.SelectedIndex = 0;
+			ClientsSubTabControl.Size = new Size(327, 322);
+			ClientsSubTabControl.TabIndex = 0;
+			//
+			// ClientsActiveSubPage
+			//
+			ClientsActiveSubPage.BackColor = SystemColors.Control;
+			ClientsActiveSubPage.Controls.Add(ClientsPanel);
+			ClientsActiveSubPage.Location = new Point(4, 24);
+			ClientsActiveSubPage.Name = "ClientsActiveSubPage";
+			ClientsActiveSubPage.Size = new Size(319, 294);
+			ClientsActiveSubPage.TabIndex = 0;
+			ClientsActiveSubPage.Text = "Active";
+			//
+			// CharactersSubPage
+			//
+			CharactersSubPage.BackColor = SystemColors.Control;
+			CharactersSubPage.Controls.Add(CharactersPanel);
+			CharactersSubPage.Location = new Point(4, 24);
+			CharactersSubPage.Name = "CharactersSubPage";
+			CharactersSubPage.Padding = new Padding(3);
+			CharactersSubPage.Size = new Size(319, 294);
+			CharactersSubPage.TabIndex = 1;
+			CharactersSubPage.Text = "Characters";
+			//
+			// CharactersPanel
+			//
+			CharactersPanel.Controls.Add(CharacterFilterLabel);
+			CharactersPanel.Controls.Add(CharacterFilterEdit);
+			CharactersPanel.Controls.Add(CharactersTree);
+			CharactersPanel.Controls.Add(CharacterGroupLabel);
+			CharactersPanel.Controls.Add(CharacterGroupCombo);
+			CharactersPanel.Controls.Add(CharacterGroupColorButton);
+			CharactersPanel.Controls.Add(CharacterRenameGroupButton);
+			CharactersPanel.Controls.Add(CharacterUngroupButton);
+			CharactersPanel.Controls.Add(CharacterManageAsWholeCheckBox);
+			CharactersPanel.Controls.Add(CharacterPreviewSettingsButton);
+			CharactersPanel.Controls.Add(CharacterForgetButton);
+			CharactersPanel.Controls.Add(CharacterSuggestGroupsButton);
+			CharactersPanel.Dock = DockStyle.Fill;
+			CharactersPanel.Location = new Point(3, 3);
+			CharactersPanel.Margin = new Padding(4);
+			CharactersPanel.Name = "CharactersPanel";
+			CharactersPanel.Size = new Size(313, 288);
+			CharactersPanel.TabIndex = 0;
+			//
+			// CharacterFilterLabel
+			//
+			CharacterFilterLabel.AutoSize = true;
+			CharacterFilterLabel.Location = new Point(6, 10);
+			CharacterFilterLabel.Margin = new Padding(4, 0, 4, 0);
+			CharacterFilterLabel.Name = "CharacterFilterLabel";
+			CharacterFilterLabel.Size = new Size(40, 15);
+			CharacterFilterLabel.TabIndex = 0;
+			CharacterFilterLabel.Text = "Filter";
+			//
+			// CharacterFilterEdit
+			//
+			CharacterFilterEdit.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+			CharacterFilterEdit.BorderStyle = BorderStyle.FixedSingle;
+			CharacterFilterEdit.Location = new Point(92, 7);
+			CharacterFilterEdit.Margin = new Padding(4);
+			CharacterFilterEdit.Name = "CharacterFilterEdit";
+			CharacterFilterEdit.Size = new Size(215, 23);
+			CharacterFilterEdit.TabIndex = 1;
+			CharacterFilterEdit.TextChanged += CharacterFilterEdit_TextChanged_Handler;
+			//
+			// CharactersTree
+			//
+			CharactersTree.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+			CharactersTree.BackColor = SystemColors.Window;
+			CharactersTree.BorderStyle = BorderStyle.FixedSingle;
+			CharactersTree.FullRowSelect = true;
+			CharactersTree.HideSelection = false;
+			CharactersTree.Location = new Point(6, 36);
+			CharactersTree.Margin = new Padding(4);
+			CharactersTree.Name = "CharactersTree";
+			CharactersTree.ShowNodeToolTips = true;
+			CharactersTree.Size = new Size(301, 132);
+			CharactersTree.TabIndex = 2;
+			CharactersTree.AfterSelect += CharactersTree_AfterSelect_Handler;
+			CharactersTree.DoubleClick += CharacterPreviewSettingsButton_Click_Handler;
+			//
+			// CharacterGroupLabel
+			//
+			CharacterGroupLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+			CharacterGroupLabel.AutoSize = true;
+			CharacterGroupLabel.Location = new Point(6, 180);
+			CharacterGroupLabel.Margin = new Padding(4, 0, 4, 0);
+			CharacterGroupLabel.Name = "CharacterGroupLabel";
+			CharacterGroupLabel.Size = new Size(44, 15);
+			CharacterGroupLabel.TabIndex = 3;
+			CharacterGroupLabel.Text = "Group";
+			//
+			// CharacterGroupCombo
+			//
+			CharacterGroupCombo.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+			CharacterGroupCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+			CharacterGroupCombo.Location = new Point(92, 176);
+			CharacterGroupCombo.Margin = new Padding(4);
+			CharacterGroupCombo.Name = "CharacterGroupCombo";
+			CharacterGroupCombo.Size = new Size(111, 23);
+			CharacterGroupCombo.TabIndex = 4;
+			CharacterGroupCombo.SelectedIndexChanged += CharacterGroupCombo_SelectedIndexChanged_Handler;
+			//
+			// CharacterRenameGroupButton
+			//
+			CharacterGroupColorButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+			CharacterGroupColorButton.BorderStyle = BorderStyle.FixedSingle;
+			CharacterGroupColorButton.Location = new Point(211, 179);
+			CharacterGroupColorButton.Margin = new Padding(4);
+			CharacterGroupColorButton.Name = "CharacterGroupColorButton";
+			CharacterGroupColorButton.Size = new Size(16, 16);
+			CharacterGroupColorButton.TabIndex = 11;
+			CharacterGroupColorButton.Click += CharacterGroupColorButton_Click_Handler;
+			//
+			// CharacterRenameGroupButton
+			//
+			CharacterRenameGroupButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+			CharacterRenameGroupButton.Location = new Point(241, 175);
+			CharacterRenameGroupButton.Margin = new Padding(4);
+			CharacterRenameGroupButton.Name = "CharacterRenameGroupButton";
+			CharacterRenameGroupButton.Size = new Size(32, 25);
+			CharacterRenameGroupButton.TabIndex = 5;
+			CharacterRenameGroupButton.Text = "✎";
+			CharacterRenameGroupButton.UseVisualStyleBackColor = true;
+			CharacterRenameGroupButton.Click += CharacterRenameGroupButton_Click_Handler;
+			//
+			// CharacterUngroupButton
+			//
+			CharacterUngroupButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+			CharacterUngroupButton.Location = new Point(275, 175);
+			CharacterUngroupButton.Margin = new Padding(4);
+			CharacterUngroupButton.Name = "CharacterUngroupButton";
+			CharacterUngroupButton.Size = new Size(32, 25);
+			CharacterUngroupButton.TabIndex = 6;
+			CharacterUngroupButton.Text = "−";
+			CharacterUngroupButton.UseVisualStyleBackColor = true;
+			CharacterUngroupButton.Click += CharacterUngroupButton_Click_Handler;
+			//
+			// CharacterManageAsWholeCheckBox
+			//
+			CharacterManageAsWholeCheckBox.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+			CharacterManageAsWholeCheckBox.AutoSize = true;
+			CharacterManageAsWholeCheckBox.Location = new Point(9, 206);
+			CharacterManageAsWholeCheckBox.Margin = new Padding(4);
+			CharacterManageAsWholeCheckBox.Name = "CharacterManageAsWholeCheckBox";
+			CharacterManageAsWholeCheckBox.Size = new Size(180, 19);
+			CharacterManageAsWholeCheckBox.TabIndex = 7;
+			CharacterManageAsWholeCheckBox.Text = "Manage the whole group";
+			CharacterManageAsWholeCheckBox.UseVisualStyleBackColor = true;
+			CharacterManageAsWholeCheckBox.CheckedChanged += CharacterManageAsWholeCheckBox_CheckedChanged_Handler;
+			//
+			// CharacterForgetButton
+			//
+			CharacterForgetButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+			CharacterForgetButton.Location = new Point(162, 230);
+			CharacterForgetButton.Margin = new Padding(4);
+			CharacterForgetButton.Name = "CharacterForgetButton";
+			CharacterForgetButton.Size = new Size(145, 25);
+			CharacterForgetButton.TabIndex = 8;
+			CharacterForgetButton.Text = "Forget character";
+			CharacterForgetButton.UseVisualStyleBackColor = true;
+			CharacterForgetButton.Click += CharacterForgetButton_Click_Handler;
+			//
+			// CharacterSuggestGroupsButton
+			//
+			CharacterSuggestGroupsButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+			CharacterSuggestGroupsButton.Location = new Point(6, 258);
+			CharacterSuggestGroupsButton.Margin = new Padding(4);
+			CharacterSuggestGroupsButton.Name = "CharacterSuggestGroupsButton";
+			CharacterSuggestGroupsButton.Size = new Size(301, 25);
+			CharacterSuggestGroupsButton.TabIndex = 9;
+			CharacterSuggestGroupsButton.Text = "Suggest groups";
+			CharacterSuggestGroupsButton.UseVisualStyleBackColor = true;
+			CharacterSuggestGroupsButton.Click += CharacterSuggestGroupsButton_Click_Handler;
+			//
+			// CharacterPreviewSettingsButton
+			//
+			CharacterPreviewSettingsButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+			CharacterPreviewSettingsButton.Location = new Point(6, 230);
+			CharacterPreviewSettingsButton.Margin = new Padding(4);
+			CharacterPreviewSettingsButton.Name = "CharacterPreviewSettingsButton";
+			CharacterPreviewSettingsButton.Size = new Size(145, 25);
+			CharacterPreviewSettingsButton.TabIndex = 10;
+			CharacterPreviewSettingsButton.Text = "Preview settings...";
+			CharacterPreviewSettingsButton.UseVisualStyleBackColor = true;
+			CharacterPreviewSettingsButton.Click += CharacterPreviewSettingsButton_Click_Handler;
 			//
 			// ClientsPanel
 			//
@@ -2476,6 +2699,7 @@ namespace EveOPreview.View
 			CycleGroupsPanel.Controls.Add(CycleGroupRemoveGroupButton);
 			CycleGroupsPanel.Controls.Add(CycleGroupClientsLabel);
 			CycleGroupsPanel.Controls.Add(CycleGroupClientsListBox);
+			CycleGroupsPanel.Controls.Add(CycleGroupWholeAccountCheckBox);
 			CycleGroupsPanel.Controls.Add(CycleGroupMoveUpButton);
 			CycleGroupsPanel.Controls.Add(CycleGroupMoveDownButton);
 			CycleGroupsPanel.Controls.Add(CycleGroupRemoveClientButton);
@@ -2560,19 +2784,22 @@ namespace EveOPreview.View
 			//
 			CycleGroupClientsListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 			CycleGroupClientsListBox.IntegralHeight = false;
+			CycleGroupClientsListBox.DrawMode = DrawMode.OwnerDrawFixed;
+			CycleGroupClientsListBox.ItemHeight = 18;
 			CycleGroupClientsListBox.Location = new Point(9, 56);
 			CycleGroupClientsListBox.Margin = new Padding(4);
 			CycleGroupClientsListBox.Name = "CycleGroupClientsListBox";
-			CycleGroupClientsListBox.Size = new Size(240, 224);
+			CycleGroupClientsListBox.Size = new Size(232, 198);
 			CycleGroupClientsListBox.TabIndex = 3;
+			CycleGroupClientsListBox.DrawItem += CycleGroupClientsListBox_DrawItem_Handler;
 			//
 			// CycleGroupMoveUpButton
 			//
 			CycleGroupMoveUpButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			CycleGroupMoveUpButton.Location = new Point(255, 56);
+			CycleGroupMoveUpButton.Location = new Point(247, 56);
 			CycleGroupMoveUpButton.Margin = new Padding(4);
 			CycleGroupMoveUpButton.Name = "CycleGroupMoveUpButton";
-			CycleGroupMoveUpButton.Size = new Size(61, 27);
+			CycleGroupMoveUpButton.Size = new Size(72, 27);
 			CycleGroupMoveUpButton.TabIndex = 4;
 			CycleGroupMoveUpButton.Text = "Up";
 			CycleGroupMoveUpButton.UseVisualStyleBackColor = true;
@@ -2581,10 +2808,10 @@ namespace EveOPreview.View
 			// CycleGroupMoveDownButton
 			//
 			CycleGroupMoveDownButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			CycleGroupMoveDownButton.Location = new Point(255, 89);
+			CycleGroupMoveDownButton.Location = new Point(247, 89);
 			CycleGroupMoveDownButton.Margin = new Padding(4);
 			CycleGroupMoveDownButton.Name = "CycleGroupMoveDownButton";
-			CycleGroupMoveDownButton.Size = new Size(61, 27);
+			CycleGroupMoveDownButton.Size = new Size(72, 27);
 			CycleGroupMoveDownButton.TabIndex = 5;
 			CycleGroupMoveDownButton.Text = "Down";
 			CycleGroupMoveDownButton.UseVisualStyleBackColor = true;
@@ -2593,14 +2820,28 @@ namespace EveOPreview.View
 			// CycleGroupRemoveClientButton
 			//
 			CycleGroupRemoveClientButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			CycleGroupRemoveClientButton.Location = new Point(255, 122);
+			CycleGroupRemoveClientButton.Location = new Point(247, 122);
 			CycleGroupRemoveClientButton.Margin = new Padding(4);
 			CycleGroupRemoveClientButton.Name = "CycleGroupRemoveClientButton";
-			CycleGroupRemoveClientButton.Size = new Size(61, 27);
+			CycleGroupRemoveClientButton.Size = new Size(72, 27);
 			CycleGroupRemoveClientButton.TabIndex = 6;
 			CycleGroupRemoveClientButton.Text = "Remove";
 			CycleGroupRemoveClientButton.UseVisualStyleBackColor = true;
 			CycleGroupRemoveClientButton.Click += CycleGroupRemoveClientButton_Click_Handler;
+			//
+			// CycleGroupWholeAccountCheckBox
+			//
+			CycleGroupWholeAccountCheckBox.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+			CycleGroupWholeAccountCheckBox.AutoSize = true;
+			CycleGroupWholeAccountCheckBox.Checked = true;
+			CycleGroupWholeAccountCheckBox.CheckState = CheckState.Checked;
+			CycleGroupWholeAccountCheckBox.Location = new Point(9, 260);
+			CycleGroupWholeAccountCheckBox.Margin = new Padding(4);
+			CycleGroupWholeAccountCheckBox.Name = "CycleGroupWholeAccountCheckBox";
+			CycleGroupWholeAccountCheckBox.Size = new Size(200, 19);
+			CycleGroupWholeAccountCheckBox.TabIndex = 10;
+			CycleGroupWholeAccountCheckBox.Text = "Add and move the whole account";
+			CycleGroupWholeAccountCheckBox.UseVisualStyleBackColor = true;
 			//
 			// CycleGroupAddClientLabel
 			//
@@ -2617,19 +2858,19 @@ namespace EveOPreview.View
 			//
 			CycleGroupAddClientCombo.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 			CycleGroupAddClientCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-			CycleGroupAddClientCombo.Location = new Point(45, 292);
+			CycleGroupAddClientCombo.Location = new Point(72, 292);
 			CycleGroupAddClientCombo.Margin = new Padding(4);
 			CycleGroupAddClientCombo.Name = "CycleGroupAddClientCombo";
-			CycleGroupAddClientCombo.Size = new Size(204, 23);
+			CycleGroupAddClientCombo.Size = new Size(169, 23);
 			CycleGroupAddClientCombo.TabIndex = 8;
 			//
 			// CycleGroupAddClientButton
 			//
 			CycleGroupAddClientButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-			CycleGroupAddClientButton.Location = new Point(255, 290);
+			CycleGroupAddClientButton.Location = new Point(247, 290);
 			CycleGroupAddClientButton.Margin = new Padding(4);
 			CycleGroupAddClientButton.Name = "CycleGroupAddClientButton";
-			CycleGroupAddClientButton.Size = new Size(61, 27);
+			CycleGroupAddClientButton.Size = new Size(72, 27);
 			CycleGroupAddClientButton.TabIndex = 9;
 			CycleGroupAddClientButton.Text = "Add";
 			CycleGroupAddClientButton.UseVisualStyleBackColor = true;
@@ -2937,6 +3178,11 @@ namespace EveOPreview.View
 			OverlayLabelAnchorPanel.ResumeLayout(false);
 			OverlayLabelAnchorPanel.PerformLayout();
 			ClientsTabPage.ResumeLayout(false);
+			ClientsSubTabControl.ResumeLayout(false);
+			ClientsActiveSubPage.ResumeLayout(false);
+			CharactersSubPage.ResumeLayout(false);
+			CharactersPanel.ResumeLayout(false);
+			CharactersPanel.PerformLayout();
 			ClientsPanel.ResumeLayout(false);
 			ClientsPanel.PerformLayout();
 			CycleGroupsTabPage.ResumeLayout(false);
@@ -3008,6 +3254,17 @@ namespace EveOPreview.View
 		private CheckBox ShowThumbnailOverlaysCheckBox;
 		private CheckBox ShowThumbnailFramesCheckBox;
 		private CheckedListBox ThumbnailsList;
+		private TreeView CharactersTree;
+		private TextBox CharacterFilterEdit;
+		private ComboBox CharacterGroupCombo;
+		private CheckBox CharacterManageAsWholeCheckBox;
+		private Button CharacterRenameGroupButton;
+		private Button CharacterUngroupButton;
+		private Button CharacterForgetButton;
+		private Button CharacterSuggestGroupsButton;
+		private Button CharacterPreviewSettingsButton;
+		private Panel CharacterGroupColorButton;
+		private CheckBox CycleGroupWholeAccountCheckBox;
 		private LinkLabel DocumentationLink;
 		private Label VersionLabel;
 		private CheckBox MinimizeInactiveClientsCheckBox;

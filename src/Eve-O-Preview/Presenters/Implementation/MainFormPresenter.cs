@@ -20,6 +20,7 @@ namespace EveOPreview.Presenters
 		private const string FORUM_URL = @"https://forums.eveonline.com/t/eve-o-preview-v8-0-2-0";
 
 		private const string HOTKEY_ACTION_CLIENT_PREFIX = "client:";
+		private const string HOTKEY_ACTION_ACCOUNT_PREFIX = "account:";
 		private const string HOTKEY_ACTION_MINIMIZE_ALL = "minimizeall";
 		private const string HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS = "toggleallpreviews";
 		private const string HOTKEY_ACTION_CLICK_THROUGH = "toggleclickthrough";
@@ -68,6 +69,17 @@ namespace EveOPreview.Presenters
 			this.View.HotkeyCaptureModeChanged = this.ChangeHotkeyCaptureMode;
 			this.View.WindowSizeChanged = this.SaveWindowSize;
 			this.View.AggroTestRequested = this.TestAggroFrames;
+			this.View.CharacterGroupChanged = this.ChangeCharacterGroup;
+			this.View.CharacterGroupCreateRequested = this.CreateCharacterGroup;
+			this.View.CharacterGroupRenameRequested = this.RenameCharacterGroup;
+			this.View.CharacterGroupRemoveRequested = this.RemoveCharacterGroup;
+			this.View.CharacterGroupManageAsWholeChanged = this.ChangeCharacterGroupManagement;
+			this.View.CharacterForgetRequested = this.ForgetCharacter;
+			this.View.CharacterGroupsSuggestionRequested = this.SuggestCharacterGroups;
+			this.View.CharacterIgnoreChanged = this.ChangeCharacterIgnored;
+			this.View.CharacterGroupColorChanged = this.ChangeCharacterGroupColor;
+			this.View.CharacterPreviewSettingsRequested = this.EditPreviewSettings;
+			this.View.CharacterPreviewSettingsChanged = this.ApplyPreviewSettings;
 
 			this.View.IconName = this._configuration.IconName;
 		}
@@ -393,10 +405,20 @@ namespace EveOPreview.Presenters
 		}
 
 		#region Hotkey management
-		// Known clients: currently running ones, the ones with a configured hotkey and cycle group members
+		// Known clients: every character the registry has ever seen, the currently running
+		// ones, the ones with a configured hotkey and the cycle group members
 		private List<string> GetKnownClients()
 		{
 			SortedSet<string> clients = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+
+			foreach (CharacterInfo character in this._configuration.GetCharacters())
+			{
+				// A blacklisted character is not offered for hotkeys or cycle groups
+				if (!character.Ignored)
+				{
+					clients.Add(character.Title);
+				}
+			}
 
 			lock (this._descriptionsCache)
 			{
@@ -431,6 +453,12 @@ namespace EveOPreview.Presenters
 				actions.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + client, string.Format(Strings.Hotkey_ActivateClient, client)));
 			}
 
+			foreach (CharacterGroup characterGroup in this._configuration.GetCharacterGroups())
+			{
+				actions.Add((MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX + characterGroup.Id,
+								string.Format(Strings.Hotkey_ActivateAccount, characterGroup.Name)));
+			}
+
 			foreach (CycleGroup group in this._configuration.CycleGroups)
 			{
 				actions.Add((MainFormPresenter.GetCycleGroupActionId(group.Name, true), string.Format(Strings.Hotkey_CycleForward, group.Name)));
@@ -461,6 +489,15 @@ namespace EveOPreview.Presenters
 				}
 
 				bindings.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + entry.Key, string.Format(Strings.Hotkey_ActivateClient, entry.Key), entry.Value));
+			}
+
+			foreach (CharacterGroup characterGroup in this._configuration.GetCharacterGroups())
+			{
+				foreach (string hotkey in characterGroup.Hotkeys.Where(x => !string.IsNullOrEmpty(x)))
+				{
+					bindings.Add((MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX + characterGroup.Id,
+									string.Format(Strings.Hotkey_ActivateAccount, characterGroup.Name), hotkey));
+				}
 			}
 
 			foreach (CycleGroup group in this._configuration.CycleGroups)
@@ -539,6 +576,20 @@ namespace EveOPreview.Presenters
 				return true;
 			}
 
+			if (actionId.StartsWith(MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX, StringComparison.Ordinal))
+			{
+				CharacterGroup characterGroup = this._configuration.GetCharacterGroupById(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX.Length));
+
+				if (characterGroup == null)
+				{
+					return false;
+				}
+
+				characterGroup.Hotkeys.RemoveAll(string.IsNullOrEmpty);
+				characterGroup.Hotkeys.Add(normalizedHotkey);
+				return true;
+			}
+
 			if (actionId == MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL)
 			{
 				this._configuration.MinimizeAllClientsHotkeys.RemoveAll(string.IsNullOrEmpty);
@@ -583,6 +634,12 @@ namespace EveOPreview.Presenters
 			if (actionId.StartsWith(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX, StringComparison.Ordinal))
 			{
 				this._configuration.RemoveClientHotkey(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX.Length));
+			}
+			else if (actionId.StartsWith(MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX, StringComparison.Ordinal))
+			{
+				CharacterGroup characterGroup = this._configuration.GetCharacterGroupById(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX.Length));
+
+				characterGroup?.Hotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
 			}
 			else if (actionId == MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL)
 			{
@@ -686,11 +743,9 @@ namespace EveOPreview.Presenters
 
 		private void RefreshCycleGroupData()
 		{
-			List<string> activeClients;
-			lock (this._descriptionsCache)
-			{
-				activeClients = this._descriptionsCache.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
-			}
+			// Every character the registry knows can be put into a cycle group, not only
+			// the ones that happen to be running right now
+			List<string> activeClients = this.GetKnownClients();
 
 			List<(string Name, IList<string> Clients)> groups = new List<(string, IList<string>)>();
 			foreach (CycleGroup group in this._configuration.CycleGroups)
@@ -707,7 +762,205 @@ namespace EveOPreview.Presenters
 			this.View.SetActiveClients(activeClients);
 			this.View.SetCycleGroups(groups);
 			this.View.SetClientCycleGroups(clientGroups);
+
+			this.RefreshCharacters();
 		}
+
+		#region Character registry
+		private void RefreshCharacters()
+		{
+			List<CharacterGroupViewItem> groups = this._configuration.GetCharacterGroups()
+											.Select(group => new CharacterGroupViewItem(group.Id, group.Name, group.ManageAsWhole, group.Color))
+											.OrderBy(group => group.Name, StringComparer.CurrentCultureIgnoreCase)
+											.ToList();
+
+			HashSet<string> onlineClients;
+
+			lock (this._descriptionsCache)
+			{
+				onlineClients = new HashSet<string>(this._descriptionsCache.Keys, StringComparer.Ordinal);
+			}
+
+			List<CharacterViewItem> characters = this._configuration.GetCharacters()
+											.Select(character => new CharacterViewItem(character.Title, character.Name, character.GroupId,
+																		onlineClients.Contains(character.Title), character.Ignored,
+																		MainFormPresenter.FormatLastSeen(character.LastSeen)))
+											.OrderBy(character => character.Name, StringComparer.CurrentCultureIgnoreCase)
+											.ToList();
+
+			this.View.SetCharacters(groups, characters);
+		}
+
+		private static string FormatLastSeen(DateTime? lastSeen)
+		{
+			return lastSeen.HasValue
+					? string.Format(Strings.Characters_LastSeen, lastSeen.Value.ToLocalTime().ToString("g"))
+					: Strings.Characters_LastSeenUnknown;
+		}
+
+		private async void ChangeCharacterGroup(string title, string groupId)
+		{
+			this._configuration.SetCharacterGroup(title, groupId);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void CreateCharacterGroup(string title, string name)
+		{
+			CharacterGroup group = this._configuration.CreateCharacterGroup(name);
+			this._configuration.SetCharacterGroup(title, group.Id);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void RenameCharacterGroup(string groupId, string name)
+		{
+			this._configuration.RenameCharacterGroup(groupId, name);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void RemoveCharacterGroup(string groupId)
+		{
+			this._configuration.RemoveCharacterGroup(groupId);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void ChangeCharacterGroupManagement(string groupId, bool manageAsWhole)
+		{
+			this._configuration.SetGroupManageAsWhole(groupId, manageAsWhole);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void ChangeCharacterIgnored(string title, bool ignored)
+		{
+			this._configuration.SetCharacterIgnored(title, ignored);
+
+			// A blacklisted character leaves the hotkey and cycle group lists
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void ChangeCharacterGroupColor(string groupId, Color color)
+		{
+			this._configuration.SetCharacterGroupColor(groupId, color);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async void ForgetCharacter(string title)
+		{
+			this._configuration.ForgetCharacter(title);
+
+			// Forgetting a character also drops its hotkey and its cycle group entries
+			await this.ApplyCycleGroupSettings();
+		}
+
+		/// <summary>
+		/// Groups the characters that share one stored preview position. Only one character
+		/// of an account can be online at a time, so the ones the user has put into the same
+		/// spot are almost always the characters of one account
+		/// </summary>
+		private async void SuggestCharacterGroups()
+		{
+			List<List<string>> suggestions = this.BuildCharacterGroupSuggestions();
+
+			if (suggestions.Count == 0)
+			{
+				this.View.ShowWarning(Strings.Characters_SuggestTitle, Strings.Characters_SuggestNothing);
+				return;
+			}
+
+			string summary = string.Join(Environment.NewLine,
+								suggestions.Select(suggestion => string.Join(" + ", suggestion.Select(CharacterInfo.GetDisplayName))));
+
+			if (!this.View.ShowQuestion(Strings.Characters_SuggestTitle, string.Format(Strings.Characters_SuggestPrompt, summary)))
+			{
+				return;
+			}
+
+			foreach (List<string> suggestion in suggestions)
+			{
+				this._configuration.LinkCharacters(suggestion);
+			}
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private List<List<string>> BuildCharacterGroupSuggestions()
+		{
+			// Positions dragged by hand are never pixel-identical, so previews standing
+			// this close to each other count as one spot. A grid slot is at least a
+			// preview wide, so the tolerance cannot merge two neighboring slots
+			const int LOCATION_TOLERANCE = 12;
+
+			Point unknownLocation = new Point(int.MinValue, int.MinValue);
+			List<(Point Location, List<string> Characters)> spots = new List<(Point, List<string>)>();
+
+			foreach (CharacterInfo character in this._configuration.GetCharacters())
+			{
+				// Characters that are already grouped or blacklisted are left alone
+				if (!string.IsNullOrEmpty(character.GroupId) || character.Ignored)
+				{
+					continue;
+				}
+
+				Point location = this._configuration.GetThumbnailLocation(character.Title, null, unknownLocation);
+
+				if (location == unknownLocation)
+				{
+					continue;
+				}
+
+				int index = spots.FindIndex(spot => (Math.Abs(spot.Location.X - location.X) <= LOCATION_TOLERANCE)
+													&& (Math.Abs(spot.Location.Y - location.Y) <= LOCATION_TOLERANCE));
+
+				if (index < 0)
+				{
+					spots.Add((location, new List<string> { character.Title }));
+					continue;
+				}
+
+				spots[index].Characters.Add(character.Title);
+			}
+
+			return spots.Where(spot => spot.Characters.Count > 1).Select(spot => spot.Characters).ToList();
+		}
+
+		private void EditPreviewSettings(string title)
+		{
+			CharacterGroup group = this._configuration.GetCharacterGroupOf(title);
+
+			// Editing one member of a group managed as a whole edits all of its members
+			string groupHint = ((group != null) && group.ManageAsWhole)
+								? string.Format(Strings.Characters_PreviewSettingsGroupHint, group.Name)
+								: null;
+
+			this.View.ShowPreviewSettings(title, CharacterInfo.GetDisplayName(title), groupHint,
+											this._configuration.ResolvePreviewSettings(title),
+											this._configuration.ResolvePreviewSettings(null));
+		}
+
+		private async void ApplyPreviewSettings(string title, PreviewSettings settings)
+		{
+			this._configuration.SetPreviewSettings(title, settings);
+
+			await this.ApplyCharacterRegistryChange();
+		}
+
+		private async Task ApplyCharacterRegistryChange()
+		{
+			// Account hotkeys are stored in the group entries, so a changed registry
+			// (a renamed, created or dropped group) has to re-register them
+			await this._mediator.Publish(new ThumbnailHotkeysUpdated());
+			await this._mediator.Send(new SaveConfiguration());
+
+			this.RefreshHotkeyActions();
+			this.RefreshHotkeyBindings();
+			this.RefreshCharacters();
+		}
+		#endregion
 
 		private async void ChangeCycleGroupClients(string groupName, IList<string> orderedClients)
 		{

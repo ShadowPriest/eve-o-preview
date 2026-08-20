@@ -11,6 +11,14 @@ namespace EveOPreview.Configuration.Implementation
 
 		private const string BROKEN_CONFIGURATION_EXTENSION = ".broken.json";
 
+		private const string LEGACY_CONFIGURATION_BACKUP_EXTENSION = ".v1.backup.json";
+
+		/// <summary>
+		/// Layout version of the configuration file this build writes. Has to be kept in
+		/// sync with the version ThumbnailConfiguration migrates the stored settings to
+		/// </summary>
+		private const int CURRENT_CONFIGURATION_VERSION = 2;
+
 		private readonly IAppConfig _appConfig;
 		private readonly IThumbnailConfiguration _thumbnailConfiguration;
 		private bool _isSaveBlocked;
@@ -86,10 +94,43 @@ namespace EveOPreview.Configuration.Implementation
 				return;
 			}
 
+			this.BackupLegacyConfiguration(filename, rawData);
+
 			JsonConvert.PopulateObject(rawData, this._thumbnailConfiguration, jsonSerializerSettings);
 
 			// Validate data after loading it
 			this._thumbnailConfiguration.ApplyRestrictions();
+		}
+
+		/// <summary>
+		/// Loading a configuration written before the character registry existed rewrites
+		/// the layout of the file: the legacy per-client entries are migrated into the
+		/// registry and are not written back. The file as the previous builds wrote it is
+		/// kept aside once, so that nothing is lost if the migration is not what the user
+		/// wanted
+		/// </summary>
+		private void BackupLegacyConfiguration(string filename, string rawData)
+		{
+			try
+			{
+				int version = (int?)JObject.Parse(rawData)["ConfigVersion"] ?? 1;
+
+				if (version >= ConfigurationStorage.CURRENT_CONFIGURATION_VERSION)
+				{
+					return;
+				}
+
+				string backupFilename = Path.ChangeExtension(filename, ConfigurationStorage.LEGACY_CONFIGURATION_BACKUP_EXTENSION);
+
+				if (!File.Exists(backupFilename))
+				{
+					File.Copy(filename, backupFilename);
+				}
+			}
+			catch (Exception)
+			{
+				// A backup copy that could not be made is not a reason to fail the start
+			}
 		}
 
 		/// <summary>

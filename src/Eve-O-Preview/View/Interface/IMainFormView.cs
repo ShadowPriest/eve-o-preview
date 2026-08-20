@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using EveOPreview.Configuration;
 
 namespace EveOPreview.View
 {
@@ -94,6 +95,17 @@ namespace EveOPreview.View
 		void SetHotkeyBindings(IList<(string ActionId, string ActionName, string Hotkey)> bindings);
 		void SetHotkeyStatus(string status);
 
+		/// <summary>Asks the user a yes/no question. True when the answer is yes</summary>
+		bool ShowQuestion(string title, string message);
+
+		void SetCharacters(IList<CharacterGroupViewItem> groups, IList<CharacterViewItem> characters);
+
+		/// <summary>
+		/// Opens the preview settings editor of one client. 'values' carries the settings
+		/// the client uses right now, 'globals' the values it would use without its own ones
+		/// </summary>
+		void ShowPreviewSettings(string title, string caption, string groupHint, PreviewSettings values, PreviewSettings globals);
+
 		void SetActiveClients(IList<string> clients);
 		void SetCycleGroups(IList<(string Name, IList<string> Clients)> groups);
 		void SetClientCycleGroups(IDictionary<string, IList<string>> clientGroups);
@@ -116,6 +128,27 @@ namespace EveOPreview.View
 		Action<string> CycleGroupRemoveRequested { get; set; }
 		Action<string, string> CycleGroupRenameRequested { get; set; }
 		Action<bool> HotkeyCaptureModeChanged { get; set; }
+		/// <summary>(character title, group id or null to detach it)</summary>
+		Action<string, string> CharacterGroupChanged { get; set; }
+
+		/// <summary>(character title, name of the group to create for it)</summary>
+		Action<string, string> CharacterGroupCreateRequested { get; set; }
+
+		Action<string, string> CharacterGroupRenameRequested { get; set; }
+		Action<string> CharacterGroupRemoveRequested { get; set; }
+		Action<string, bool> CharacterGroupManageAsWholeChanged { get; set; }
+		Action<string> CharacterForgetRequested { get; set; }
+		Action CharacterGroupsSuggestionRequested { get; set; }
+
+		/// <summary>(character title, blacklisted)</summary>
+		Action<string, bool> CharacterIgnoreChanged { get; set; }
+
+		Action<string, Color> CharacterGroupColorChanged { get; set; }
+		Action<string> CharacterPreviewSettingsRequested { get; set; }
+
+		/// <summary>(character title, edited settings or null to follow the global ones)</summary>
+		Action<string, PreviewSettings> CharacterPreviewSettingsChanged { get; set; }
+
 		Action WindowSizeChanged { get; set; }
 		Action AggroTestRequested { get; set; }
 	}

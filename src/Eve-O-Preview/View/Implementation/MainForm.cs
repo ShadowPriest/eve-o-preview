@@ -1,4 +1,5 @@
-﻿using EveOPreview.Localization;
+﻿using EveOPreview.Configuration;
+using EveOPreview.Localization;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -25,6 +26,8 @@ namespace EveOPreview.View
 		private readonly List<string> _cycleGroupNames;
 		private readonly Dictionary<string, List<string>> _cycleGroups;
 		private Dictionary<string, IList<string>> _clientCycleGroups;
+		private IList<CharacterGroupViewItem> _characterGroups;
+		private IList<CharacterViewItem> _characters;
 		private List<(string ActionId, string DisplayName)> _hotkeyActions;
 		private List<(string ActionId, string ActionName, string Hotkey)> _hotkeyBindings;
 		private List<string> _activeClients;
@@ -47,6 +50,8 @@ namespace EveOPreview.View
 			this._cycleGroupNames = new List<string>();
 			this._cycleGroups = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 			this._clientCycleGroups = new Dictionary<string, IList<string>>(StringComparer.OrdinalIgnoreCase);
+			this._characterGroups = new List<CharacterGroupViewItem>();
+			this._characters = new List<CharacterViewItem>();
 			this._hotkeyActions = new List<(string ActionId, string DisplayName)>();
 			this._hotkeyBindings = new List<(string ActionId, string ActionName, string Hotkey)>();
 			this._activeClients = new List<string>();
@@ -64,6 +69,8 @@ namespace EveOPreview.View
 			this.ThumbnailsList.MouseDown += this.ThumbnailsList_MouseDown_Handler;
 			this.ThumbnailsList.SelectedIndexChanged += this.ThumbnailsList_SelectedIndexChanged_Handler;
 			this.ClientCycleGroupCombo.Enabled = false;
+
+			this.InitCharactersContextMenu();
 
 			this.HotkeyBindingsListView.ClientSizeChanged += this.HotkeyBindingsListViewResize_Handler;
 			this.HotkeyBindingsListView.DoubleClick += this.HotkeyBindingsListView_DoubleClick_Handler;
@@ -749,6 +756,22 @@ namespace EveOPreview.View
 			MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 		}
 
+		public bool ShowQuestion(string title, string message)
+		{
+			// The always-on-top main window would cover a message box of its own
+			bool wasTopMost = this.TopMost;
+			this.TopMost = false;
+
+			try
+			{
+				return MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+			}
+			finally
+			{
+				this.TopMost = wasTopMost;
+			}
+		}
+
 		public void SetThumbnailSizeLimitations(Size minimumSize, Size maximumSize)
 		{
 			this._minimumSize = minimumSize;
@@ -921,6 +944,501 @@ namespace EveOPreview.View
 			this.ThumbnailsList.Invalidate();
 		}
 
+		#region Character registry
+		private ToolStripMenuItem _characterPreviewSettingsMenuItem;
+		private ToolStripMenuItem _characterIgnoreMenuItem;
+		private ToolStripMenuItem _characterForgetMenuItem;
+
+		private const string CHARACTER_NODE_PREFIX = "c:";
+		private const string CHARACTER_GROUP_NODE_PREFIX = "g:";
+
+		// Marks the 'create a new group' entry of the group combo box
+		private const string NEW_CHARACTER_GROUP_ID = "\u0001new";
+
+		public void SetCharacters(IList<CharacterGroupViewItem> groups, IList<CharacterViewItem> characters)
+		{
+			this._characterGroups = groups ?? new List<CharacterGroupViewItem>();
+			this._characters = characters ?? new List<CharacterViewItem>();
+
+			this.RenderCharacters();
+		}
+
+		private void RenderCharacters()
+		{
+			string selectedTag = this.CharactersTree.SelectedNode?.Tag as string;
+			string filter = this.CharacterFilterEdit.Text.Trim();
+
+			this.CharactersTree.BeginUpdate();
+			this.CharactersTree.Nodes.Clear();
+
+			foreach (CharacterGroupViewItem group in this._characterGroups)
+			{
+				List<CharacterViewItem> members = this._characters.Where(character => string.Equals(character.GroupId, group.Id, StringComparison.Ordinal)
+																						&& !character.IsIgnored).ToList();
+
+				// A group matching the filter is shown with all of its members
+				bool groupMatches = MainForm.MatchesCharacterFilter(group.Name, filter);
+				List<CharacterViewItem> visibleMembers = groupMatches
+														? members
+														: members.Where(character => MainForm.MatchesCharacterFilter(character.Name, filter)).ToList();
+
+				if (visibleMembers.Count == 0)
+				{
+					continue;
+				}
+
+				TreeNode groupNode = new TreeNode(group.Name + " (" + members.Count + ")")
+				{
+					Tag = MainForm.CHARACTER_GROUP_NODE_PREFIX + group.Id,
+					ForeColor = group.Color.IsEmpty ? this.CharactersTree.ForeColor : group.Color
+				};
+
+				foreach (CharacterViewItem character in visibleMembers)
+				{
+					groupNode.Nodes.Add(this.CreateCharacterNode(character));
+				}
+
+				this.CharactersTree.Nodes.Add(groupNode);
+			}
+
+			List<CharacterViewItem> ungrouped = this._characters
+													.Where(character => string.IsNullOrEmpty(character.GroupId) && !character.IsIgnored
+																		&& MainForm.MatchesCharacterFilter(character.Name, filter))
+													.ToList();
+
+			if (ungrouped.Count > 0)
+			{
+				TreeNode ungroupedNode = new TreeNode(Strings.Characters_NoGroup + " (" + ungrouped.Count + ")");
+
+				foreach (CharacterViewItem character in ungrouped)
+				{
+					ungroupedNode.Nodes.Add(this.CreateCharacterNode(character));
+				}
+
+				this.CharactersTree.Nodes.Add(ungroupedNode);
+			}
+
+			// The blacklist sits at the bottom, collapsed: those characters are done with
+			List<CharacterViewItem> ignored = this._characters
+													.Where(character => character.IsIgnored && MainForm.MatchesCharacterFilter(character.Name, filter))
+													.ToList();
+
+			TreeNode ignoredNode = null;
+
+			if (ignored.Count > 0)
+			{
+				ignoredNode = new TreeNode(Strings.Characters_Blacklist + " (" + ignored.Count + ")")
+				{
+					ForeColor = SystemColors.GrayText
+				};
+
+				foreach (CharacterViewItem character in ignored)
+				{
+					ignoredNode.Nodes.Add(this.CreateCharacterNode(character));
+				}
+
+				this.CharactersTree.Nodes.Add(ignoredNode);
+			}
+
+			this.CharactersTree.ExpandAll();
+
+			ignoredNode?.Collapse();
+
+			TreeNode nodeToSelect = MainForm.FindCharacterNode(this.CharactersTree.Nodes, selectedTag);
+
+			if (nodeToSelect != null)
+			{
+				this.CharactersTree.SelectedNode = nodeToSelect;
+				nodeToSelect.EnsureVisible();
+			}
+
+			this.CharactersTree.EndUpdate();
+
+			this.RefreshCharacterDetails();
+		}
+
+		private TreeNode CreateCharacterNode(CharacterViewItem character)
+		{
+			return new TreeNode(character.IsOnline ? "\u25cf " + character.Name : character.Name)
+			{
+				Tag = MainForm.CHARACTER_NODE_PREFIX + character.Title,
+				ToolTipText = character.Title + Environment.NewLine + character.LastSeen
+			};
+		}
+
+		private static bool MatchesCharacterFilter(string value, string filter)
+		{
+			return (filter.Length == 0)
+					|| ((value != null) && (value.IndexOf(filter, StringComparison.CurrentCultureIgnoreCase) >= 0));
+		}
+
+		private static TreeNode FindCharacterNode(TreeNodeCollection nodes, string tag)
+		{
+			if (tag == null)
+			{
+				return null;
+			}
+
+			foreach (TreeNode node in nodes)
+			{
+				if (string.Equals(node.Tag as string, tag, StringComparison.Ordinal))
+				{
+					return node;
+				}
+
+				TreeNode childNode = MainForm.FindCharacterNode(node.Nodes, tag);
+
+				if (childNode != null)
+				{
+					return childNode;
+				}
+			}
+
+			return null;
+		}
+
+		private void RefreshCharacterDetails()
+		{
+			CharacterViewItem character = this.SelectedCharacter;
+			CharacterGroupViewItem group = this.SelectedCharacterGroup;
+
+			bool suppressed = this._suppressEvents;
+			this._suppressEvents = true;
+
+			try
+			{
+				this.CharacterGroupCombo.BeginUpdate();
+				this.CharacterGroupCombo.Items.Clear();
+				this.CharacterGroupCombo.Items.Add(new CharacterGroupComboItem(null, Strings.Characters_NoGroup));
+
+				foreach (CharacterGroupViewItem item in this._characterGroups)
+				{
+					this.CharacterGroupCombo.Items.Add(new CharacterGroupComboItem(item.Id, item.Name));
+				}
+
+				this.CharacterGroupCombo.Items.Add(new CharacterGroupComboItem(MainForm.NEW_CHARACTER_GROUP_ID, Strings.Characters_NewGroup));
+				this.CharacterGroupCombo.EndUpdate();
+
+				int selectedIndex = 0;
+
+				for (int i = 0; i < this.CharacterGroupCombo.Items.Count; i++)
+				{
+					CharacterGroupComboItem item = (CharacterGroupComboItem)this.CharacterGroupCombo.Items[i];
+
+					if (string.Equals(item.Id, character?.GroupId, StringComparison.Ordinal))
+					{
+						selectedIndex = i;
+						break;
+					}
+				}
+
+				this.CharacterGroupCombo.SelectedIndex = selectedIndex;
+				this.CharacterGroupCombo.Enabled = character != null;
+
+				this.CharacterManageAsWholeCheckBox.Checked = (group != null) && group.ManageAsWhole;
+				this.CharacterManageAsWholeCheckBox.Enabled = group != null;
+				this.CharacterRenameGroupButton.Enabled = group != null;
+				this.CharacterUngroupButton.Enabled = group != null;
+				this.CharacterForgetButton.Enabled = character != null;
+				this.CharacterPreviewSettingsButton.Enabled = character != null;
+
+				this.CharacterGroupColorButton.BackColor = (group == null) ? SystemColors.Control : group.Color;
+				this.CharacterGroupColorButton.Enabled = group != null;
+			}
+			finally
+			{
+				this._suppressEvents = suppressed;
+			}
+		}
+
+		private CharacterViewItem SelectedCharacter
+		{
+			get
+			{
+				string tag = this.CharactersTree.SelectedNode?.Tag as string;
+
+				if ((tag == null) || !tag.StartsWith(MainForm.CHARACTER_NODE_PREFIX, StringComparison.Ordinal))
+				{
+					return null;
+				}
+
+				string title = tag.Substring(MainForm.CHARACTER_NODE_PREFIX.Length);
+
+				return this._characters.FirstOrDefault(character => string.Equals(character.Title, title, StringComparison.Ordinal));
+			}
+		}
+
+		/// <summary>Group of the selected node: the group itself or the group of the character</summary>
+		private CharacterGroupViewItem SelectedCharacterGroup
+		{
+			get
+			{
+				string tag = this.CharactersTree.SelectedNode?.Tag as string;
+
+				if ((tag != null) && tag.StartsWith(MainForm.CHARACTER_GROUP_NODE_PREFIX, StringComparison.Ordinal))
+				{
+					string groupId = tag.Substring(MainForm.CHARACTER_GROUP_NODE_PREFIX.Length);
+
+					return this._characterGroups.FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.Ordinal));
+				}
+
+				string characterGroupId = this.SelectedCharacter?.GroupId;
+
+				return string.IsNullOrEmpty(characterGroupId)
+						? null
+						: this._characterGroups.FirstOrDefault(group => string.Equals(group.Id, characterGroupId, StringComparison.Ordinal));
+			}
+		}
+
+		private void InitCharactersContextMenu()
+		{
+			this._characterPreviewSettingsMenuItem = new ToolStripMenuItem(Strings.Characters_PreviewSettings, null,
+																			this.CharacterPreviewSettingsButton_Click_Handler);
+			this._characterIgnoreMenuItem = new ToolStripMenuItem(Strings.Characters_Blacklist_Add, null, this.CharacterIgnoreMenuItem_Click_Handler);
+			this._characterForgetMenuItem = new ToolStripMenuItem(Strings.Characters_Forget, null, this.CharacterForgetButton_Click_Handler);
+
+			ContextMenuStrip menu = new ContextMenuStrip();
+			menu.Items.Add(this._characterPreviewSettingsMenuItem);
+			menu.Items.Add(new ToolStripSeparator());
+			menu.Items.Add(this._characterIgnoreMenuItem);
+			menu.Items.Add(this._characterForgetMenuItem);
+			menu.Opening += this.CharactersContextMenu_Opening_Handler;
+
+			this.CharactersTree.ContextMenuStrip = menu;
+		}
+
+		private void CharactersContextMenu_Opening_Handler(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			// The right click does not move the selection on its own
+			TreeNode node = this.CharactersTree.GetNodeAt(this.CharactersTree.PointToClient(Cursor.Position));
+
+			if (node != null)
+			{
+				this.CharactersTree.SelectedNode = node;
+			}
+
+			CharacterViewItem character = this.SelectedCharacter;
+
+			if (character == null)
+			{
+				e.Cancel = true;
+				return;
+			}
+
+			this._characterIgnoreMenuItem.Text = character.IsIgnored ? Strings.Characters_Blacklist_Remove : Strings.Characters_Blacklist_Add;
+		}
+
+		private void CharacterIgnoreMenuItem_Click_Handler(object sender, EventArgs e)
+		{
+			CharacterViewItem character = this.SelectedCharacter;
+
+			if (character == null)
+			{
+				return;
+			}
+
+			if (!character.IsIgnored
+				&& !this.ShowQuestion(Strings.Characters_Blacklist_Add, string.Format(Strings.Characters_BlacklistPrompt, character.Name)))
+			{
+				return;
+			}
+
+			this.CharacterIgnoreChanged?.Invoke(character.Title, !character.IsIgnored);
+		}
+
+		private void CharacterGroupColorButton_Click_Handler(object sender, EventArgs e)
+		{
+			CharacterGroupViewItem group = this.SelectedCharacterGroup;
+
+			if (group == null)
+			{
+				return;
+			}
+
+			using (ColorDialog dialog = new ColorDialog { Color = group.Color })
+			{
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.CharacterGroupColorChanged?.Invoke(group.Id, dialog.Color);
+			}
+		}
+
+		private void CharacterFilterEdit_TextChanged_Handler(object sender, EventArgs e)
+		{
+			this.RenderCharacters();
+		}
+
+		private void CharactersTree_AfterSelect_Handler(object sender, TreeViewEventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			this.RefreshCharacterDetails();
+		}
+
+		private void CharacterGroupCombo_SelectedIndexChanged_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			CharacterViewItem character = this.SelectedCharacter;
+
+			if ((character == null) || !(this.CharacterGroupCombo.SelectedItem is CharacterGroupComboItem item))
+			{
+				return;
+			}
+
+			if (item.Id == MainForm.NEW_CHARACTER_GROUP_ID)
+			{
+				using (TextPromptDialog dialog = new TextPromptDialog(Strings.Characters_NewGroupTitle, Strings.Characters_NamePrompt, character.Name))
+				{
+					if ((this.ShowModalDialog(dialog) != DialogResult.OK) || (dialog.Value.Length == 0))
+					{
+						// Put the combo box back to the group the character is in
+						this.RefreshCharacterDetails();
+						return;
+					}
+
+					this.CharacterGroupCreateRequested?.Invoke(character.Title, dialog.Value);
+				}
+
+				return;
+			}
+
+			if (string.Equals(item.Id, character.GroupId, StringComparison.Ordinal))
+			{
+				return;
+			}
+
+			this.CharacterGroupChanged?.Invoke(character.Title, item.Id);
+		}
+
+		private void CharacterManageAsWholeCheckBox_CheckedChanged_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			CharacterGroupViewItem group = this.SelectedCharacterGroup;
+
+			if (group == null)
+			{
+				return;
+			}
+
+			this.CharacterGroupManageAsWholeChanged?.Invoke(group.Id, this.CharacterManageAsWholeCheckBox.Checked);
+		}
+
+		private void CharacterRenameGroupButton_Click_Handler(object sender, EventArgs e)
+		{
+			CharacterGroupViewItem group = this.SelectedCharacterGroup;
+
+			if (group == null)
+			{
+				return;
+			}
+
+			using (TextPromptDialog dialog = new TextPromptDialog(Strings.Characters_RenameTitle, Strings.Characters_NamePrompt, group.Name))
+			{
+				if ((this.ShowModalDialog(dialog) != DialogResult.OK) || (dialog.Value.Length == 0) || (dialog.Value == group.Name))
+				{
+					return;
+				}
+
+				this.CharacterGroupRenameRequested?.Invoke(group.Id, dialog.Value);
+			}
+		}
+
+		private void CharacterUngroupButton_Click_Handler(object sender, EventArgs e)
+		{
+			CharacterGroupViewItem group = this.SelectedCharacterGroup;
+
+			if (group == null)
+			{
+				return;
+			}
+
+			if (!this.ShowQuestion(Strings.Characters_UngroupTitle, string.Format(Strings.Characters_UngroupPrompt, group.Name)))
+			{
+				return;
+			}
+
+			this.CharacterGroupRemoveRequested?.Invoke(group.Id);
+		}
+
+		private void CharacterForgetButton_Click_Handler(object sender, EventArgs e)
+		{
+			CharacterViewItem character = this.SelectedCharacter;
+
+			if (character == null)
+			{
+				return;
+			}
+
+			if (!this.ShowQuestion(Strings.Characters_ForgetTitle, string.Format(Strings.Characters_ForgetPrompt, character.Name)))
+			{
+				return;
+			}
+
+			this.CharacterForgetRequested?.Invoke(character.Title);
+		}
+
+		private void CharacterSuggestGroupsButton_Click_Handler(object sender, EventArgs e)
+		{
+			this.CharacterGroupsSuggestionRequested?.Invoke();
+		}
+
+		private void CharacterPreviewSettingsButton_Click_Handler(object sender, EventArgs e)
+		{
+			CharacterViewItem character = this.SelectedCharacter;
+
+			if (character == null)
+			{
+				return;
+			}
+
+			this.CharacterPreviewSettingsRequested?.Invoke(character.Title);
+		}
+
+		public void ShowPreviewSettings(string title, string caption, string groupHint, PreviewSettings values, PreviewSettings globals)
+		{
+			using (PreviewSettingsDialog dialog = new PreviewSettingsDialog(caption, groupHint, values, globals))
+			{
+				if (this.ShowModalDialog(dialog) != DialogResult.OK)
+				{
+					return;
+				}
+
+				this.CharacterPreviewSettingsChanged?.Invoke(title, dialog.Value);
+			}
+		}
+
+		private sealed class CharacterGroupComboItem
+		{
+			public CharacterGroupComboItem(string id, string name)
+			{
+				this.Id = id;
+				this.Name = name;
+			}
+
+			public string Id { get; }
+			public string Name { get; }
+
+			public override string ToString()
+			{
+				return this.Name;
+			}
+		}
+		#endregion
+
 		public Action ApplicationExitRequested { get; set; }
 
 		public Action FormActivated { get; set; }
@@ -958,6 +1476,28 @@ namespace EveOPreview.View
 		public Action WindowSizeChanged { get; set; }
 
 		public Action AggroTestRequested { get; set; }
+
+		public Action<string, string> CharacterGroupChanged { get; set; }
+
+		public Action<string, string> CharacterGroupCreateRequested { get; set; }
+
+		public Action<string, string> CharacterGroupRenameRequested { get; set; }
+
+		public Action<string> CharacterGroupRemoveRequested { get; set; }
+
+		public Action<string, bool> CharacterGroupManageAsWholeChanged { get; set; }
+
+		public Action<string> CharacterForgetRequested { get; set; }
+
+		public Action CharacterGroupsSuggestionRequested { get; set; }
+
+		public Action<string> CharacterPreviewSettingsRequested { get; set; }
+
+		public Action<string, PreviewSettings> CharacterPreviewSettingsChanged { get; set; }
+
+		public Action<string, bool> CharacterIgnoreChanged { get; set; }
+
+		public Action<string, Color> CharacterGroupColorChanged { get; set; }
 
 		#region UI events
 		private void ContentTabControl_DrawItem(object sender, DrawItemEventArgs e)
@@ -1466,18 +2006,48 @@ namespace EveOPreview.View
 			this.MoveSelectedCycleGroupClient(1);
 		}
 
+		// Characters of one account travel through the cycle order as one block: they are
+		// added, removed and moved together. Only one of them can be online at a time, so
+		// the cycle stops at the account once, whichever character is logged in
 		private void MoveSelectedCycleGroupClient(int direction)
 		{
 			List<string> clients = this.GetSelectedCycleGroupClients();
 			int index = this.CycleGroupClientsListBox.SelectedIndex;
-			int newIndex = index + direction;
 
-			if ((clients == null) || (index < 0) || (newIndex < 0) || (newIndex >= clients.Count))
+			if ((clients == null) || (index < 0) || (index >= clients.Count))
 			{
 				return;
 			}
 
-			(clients[index], clients[newIndex]) = (clients[newIndex], clients[index]);
+			(int start, int count) = this.GetSelectedRange(clients, index);
+			int neighborIndex = (direction < 0) ? (start - 1) : (start + count);
+
+			if ((neighborIndex < 0) || (neighborIndex >= clients.Count))
+			{
+				return;
+			}
+
+			(int neighborStart, int neighborCount) = this.GetSelectedRange(clients, neighborIndex);
+
+			List<string> block = clients.GetRange(start, count);
+			List<string> neighbor = clients.GetRange(neighborStart, neighborCount);
+			int selectionOffset = index - start;
+			int newIndex;
+
+			if (direction < 0)
+			{
+				clients.RemoveRange(neighborStart, neighborCount + count);
+				clients.InsertRange(neighborStart, block);
+				clients.InsertRange(neighborStart + count, neighbor);
+				newIndex = neighborStart + selectionOffset;
+			}
+			else
+			{
+				clients.RemoveRange(start, count + neighborCount);
+				clients.InsertRange(start, neighbor);
+				clients.InsertRange(start + neighborCount, block);
+				newIndex = start + neighborCount + selectionOffset;
+			}
 
 			this.RenderSelectedCycleGroup();
 			this.CycleGroupClientsListBox.SelectedIndex = newIndex;
@@ -1495,7 +2065,8 @@ namespace EveOPreview.View
 				return;
 			}
 
-			clients.RemoveAt(index);
+			(int start, int count) = this.GetSelectedRange(clients, index);
+			clients.RemoveRange(start, count);
 
 			this.RenderSelectedCycleGroup();
 
@@ -1512,16 +2083,144 @@ namespace EveOPreview.View
 				return;
 			}
 
-			if (clients.Contains(client, StringComparer.OrdinalIgnoreCase))
+			// The whole account joins the cycle order unless only the picked character is wanted
+			List<string> block = this.CycleGroupWholeAccountCheckBox.Checked
+									? this.GetAccountMembers(client)
+									: new List<string> { client };
+			bool added = false;
+
+			foreach (string member in block)
+			{
+				if (clients.Contains(member, StringComparer.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
+				clients.Add(member);
+				added = true;
+			}
+
+			if (!added)
 			{
 				return;
 			}
 
-			clients.Add(client);
-
 			this.RenderSelectedCycleGroup();
 
 			this.CycleGroupClientsChanged?.Invoke(this.SelectedCycleGroupName, new List<string>(clients));
+		}
+
+		/// <summary>Account of the character, null when it belongs to none</summary>
+		private string GetAccountId(string title)
+		{
+			return this._characters.FirstOrDefault(character => string.Equals(character.Title, title, StringComparison.OrdinalIgnoreCase))?.GroupId;
+		}
+
+		/// <summary>The character itself, or every character of its account</summary>
+		private List<string> GetAccountMembers(string title)
+		{
+			string accountId = this.GetAccountId(title);
+
+			if (string.IsNullOrEmpty(accountId))
+			{
+				return new List<string> { title };
+			}
+
+			return this._characters.Where(character => string.Equals(character.GroupId, accountId, StringComparison.Ordinal))
+									.Select(character => character.Title)
+									.ToList();
+		}
+
+		/// <summary>
+		/// The range the list operations work on: the whole account block, or just the
+		/// single character when the account switch is off
+		/// </summary>
+		private (int Start, int Count) GetSelectedRange(List<string> clients, int index)
+		{
+			return this.CycleGroupWholeAccountCheckBox.Checked ? this.GetAccountBlock(clients, index) : (index, 1);
+		}
+
+		/// <summary>Range of the account block the item at this position belongs to</summary>
+		private (int Start, int Count) GetAccountBlock(List<string> clients, int index)
+		{
+			string accountId = this.GetAccountId(clients[index]);
+
+			if (string.IsNullOrEmpty(accountId))
+			{
+				return (index, 1);
+			}
+
+			int start = index;
+			while ((start > 0) && string.Equals(this.GetAccountId(clients[start - 1]), accountId, StringComparison.Ordinal))
+			{
+				start--;
+			}
+
+			int end = index;
+			while ((end < clients.Count - 1) && string.Equals(this.GetAccountId(clients[end + 1]), accountId, StringComparison.Ordinal))
+			{
+				end++;
+			}
+
+			return (start, end - start + 1);
+		}
+
+		private CharacterGroupViewItem FindAccount(string accountId)
+		{
+			return string.IsNullOrEmpty(accountId)
+					? null
+					: this._characterGroups.FirstOrDefault(group => string.Equals(group.Id, accountId, StringComparison.Ordinal));
+		}
+
+		/// <summary>
+		/// Every character of an account carries its color and its name here, so that a
+		/// block of three characters reads as one account and not as three names that
+		/// happen to stand next to each other
+		/// </summary>
+		private void CycleGroupClientsListBox_DrawItem_Handler(object sender, DrawItemEventArgs e)
+		{
+			e.DrawBackground();
+
+			if ((e.Index < 0) || (e.Index >= this.CycleGroupClientsListBox.Items.Count))
+			{
+				return;
+			}
+
+			string title = this.CycleGroupClientsListBox.Items[e.Index] as string;
+			CharacterGroupViewItem account = this.FindAccount(this.GetAccountId(title));
+			bool isSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+			Rectangle bounds = e.Bounds;
+
+			if (account != null)
+			{
+				using (Brush markerBrush = new SolidBrush(account.Color))
+				{
+					e.Graphics.FillRectangle(markerBrush, bounds.X + 2, bounds.Y + 1, 4, bounds.Height - 2);
+				}
+			}
+
+			Rectangle textBounds = new Rectangle(bounds.X + 10, bounds.Y, bounds.Width - 12, bounds.Height);
+			Color textColor = isSelected ? SystemColors.HighlightText : SystemColors.ControlText;
+
+			TextRenderer.DrawText(e.Graphics, title, e.Font, textBounds, textColor,
+									TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+			if (account != null)
+			{
+				Size titleSize = TextRenderer.MeasureText(e.Graphics, title, e.Font);
+				Rectangle accountBounds = new Rectangle(textBounds.X + titleSize.Width + 8, bounds.Y,
+														textBounds.Width - titleSize.Width - 8, bounds.Height);
+
+				if (accountBounds.Width > 20)
+				{
+					Color accountColor = isSelected ? SystemColors.HighlightText : account.Color;
+
+					TextRenderer.DrawText(e.Graphics, account.Name, e.Font, accountBounds, accountColor,
+											TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+				}
+			}
+
+			e.DrawFocusRectangle();
 		}
 
 		private void CycleGroupAddGroupButton_Click_Handler(object sender, EventArgs e)
@@ -1604,7 +2303,16 @@ namespace EveOPreview.View
 				["ThumbnailTabPage"] = Strings.Tab_Previews,
 				["OverlayTabPage"] = Strings.Tab_Overlay,
 				["ClientWindowsTabPage"] = Strings.Tab_ClientWindows,
-				["ClientsTabPage"] = Strings.Tab_ActiveClients,
+				["ClientsTabPage"] = Strings.Tab_Clients,
+				["ClientsActiveSubPage"] = Strings.Tab_ActiveClients,
+				["CharactersSubPage"] = Strings.Tab_Characters,
+				["CharacterFilterLabel"] = Strings.Characters_Filter,
+				["CharacterGroupLabel"] = Strings.Characters_Group,
+				["CharacterManageAsWholeCheckBox"] = Strings.Characters_ManageAsWhole,
+				["CharacterForgetButton"] = Strings.Characters_Forget,
+				["CharacterPreviewSettingsButton"] = Strings.Characters_PreviewSettings,
+				["CharacterSuggestGroupsButton"] = Strings.Characters_SuggestGroups,
+				["CycleGroupWholeAccountCheckBox"] = Strings.CycleGroups_WholeAccount,
 				["CycleGroupsTabPage"] = Strings.Tab_CycleGroups,
 				["HotkeysTabPage"] = Strings.Tab_Hotkeys,
 				["GameLogsTabPage"] = Strings.Tab_GameLogs,

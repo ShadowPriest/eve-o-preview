@@ -24,7 +24,14 @@ namespace EveOPreview.Services
 		private const int FORCED_REFRESH_CYCLE_THRESHOLD = 2;
 		private const int DEFAULT_LOCATION_CHANGE_NOTIFICATION_DELAY = 2;
 
-		private const string DEFAULT_CLIENT_TITLE = "EVE";
+		private const string DEFAULT_CLIENT_TITLE = CharacterInfo.LOGIN_TITLE;
+
+		/// <summary>
+		/// How long a client title has to stay in place before the character behind it is
+		/// written into the registry. A client puts transient titles into its window while
+		/// it is starting up, and a bogus entry would drag a whole account group with it
+		/// </summary>
+		private const int CHARACTER_REGISTRATION_DELAY = 3000;
 		#endregion
 
 		#region Private fields
@@ -73,6 +80,12 @@ namespace EveOPreview.Services
 		private readonly Dictionary<IntPtr, long> _minimizedClientWakeTimestamps = new Dictionary<IntPtr, long>();
 
 		private readonly IGameLogMonitor _gameLogMonitor;
+
+		// Character registry tracking. A client cannot switch the account without a restart,
+		// so every character seen in one client process belongs to one account
+		private readonly Dictionary<IntPtr, (string Title, long Timestamp, bool Registered)> _clientTitleObservations = new Dictionary<IntPtr, (string, long, bool)>();
+		private readonly Dictionary<IntPtr, (uint ProcessId, long StartTime)> _clientProcesses = new Dictionary<IntPtr, (uint, long)>();
+		private readonly Dictionary<(uint ProcessId, long StartTime), HashSet<string>> _processCharacters = new Dictionary<(uint, long), HashSet<string>>();
 		#endregion
 
 		public ThumbnailManager(IMediator mediator, IThumbnailConfiguration configuration, IProcessMonitor processMonitor, IWindowManager windowManager, IThumbnailViewFactory factory, IMouseHookService mouseHook, IGameLogMonitor gameLogMonitor)
@@ -112,6 +125,11 @@ namespace EveOPreview.Services
 			{
 				RegisterCycleClientHotkey(group.ForwardHotkeys.Select(x => this._configuration.StringToKey(x)), true, group.ClientsOrder);
 				RegisterCycleClientHotkey(group.BackwardHotkeys.Select(x => this._configuration.StringToKey(x)), false, group.ClientsOrder);
+			}
+
+			foreach (CharacterGroup characterGroup in this._configuration.GetCharacterGroups())
+			{
+				this.RegisterCharacterGroupHotkey(characterGroup.Id, characterGroup.Hotkeys.Select(x => this._configuration.StringToKey(x)));
 			}
 
 			RegisterMinimizeAllClientsHotkey(this._configuration.MinimizeAllClientsHotkeys?.Select(x => this._configuration.StringToKey(x)));
@@ -234,6 +252,16 @@ namespace EveOPreview.Services
 				this._mouseHook.Register(binding, () => this.ToggleClickThrough());
 			}
 
+			foreach (CharacterGroup characterGroup in this._configuration.GetCharacterGroups())
+			{
+				string groupId = characterGroup.Id;
+
+				foreach (string binding in characterGroup.Hotkeys.Where(MouseBinding.IsMouseBinding))
+				{
+					this._mouseHook.Register(binding, () => this.ActivateCharacterGroup(groupId));
+				}
+			}
+
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
 				string title = entry.Value.Title;
@@ -255,6 +283,76 @@ namespace EveOPreview.Services
 			}
 
 			return string.Join(", ", this._configuration.CycleGroups.Where(x => x.ClientsOrder.ContainsKey(title)).Select(x => x.Name));
+		}
+
+		/// <summary>Switches to the client of this account: the character that is online now</summary>
+		private void RegisterCharacterGroupHotkey(string groupId, IEnumerable<Keys> keys)
+		{
+			foreach (Keys hotkey in keys)
+			{
+				if (hotkey == Keys.None)
+				{
+					continue;
+				}
+
+				HotkeyHandler newHandler = new HotkeyHandler(default(IntPtr), hotkey);
+				newHandler.Pressed += (object s, HandledEventArgs e) =>
+				{
+					this.ActivateCharacterGroup(groupId);
+					e.Handled = true;
+				};
+
+				newHandler.Register();
+				this._cycleClientHotkeyHandlers.Add(newHandler);
+			}
+		}
+
+		/// <summary>
+		/// Activates the client of an account. Only one character of an account can be
+		/// logged in at a time, so the account is one switch target regardless of which
+		/// character is in the game. A client that has no character logged in counts too:
+		/// its account is known from the characters seen in that very process
+		/// </summary>
+		private void ActivateCharacterGroup(string groupId)
+		{
+			IReadOnlyList<string> members = this._configuration.GetGroupMembers(groupId);
+
+			if (members.Count == 0)
+			{
+				return;
+			}
+
+			KeyValuePair<IntPtr, IThumbnailView> loggedOutClient = default;
+
+			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
+			{
+				if (members.Contains(entry.Value.Title, StringComparer.Ordinal))
+				{
+					this.SetActive(entry);
+					return;
+				}
+
+				if ((loggedOutClient.Value == null) && this.IsClientOfCharacterGroup(entry.Key, members))
+				{
+					loggedOutClient = entry;
+				}
+			}
+
+			if (loggedOutClient.Value != null)
+			{
+				this.SetActive(loggedOutClient);
+			}
+		}
+
+		private bool IsClientOfCharacterGroup(IntPtr handle, IReadOnlyList<string> members)
+		{
+			if (!this._clientProcesses.TryGetValue(handle, out (uint ProcessId, long StartTime) process)
+				|| !this._processCharacters.TryGetValue(process, out HashSet<string> characters))
+			{
+				return false;
+			}
+
+			return characters.Any(character => members.Contains(character, StringComparer.Ordinal));
 		}
 
 		private void ActivateClientByTitle(string title)
@@ -955,16 +1053,17 @@ namespace EveOPreview.Services
 
 			foreach (IProcessInfo process in addedProcesses)
 			{
-				Size initialSize = this._configuration.ThumbnailSize;
-				if (this._configuration.PerClientThumbnailSize.Any(x => x.Key == process.Title))
-				{
-					initialSize = this._configuration.PerClientThumbnailSize[process.Title];
-				}
+				// A client with its own preview size gets it right away: the refresh loop
+				// would otherwise create the preview in the global size first and resize it
+				// one cycle later, which is visible as a jump
+				Size initialSize = this._configuration.GetThumbnailSize(process.Title, this._activeClient.Title, this._configuration.ThumbnailSize);
 
-				IThumbnailView view = this._thumbnailViewFactory.Create(process.Handle, process.Title, this._configuration.ThumbnailSize);
-				view.IsOverlayEnabled = this._configuration.ShowThumbnailOverlays;
+				IThumbnailView view = this._thumbnailViewFactory.Create(process.Handle, process.Title, initialSize);
+				PreviewSettings initialSettings = this._configuration.ResolvePreviewSettings(process.Title);
+
+				view.IsOverlayEnabled = initialSettings.ShowThumbnailOverlays.Value;
 				view.IsExcludedFromCycleGroup = false;
-				view.SetFrames(this._configuration.ShowThumbnailFrames);
+				view.SetFrames(initialSettings.ShowThumbnailFrames.Value);
 				// Max/Min size limitations should be set AFTER the frames are disabled
 				// Otherwise thumbnail window will be unnecessary resized
 				view.SetSizeLimitations(this._configuration.ThumbnailMinimumSize, this._configuration.ThumbnailMaximumSize);
@@ -1022,6 +1121,15 @@ namespace EveOPreview.Services
 
 					view.RegisterHotkey(this._configuration.GetClientHotkey(process.Title));
 
+					// A client that has just logged a character in still sits at the login
+					// screen position - it belongs at the position of that character now.
+					// The current location is the fallback, so a character with no stored
+					// position of its own (and no group to inherit one from) stays put
+					if (this.IsManageableThumbnail(view))
+					{
+						view.ThumbnailLocation = this._configuration.GetThumbnailLocation(view.Title, this._activeClient.Title, view.ThumbnailLocation);
+					}
+
 					this.ApplyClientLayout(view);
 					this.ApplyCaptionBar(view);
 				}
@@ -1054,12 +1162,127 @@ namespace EveOPreview.Services
 				view.Close();
 			}
 
-			if ((viewsAdded.Count > 0) || (viewsRemoved.Count > 0))
+			bool registryChanged = this.TrackClientCharacters(addedProcesses, updatedProcesses, removedProcesses);
+
+			if (registryChanged)
+			{
+				await this._mediator.Send(new SaveConfiguration());
+			}
+
+			bool viewsChanged = (viewsAdded.Count > 0) || (viewsRemoved.Count > 0);
+
+			if (viewsChanged)
 			{
 				this.RefreshMouseBindings();
+			}
+
+			// A character is registered a few seconds after its client window has been
+			// picked up, so the settings UI is notified once more when that happens
+			if (viewsChanged || registryChanged)
+			{
 				await this._mediator.Publish(new ThumbnailListUpdated(viewsAdded, viewsRemoved));
 			}
 		}
+
+		#region Character registry tracking
+		/// <summary>
+		/// Keeps the character registry in sync with the running clients: every character
+		/// that has been seen logged in is stored, and the characters seen in one client
+		/// process are grouped together as one account.
+		/// Returns true when the registry has changed and has to be saved
+		/// </summary>
+		private bool TrackClientCharacters(ICollection<IProcessInfo> addedProcesses, ICollection<IProcessInfo> updatedProcesses, ICollection<IProcessInfo> removedProcesses)
+		{
+			foreach (IProcessInfo process in addedProcesses)
+			{
+				this.ObserveClientTitle(process);
+			}
+
+			foreach (IProcessInfo process in updatedProcesses)
+			{
+				this.ObserveClientTitle(process);
+			}
+
+			foreach (IProcessInfo process in removedProcesses)
+			{
+				this._clientTitleObservations.Remove(process.Handle);
+				this._clientProcesses.Remove(process.Handle);
+			}
+
+			// The characters seen in a process are NOT dropped along with its windows:
+			// a client can be without a visible window for a moment while it switches
+			// characters, and that must not cost the account the link between them
+			return this.RegisterStableCharacters();
+		}
+
+		private void ObserveClientTitle(IProcessInfo process)
+		{
+			this._clientProcesses[process.Handle] = (process.ProcessId, process.ProcessStartTime);
+
+			if (this._clientTitleObservations.TryGetValue(process.Handle, out (string Title, long Timestamp, bool Registered) observation)
+				&& (observation.Title == process.Title))
+			{
+				return;
+			}
+
+			this._clientTitleObservations[process.Handle] = (process.Title, Environment.TickCount64, false);
+		}
+
+		private bool RegisterStableCharacters()
+		{
+			bool registryChanged = false;
+			long now = Environment.TickCount64;
+
+			foreach (IntPtr handle in this._clientTitleObservations.Keys.ToList())
+			{
+				(string Title, long Timestamp, bool Registered) observation = this._clientTitleObservations[handle];
+
+				if (observation.Registered || !CharacterInfo.IsCharacterTitle(observation.Title))
+				{
+					continue;
+				}
+
+				// A character that is already in the registry is no garbage title: it is
+				// picked up at once instead of waiting for the title to prove itself
+				bool isKnownCharacter = this._configuration.GetCharacter(observation.Title) != null;
+
+				if (!isKnownCharacter && ((now - observation.Timestamp) < ThumbnailManager.CHARACTER_REGISTRATION_DELAY))
+				{
+					continue;
+				}
+
+				observation.Registered = true;
+				this._clientTitleObservations[handle] = observation;
+
+				registryChanged |= this._configuration.RegisterCharacter(observation.Title);
+
+				if (!this._clientProcesses.TryGetValue(handle, out (uint ProcessId, long StartTime) process))
+				{
+					continue;
+				}
+
+				if (!this._processCharacters.TryGetValue(process, out HashSet<string> characters))
+				{
+					characters = new HashSet<string>(StringComparer.Ordinal);
+					this._processCharacters[process] = characters;
+				}
+
+				characters.Add(observation.Title);
+
+				// Every character of this client process shares one account. The link is
+				// re-applied on every registration, not only when the set grows: an account
+				// is recognized when its second character shows up, which can be many
+				// relogins (or application restarts) later
+				if (characters.Count > 1)
+				{
+					registryChanged |= this._configuration.LinkCharacters(characters);
+				}
+			}
+
+			return registryChanged;
+		}
+
+		#endregion
 
 		private void RefreshThumbnails()
 		{
@@ -1164,8 +1387,14 @@ namespace EveOPreview.Services
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
 				IThumbnailView view = entry.Value;
+
+				// Settings edited in the settings window (global or per client) apply live
+				view.RefreshPreviewSettings();
+
+				PreviewSettings settings = this._configuration.ResolvePreviewSettings(view.Title);
+
 				// update ZoomAnchor regardless
-				view.ClientZoomAnchor = this._configuration.GetZoomAnchor(view.Title, this._configuration.ThumbnailZoomAnchor);
+				view.ClientZoomAnchor = settings.ThumbnailZoomAnchor.Value;
 
 
 				if (hideAllThumbnails || this._configuration.IsThumbnailDisabled(view.Title))
@@ -1219,17 +1448,18 @@ namespace EveOPreview.Services
 					}
 
 					// Click-through mode dims the previews so its being active is obvious
-					view.SetOpacity(this._isClickThroughActive ? this._configuration.ThumbnailOpacity * 0.6 : this._configuration.ThumbnailOpacity);
+					view.SetOpacity(this._isClickThroughActive ? settings.ThumbnailOpacity.Value * 0.6 : settings.ThumbnailOpacity.Value);
 					view.SetTopMost(this._configuration.ShowThumbnailsAlwaysOnTop);
 				}
 
-				view.IsOverlayEnabled = this._configuration.ShowThumbnailOverlays;
+				view.IsOverlayEnabled = settings.ShowThumbnailOverlays.Value;
+				view.SetFrames(settings.ShowThumbnailFrames.Value);
 				view.SetCycleGroupName(this.GetCycleGroupNames(view.Title));
 				view.SetAggroFrame(this.ComputeAggroLevel(view));
 
 				view.SetHighlight(
-					this._configuration.EnableActiveClientHighlight && (view.Id == this._activeClient.Handle), 
-					this._configuration.ActiveClientHighlightThickness);
+					settings.EnableActiveClientHighlight.Value && (view.Id == this._activeClient.Handle),
+					settings.ActiveClientHighlightThickness.Value);
 
 				if (!view.IsActive)
 				{
@@ -1357,7 +1587,8 @@ namespace EveOPreview.Services
 
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
-				entry.Value.SetFrames(this._configuration.ShowThumbnailFrames);
+				entry.Value.RefreshPreviewSettings();
+				entry.Value.SetFrames(this._configuration.ResolvePreviewSettings(entry.Value.Title).ShowThumbnailFrames.Value);
 				ApplyCaptionBar(entry.Value);
 				entry.Value.SetPreventPreviews();
 
@@ -1412,7 +1643,7 @@ namespace EveOPreview.Services
 			view.SetTopMost(true);
 			view.SetOpacity(1.0);
 
-			if (this._configuration.ThumbnailZoomEnabled && ! view.IsPreventPreviews() )
+			if (this._configuration.ResolvePreviewSettings(view.Title).ThumbnailZoomEnabled.Value && ! view.IsPreventPreviews() )
 			{
 				// The expanded window must never be covered by the neighboring previews
 				view.BringAboveOtherThumbnails();
@@ -1429,12 +1660,12 @@ namespace EveOPreview.Services
 
 			IThumbnailView view = this._thumbnailViews[id];
 
-			if (this._configuration.ThumbnailZoomEnabled)
+			if (this._configuration.ResolvePreviewSettings(view.Title).ThumbnailZoomEnabled.Value)
 			{
 				this.ThumbnailZoomOut(view);
 			}
 
-			view.SetOpacity(this._configuration.ThumbnailOpacity);
+			view.SetOpacity(this._configuration.ResolvePreviewSettings(view.Title).ThumbnailOpacity.Value);
 
 			this._isHoverEffectActive = false;
 		}
@@ -1564,7 +1795,7 @@ namespace EveOPreview.Services
 		{
 			this.DisableViewEvents();
 
-			view.ZoomIn(ViewZoomAnchorConverter.Convert(view.ClientZoomAnchor), this._configuration.ThumbnailZoomFactor);
+			view.ZoomIn(ViewZoomAnchorConverter.Convert(view.ClientZoomAnchor), this._configuration.ResolvePreviewSettings(view.Title).ThumbnailZoomFactor.Value);
 			view.Refresh(false);
 
 			this.EnableViewEvents();

@@ -8,10 +8,6 @@ namespace EveOPreview.Configuration
 	{
 		List<CycleGroup> CycleGroups { get; set; }
 
-		Dictionary<string, Color> PerClientActiveClientHighlightColor { get; set; }
-		Dictionary<string, Color> PerClientPreventPreviewColor { get; set; }
-		Dictionary<string, bool> PerClientPreventPreviews { get; set; }
-		Dictionary<string, Size> PerClientThumbnailSize { get; set; }
 		Dictionary<string, bool> CycleGroupExclusions { get; set; }
 
 		bool MinimizeToTray { get; set; }
@@ -100,6 +96,53 @@ namespace EveOPreview.Configuration
 
 		/// <summary>How deep the edge-to-center gradient reaches: 100 fills the whole preview</summary>
 		int AggroFillPercent { get; set; }
+
+		#region Character registry
+		/// <summary>Every character that has been seen logged in at least once</summary>
+		IReadOnlyList<CharacterInfo> GetCharacters();
+
+		CharacterInfo GetCharacter(string title);
+
+		/// <summary>Adds the character to the registry. True when the registry has changed</summary>
+		bool RegisterCharacter(string title);
+
+		/// <summary>Drops the character and every setting stored for it</summary>
+		bool ForgetCharacter(string title);
+
+		/// <summary>Blacklists the character: it stays stored but is hidden from every list</summary>
+		void SetCharacterIgnored(string title, bool ignored);
+
+		void SetCharacterGroupColor(string groupId, Color color);
+
+		IReadOnlyList<CharacterGroup> GetCharacterGroups();
+		CharacterGroup GetCharacterGroupById(string groupId);
+		CharacterGroup GetCharacterGroupOf(string title);
+		IReadOnlyList<string> GetGroupMembers(string groupId);
+
+		/// <summary>Clients a setting written for this one has to be written for as well</summary>
+		IReadOnlyList<string> GetLinkedClients(string title);
+
+		/// <summary>Puts the characters into one group. True when the registry has changed</summary>
+		bool LinkCharacters(IEnumerable<string> titles);
+
+		void SetCharacterGroup(string title, string groupId);
+		CharacterGroup CreateCharacterGroup(string name);
+		void RenameCharacterGroup(string groupId, string name);
+		void SetGroupManageAsWhole(string groupId, bool value);
+		void RemoveCharacterGroup(string groupId);
+		#endregion
+
+		#region Per-window preview settings
+		PreviewSettings GetPreviewSettings(string title);
+		void SetPreviewSettings(string title, PreviewSettings settings);
+
+		/// <summary>Settings of the client with the global values filled in where it has none</summary>
+		PreviewSettings ResolvePreviewSettings(string title);
+
+		bool GetPreventPreviews(string currentClient, bool defaultValue);
+		Color GetPreventPreviewColor(string currentClient, Color defaultColor);
+		Color GetActiveClientHighlightColor(string currentClient, Color defaultColor);
+		#endregion
 
 		Point GetThumbnailLocation(string currentClient, string activeClient, Point defaultLocation);
 		Size GetThumbnailSize(string currentClient, string activeClient, Size defaultSize);

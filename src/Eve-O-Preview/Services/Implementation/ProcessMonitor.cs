@@ -15,14 +15,14 @@ namespace EveOPreview.Services.Implementation
 		#endregion
 
 		#region Private fields
-		private readonly IDictionary<IntPtr, string> _processCache;
+		private readonly IDictionary<IntPtr, ClientWindow> _processCache;
 		private IProcessInfo _currentProcessInfo;
 		private readonly IThumbnailConfiguration _configuration;
 		#endregion
 
 		public ProcessMonitor(IThumbnailConfiguration configuration)
 		{
-			this._processCache = new Dictionary<IntPtr, string>(512);
+			this._processCache = new Dictionary<IntPtr, ClientWindow>(512);
 			this._configuration = configuration;
 
 			// This field cannot be initialized properly in constructor
@@ -63,9 +63,9 @@ namespace EveOPreview.Services.Implementation
 			ICollection<IProcessInfo> result = new List<IProcessInfo>(this._processCache.Count);
 
 			// TODO Lock list here just in case
-			foreach (KeyValuePair<IntPtr, string> entry in this._processCache)
+			foreach (KeyValuePair<IntPtr, ClientWindow> entry in this._processCache)
 			{
-				result.Add(new ProcessInfo(entry.Key, entry.Value));
+				result.Add(ProcessMonitor.ToProcessInfo(entry.Key, entry.Value));
 			}
 
 			return result;
@@ -79,33 +79,30 @@ namespace EveOPreview.Services.Implementation
 
 			IList<IntPtr> knownProcesses = new List<IntPtr>(this._processCache.Keys);
 
-			foreach ((IntPtr handle, string title) in this.GetClientWindows())
+			foreach (ClientWindow window in this.GetClientWindows())
 			{
-				this._processCache.TryGetValue(handle, out string cachedTitle);
-
-				if (cachedTitle == null)
+				if (!this._processCache.TryGetValue(window.Handle, out ClientWindow cachedWindow))
 				{
 					// This is a new client window
-					this._processCache.Add(handle, title);
-					addedProcesses.Add(new ProcessInfo(handle, title));
+					this._processCache.Add(window.Handle, window);
+					addedProcesses.Add(ProcessMonitor.ToProcessInfo(window.Handle, window));
 				}
 				else
 				{
 					// This is an already known client window
-					if (cachedTitle != title)
+					if (cachedWindow.Title != window.Title)
 					{
-						this._processCache[handle] = title;
-						updatedProcesses.Add(new ProcessInfo(handle, title));
+						this._processCache[window.Handle] = window;
+						updatedProcesses.Add(ProcessMonitor.ToProcessInfo(window.Handle, window));
 					}
 
-					knownProcesses.Remove(handle);
+					knownProcesses.Remove(window.Handle);
 				}
 			}
 
 			foreach (IntPtr index in knownProcesses)
 			{
-				string title = this._processCache[index];
-				removedProcesses.Add(new ProcessInfo(index, title));
+				removedProcesses.Add(ProcessMonitor.ToProcessInfo(index, this._processCache[index]));
 				this._processCache.Remove(index);
 			}
 		}
@@ -117,9 +114,11 @@ namespace EveOPreview.Services.Implementation
 		/// end up presenting its live UI in a different window than the reported one,
 		/// leaving the preview forever bound to a dead window (a stuck black thumbnail)
 		/// </summary>
-		private List<(IntPtr Handle, string Title)> GetClientWindows()
+		private List<ClientWindow> GetClientWindows()
 		{
-			HashSet<uint> monitoredProcessIds = new HashSet<uint>();
+			// The start time is read together with the id: Windows reuses process ids, and
+			// the character grouping relies on the identity of a single client run
+			Dictionary<uint, long> monitoredProcessIds = new Dictionary<uint, long>();
 
 			foreach (Process process in Process.GetProcesses())
 			{
@@ -127,14 +126,28 @@ namespace EveOPreview.Services.Implementation
 				// so they have to be released deterministically
 				using (process)
 				{
-					if (this.IsMonitoredProcess(process.ProcessName))
+					if (!this.IsMonitoredProcess(process.ProcessName))
 					{
-						monitoredProcessIds.Add((uint)process.Id);
+						continue;
 					}
+
+					long startTime;
+
+					try
+					{
+						startTime = process.StartTime.ToFileTimeUtc();
+					}
+					catch (Exception)
+					{
+						// An elevated (or already exited) process does not report it
+						startTime = 0;
+					}
+
+					monitoredProcessIds[(uint)process.Id] = startTime;
 				}
 			}
 
-			List<(IntPtr Handle, string Title)> clientWindows = new List<(IntPtr, string)>(16);
+			List<ClientWindow> clientWindows = new List<ClientWindow>(16);
 
 			if (monitoredProcessIds.Count == 0)
 			{
@@ -147,7 +160,7 @@ namespace EveOPreview.Services.Implementation
 			{
 				User32NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
 
-				if (!monitoredProcessIds.Contains(processId)
+				if (!monitoredProcessIds.TryGetValue(processId, out long processStartTime)
 					|| !User32NativeMethods.IsWindowVisible(hwnd)
 					|| (User32NativeMethods.GetWindow(hwnd, User32NativeMethods.GW_OWNER) != IntPtr.Zero))
 				{
@@ -160,13 +173,34 @@ namespace EveOPreview.Services.Implementation
 				// Auxiliary windows without a title are of no interest
 				if (titleBuffer.Length > 0)
 				{
-					clientWindows.Add((hwnd, titleBuffer.ToString().Replace("—", "-")));
+					clientWindows.Add(new ClientWindow(hwnd, titleBuffer.ToString().Replace("—", "-"), processId, processStartTime));
 				}
 
 				return true;
 			}, IntPtr.Zero);
 
 			return clientWindows;
+		}
+
+		private static IProcessInfo ToProcessInfo(IntPtr handle, ClientWindow window)
+		{
+			return new ProcessInfo(handle, window.Title, window.ProcessId, window.ProcessStartTime);
+		}
+
+		private readonly struct ClientWindow
+		{
+			public ClientWindow(IntPtr handle, string title, uint processId, long processStartTime)
+			{
+				this.Handle = handle;
+				this.Title = title;
+				this.ProcessId = processId;
+				this.ProcessStartTime = processStartTime;
+			}
+
+			public IntPtr Handle { get; }
+			public string Title { get; }
+			public uint ProcessId { get; }
+			public long ProcessStartTime { get; }
 		}
 	}
 }

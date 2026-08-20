@@ -76,6 +76,7 @@ namespace EveOPreview.View
 
 			InitializeComponent();
 
+			this.RefreshPreviewSettings();
 			SetDefaultBorderColor();
 			SetPreventPreviews();
 			this._thumbnailManager = thumbnailManager;
@@ -124,9 +125,9 @@ namespace EveOPreview.View
 			this._overlay.TopMost = this._isTopMost;
 
 			this._overlay.SetOverlayLabel(title.Replace("EVE - ", "").Replace("EVE Frontier - ", "*"));
-			this._overlay.SetPropertiesOverlayLabel(this._config.OverlayLabelFont, this._config.OverlayLabelColor, this._config.OverlayLabelAnchor);
-			this._overlay.SetOverlayLabelOutline(this._config.OverlayLabelOutlineEnabled, this._config.OverlayLabelOutlineThickness, this._config.OverlayLabelOutlineColor);
-			this._overlay.SetCycleGroupNameOutline(this._config.CycleGroupNameOutlineEnabled, this._config.CycleGroupNameOutlineThickness, this._config.CycleGroupNameOutlineColor);
+			this._overlay.SetPropertiesOverlayLabel(this._settings.OverlayLabelFont, this._settings.OverlayLabelColor.Value, this._settings.OverlayLabelAnchor.Value);
+			this._overlay.SetOverlayLabelOutline(this._settings.OverlayLabelOutlineEnabled.Value, this._settings.OverlayLabelOutlineThickness.Value, this._settings.OverlayLabelOutlineColor.Value);
+			this._overlay.SetCycleGroupNameOutline(this._settings.CycleGroupNameOutlineEnabled.Value, this._settings.CycleGroupNameOutlineThickness.Value, this._settings.CycleGroupNameOutlineColor.Value);
 
 			// A lazily created overlay has to catch up with the click-through mode
 			if (this._isClickThrough)
@@ -134,7 +135,7 @@ namespace EveOPreview.View
 				ThumbnailView.ApplyClickThroughStyle(this._overlay.Handle, true);
 			}
 			this._overlay.EnableFakePreview(this._preventPreviews.Value, false, 0, SystemColors.Control);
-			this._overlay.SetCycleGroupIndicator(this.IsExcludedFromCycleGroup, this._config.CycleGroupIndicatorAnchor);
+			this._overlay.SetCycleGroupIndicator(this.IsExcludedFromCycleGroup, this._settings.CycleGroupIndicatorAnchor.Value);
 
 			// The group name might have been cached before the overlay existed
 			// (SetCycleGroupName is called earlier in the refresh cycle than the lazy
@@ -177,6 +178,7 @@ namespace EveOPreview.View
 			set
 			{
 				this.Text = value;
+				this.RefreshPreviewSettings();
 				SetDefaultBorderColor();
 				SetPreventPreviews();
 				this.ApplyOverlayState();
@@ -222,17 +224,7 @@ namespace EveOPreview.View
 
 		public void SetDefaultBorderColor()
 		{
-			this._myBorderColor = new Lazy<Color>(() =>
-			{
-				if (this._config.PerClientActiveClientHighlightColor.Any(x => x.Key == this.Title))
-				{
-					return this._config.PerClientActiveClientHighlightColor[Title];
-				}
-				else
-				{
-					return _config.ActiveClientHighlightColor;
-				}
-			});
+			this._myBorderColor = new Lazy<Color>(() => this._settings.ActiveClientHighlightColor.Value);
 		}
 
 		public bool IsPreventPreviews()
@@ -241,29 +233,9 @@ namespace EveOPreview.View
 		}
 		public void SetPreventPreviews()
 		{
-			this._preventPreviews = new Lazy<bool>(() =>
-			{
-				if (this._config.PerClientPreventPreviews.Any(x => x.Key == this.Title))
-				{
-					return this._config.PerClientPreventPreviews[Title];
-				}
-				else
-				{
-					return _config.PreventPreviews;
-				}
-			});
+			this._preventPreviews = new Lazy<bool>(() => this._settings.PreventPreviews.Value);
 
-			this._preventPreviewColor = new Lazy<Color>(() =>
-			{
-				if (this._config.PerClientPreventPreviewColor.Any(x => x.Key == this.Title))
-				{
-					return this._config.PerClientPreventPreviewColor[Title];
-				}
-				else
-				{
-					return _config.PreventPreviewColor;
-				}
-			});
+			this._preventPreviewColor = new Lazy<Color>(() => this._settings.PreventPreviewColor.Value);
 		}
 
 		public new void Show()
@@ -346,6 +318,18 @@ namespace EveOPreview.View
 			}
 		}
 
+		/// <summary>
+		/// Preview settings of this particular client with every value filled in. Cached
+		/// so that the paint paths do not resolve them over and over; refreshed on a title
+		/// change and once per refresh cycle
+		/// </summary>
+		private PreviewSettings _settings;
+
+		public void RefreshPreviewSettings()
+		{
+			this._settings = this._config.ResolvePreviewSettings(this.Title);
+		}
+
 		public void SetFrames(bool enable)
 		{
 			FormBorderStyle style = enable ? FormBorderStyle.SizableToolWindow : FormBorderStyle.None;
@@ -374,19 +358,19 @@ namespace EveOPreview.View
 			// measurement) on each call, so unchanged values are filtered out here
 			if ((this._overlay != null)
 				&& (this._cycleGroupName == groupName)
-				&& (this._cycleGroupNameFont == this._config.CycleGroupNameFont)
-				&& (this._cycleGroupNameColor == this._config.CycleGroupNameColor)
-				&& (this._cycleGroupNameAnchor == this._config.CycleGroupIndicatorAnchor))
+				&& (this._cycleGroupNameFont == this._settings.CycleGroupNameFont)
+				&& (this._cycleGroupNameColor == this._settings.CycleGroupNameColor.Value)
+				&& (this._cycleGroupNameAnchor == this._settings.CycleGroupIndicatorAnchor.Value))
 			{
 				return;
 			}
 
 			this._cycleGroupName = groupName;
-			this._cycleGroupNameFont = this._config.CycleGroupNameFont;
-			this._cycleGroupNameColor = this._config.CycleGroupNameColor;
-			this._cycleGroupNameAnchor = this._config.CycleGroupIndicatorAnchor;
+			this._cycleGroupNameFont = this._settings.CycleGroupNameFont;
+			this._cycleGroupNameColor = this._settings.CycleGroupNameColor.Value;
+			this._cycleGroupNameAnchor = this._settings.CycleGroupIndicatorAnchor.Value;
 
-			this._overlay?.SetCycleGroupName(groupName, _config.CycleGroupIndicatorAnchor, _config.CycleGroupNameFont, _config.CycleGroupNameColor);
+			this._overlay?.SetCycleGroupName(groupName, this._cycleGroupNameAnchor, this._cycleGroupNameFont, this._cycleGroupNameColor);
 			this._cycleGroupNameLayoutSize = this._overlay?.Size ?? Size.Empty;
 		}
 		private string _cycleGroupName;
@@ -475,7 +459,7 @@ namespace EveOPreview.View
 		/// </summary>
 		private void RaiseOverlayAboveThumbnail()
 		{
-			if ((this._overlay == null) || !this._config.OverlayAlwaysOnTop || !this._isOverlayVisible)
+			if ((this._overlay == null) || !this._settings.OverlayAlwaysOnTop.Value || !this._isOverlayVisible)
 			{
 				return;
 			}
@@ -501,7 +485,7 @@ namespace EveOPreview.View
 
 		public void SetHighlight()
 		{
-			SetHighlight(_config.EnableActiveClientHighlight, _config.ActiveClientHighlightThickness);
+			SetHighlight(this._settings.EnableActiveClientHighlight.Value, this._settings.ActiveClientHighlightThickness.Value);
 		}
 
 		public void SetHighlight(bool enabled, int width)
@@ -771,7 +755,7 @@ namespace EveOPreview.View
 			ThumbnailOverlay overlay = this.Overlay;
 
 			// Only show overlay if enabled AND thumbnail is active/visible.
-			overlay.EnableOverlayLabel(this.IsOverlayEnabled && this.Visible && this._config.ShowClientName);
+			overlay.EnableOverlayLabel(this.IsOverlayEnabled && this.Visible && this._settings.ShowClientName.Value);
 
 			// The overlay strictly follows its thumbnail: a forced refresh of a hidden
 			// thumbnail (f.e. a highlight update while all previews are toggled off)
@@ -794,9 +778,9 @@ namespace EveOPreview.View
 			this._isLocationChanged = false;
 			overlay.Size = overlaySize;
 
-			overlay.SetPropertiesOverlayLabel(_config.OverlayLabelFont, _config.OverlayLabelColor, _config.OverlayLabelAnchor);
-			overlay.SetOverlayLabelOutline(this._config.OverlayLabelOutlineEnabled, this._config.OverlayLabelOutlineThickness, this._config.OverlayLabelOutlineColor);
-			overlay.SetCycleGroupNameOutline(this._config.CycleGroupNameOutlineEnabled, this._config.CycleGroupNameOutlineThickness, this._config.CycleGroupNameOutlineColor);
+			overlay.SetPropertiesOverlayLabel(this._settings.OverlayLabelFont, this._settings.OverlayLabelColor.Value, this._settings.OverlayLabelAnchor.Value);
+			overlay.SetOverlayLabelOutline(this._settings.OverlayLabelOutlineEnabled.Value, this._settings.OverlayLabelOutlineThickness.Value, this._settings.OverlayLabelOutlineColor.Value);
+			overlay.SetCycleGroupNameOutline(this._settings.CycleGroupNameOutlineEnabled.Value, this._settings.CycleGroupNameOutlineThickness.Value, this._settings.CycleGroupNameOutlineColor.Value);
 
 			// The group name label layout is cached for a specific overlay size (text
 			// measurement is not free), so a resized overlay (f.e. the hover zoom)

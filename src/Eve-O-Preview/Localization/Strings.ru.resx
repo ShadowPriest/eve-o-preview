@@ -71,7 +71,7 @@
     <value>Окна клиентов</value>
   </data>
   <data name="Tab_ActiveClients" xml:space="preserve">
-    <value>Клиенты</value>
+    <value>Активные</value>
   </data>
   <data name="Tab_CycleGroups" xml:space="preserve">
     <value>Группы</value>
@@ -498,5 +498,103 @@
   </data>
   <data name="Aggro_OpenLogSettings" xml:space="preserve">
     <value>Настроить чтение логов</value>
+  </data>
+  <data name="Tab_Clients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="Tab_Characters" xml:space="preserve">
+    <value>Персонажи</value>
+  </data>
+  <data name="Characters_Filter" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="Characters_Group" xml:space="preserve">
+    <value>Группа</value>
+  </data>
+  <data name="Characters_NoGroup" xml:space="preserve">
+    <value>Без группы</value>
+  </data>
+  <data name="Characters_NewGroup" xml:space="preserve">
+    <value>Новая группа…</value>
+  </data>
+  <data name="Characters_NewGroupTitle" xml:space="preserve">
+    <value>Новая группа</value>
+  </data>
+  <data name="Characters_NamePrompt" xml:space="preserve">
+    <value>Название группы</value>
+  </data>
+  <data name="Characters_RenameTitle" xml:space="preserve">
+    <value>Переименовать группу</value>
+  </data>
+  <data name="Characters_ManageAsWhole" xml:space="preserve">
+    <value>Управлять всей группой</value>
+  </data>
+  <data name="Characters_Forget" xml:space="preserve">
+    <value>Забыть персонажа</value>
+  </data>
+  <data name="Characters_ForgetTitle" xml:space="preserve">
+    <value>Забыть персонажа</value>
+  </data>
+  <data name="Characters_ForgetPrompt" xml:space="preserve">
+    <value>Забыть «{0}»? Все сохранённые настройки этого персонажа будут удалены.</value>
+  </data>
+  <data name="Characters_UngroupTitle" xml:space="preserve">
+    <value>Расформировать группу</value>
+  </data>
+  <data name="Characters_UngroupPrompt" xml:space="preserve">
+    <value>Расформировать группу «{0}»? Настройки персонажей сохранятся.</value>
+  </data>
+  <data name="Characters_SuggestGroups" xml:space="preserve">
+    <value>Предложить группы</value>
+  </data>
+  <data name="Characters_SuggestTitle" xml:space="preserve">
+    <value>Предложенные группы</value>
+  </data>
+  <data name="Characters_SuggestPrompt" xml:space="preserve">
+    <value>Объединить этих персонажей в группы?
+
+{0}</value>
+  </data>
+  <data name="Characters_SuggestNothing" xml:space="preserve">
+    <value>Персонажей с одинаковой позицией превью не найдено.</value>
+  </data>
+  <data name="Characters_LastSeen" xml:space="preserve">
+    <value>Последний вход: {0}</value>
+  </data>
+  <data name="Characters_LastSeenUnknown" xml:space="preserve">
+    <value>Последний вход: неизвестен</value>
+  </data>
+  <data name="Characters_PreviewSettings" xml:space="preserve">
+    <value>Настройки превью…</value>
+  </data>
+  <data name="Characters_PreviewSettingsGroupHint" xml:space="preserve">
+    <value>Настройки применяются ко всей группе: {0}</value>
+  </data>
+  <data name="PreviewSettings_Title" xml:space="preserve">
+    <value>Настройки превью — {0}</value>
+  </data>
+  <data name="PreviewSettings_UseCustom" xml:space="preserve">
+    <value>Свои настройки для этого клиента</value>
+  </data>
+  <data name="PreviewSettings_CopyGlobal" xml:space="preserve">
+    <value>Взять общие значения</value>
+  </data>
+  <data name="Hotkey_ActivateAccount" xml:space="preserve">
+    <value>Переключиться на аккаунт {0}</value>
+  </data>
+  <data name="Characters_Blacklist" xml:space="preserve">
+    <value>Чёрный список</value>
+  </data>
+  <data name="Characters_Blacklist_Add" xml:space="preserve">
+    <value>В чёрный список</value>
+  </data>
+  <data name="Characters_Blacklist_Remove" xml:space="preserve">
+    <value>Вернуть из чёрного списка</value>
+  </data>
+  <data name="Characters_BlacklistPrompt" xml:space="preserve">
+    <value>Отправить «{0}» в чёрный список? Персонаж уйдёт из всех списков и цикл-групп, настройки превью сохранятся.</value>
+  </data>
+  <data name="CycleGroups_WholeAccount" xml:space="preserve">
+    <value>Добавлять и двигать весь аккаунт</value>
   </data>
 </root>

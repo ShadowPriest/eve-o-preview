@@ -71,7 +71,7 @@
     <value>Client Windows</value>
   </data>
   <data name="Tab_ActiveClients" xml:space="preserve">
-    <value>Active Clients</value>
+    <value>Active</value>
   </data>
   <data name="Tab_CycleGroups" xml:space="preserve">
     <value>Cycle Groups</value>
@@ -498,5 +498,103 @@ The application started with default settings and will not save any settings unt
   </data>
   <data name="Aggro_OpenLogSettings" xml:space="preserve">
     <value>Open log settings</value>
+  </data>
+  <data name="Tab_Clients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="Tab_Characters" xml:space="preserve">
+    <value>Characters</value>
+  </data>
+  <data name="Characters_Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Characters_Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Characters_NoGroup" xml:space="preserve">
+    <value>No group</value>
+  </data>
+  <data name="Characters_NewGroup" xml:space="preserve">
+    <value>New group...</value>
+  </data>
+  <data name="Characters_NewGroupTitle" xml:space="preserve">
+    <value>New group</value>
+  </data>
+  <data name="Characters_NamePrompt" xml:space="preserve">
+    <value>Group name</value>
+  </data>
+  <data name="Characters_RenameTitle" xml:space="preserve">
+    <value>Rename group</value>
+  </data>
+  <data name="Characters_ManageAsWhole" xml:space="preserve">
+    <value>Manage the whole group</value>
+  </data>
+  <data name="Characters_Forget" xml:space="preserve">
+    <value>Forget character</value>
+  </data>
+  <data name="Characters_ForgetTitle" xml:space="preserve">
+    <value>Forget character</value>
+  </data>
+  <data name="Characters_ForgetPrompt" xml:space="preserve">
+    <value>Forget {0}? Every setting stored for this character will be removed.</value>
+  </data>
+  <data name="Characters_UngroupTitle" xml:space="preserve">
+    <value>Disband group</value>
+  </data>
+  <data name="Characters_UngroupPrompt" xml:space="preserve">
+    <value>Disband the group {0}? Its characters keep their own settings.</value>
+  </data>
+  <data name="Characters_SuggestGroups" xml:space="preserve">
+    <value>Suggest groups</value>
+  </data>
+  <data name="Characters_SuggestTitle" xml:space="preserve">
+    <value>Suggested groups</value>
+  </data>
+  <data name="Characters_SuggestPrompt" xml:space="preserve">
+    <value>Group these characters together?
+
+{0}</value>
+  </data>
+  <data name="Characters_SuggestNothing" xml:space="preserve">
+    <value>No characters sharing one preview position were found.</value>
+  </data>
+  <data name="Characters_LastSeen" xml:space="preserve">
+    <value>Last seen: {0}</value>
+  </data>
+  <data name="Characters_LastSeenUnknown" xml:space="preserve">
+    <value>Last seen: unknown</value>
+  </data>
+  <data name="Characters_PreviewSettings" xml:space="preserve">
+    <value>Preview settings...</value>
+  </data>
+  <data name="Characters_PreviewSettingsGroupHint" xml:space="preserve">
+    <value>These settings are applied to the whole group: {0}</value>
+  </data>
+  <data name="PreviewSettings_Title" xml:space="preserve">
+    <value>Preview settings - {0}</value>
+  </data>
+  <data name="PreviewSettings_UseCustom" xml:space="preserve">
+    <value>Own settings for this client</value>
+  </data>
+  <data name="PreviewSettings_CopyGlobal" xml:space="preserve">
+    <value>Copy the global values</value>
+  </data>
+  <data name="Hotkey_ActivateAccount" xml:space="preserve">
+    <value>Switch to account {0}</value>
+  </data>
+  <data name="Characters_Blacklist" xml:space="preserve">
+    <value>Blacklist</value>
+  </data>
+  <data name="Characters_Blacklist_Add" xml:space="preserve">
+    <value>Blacklist this character</value>
+  </data>
+  <data name="Characters_Blacklist_Remove" xml:space="preserve">
+    <value>Take off the blacklist</value>
+  </data>
+  <data name="Characters_BlacklistPrompt" xml:space="preserve">
+    <value>Blacklist {0}? The character leaves every list and the cycle order but keeps its preview settings.</value>
+  </data>
+  <data name="CycleGroups_WholeAccount" xml:space="preserve">
+    <value>Add and move the whole account</value>
   </data>
 </root>

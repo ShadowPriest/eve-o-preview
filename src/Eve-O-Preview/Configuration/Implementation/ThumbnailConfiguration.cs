@@ -10,6 +10,22 @@ namespace EveOPreview.Configuration.Implementation
 {
 	sealed class ThumbnailConfiguration : IThumbnailConfiguration
 	{
+		#region Private constants
+		/// <summary>Configuration layout version that introduced the character registry</summary>
+		private const int CONFIG_VERSION_CHARACTER_REGISTRY = 2;
+
+		/// <summary>Sample per-client entries older builds seeded fresh configurations with</summary>
+		private const string EXAMPLE_CLIENT_TITLE_PREFIX = "EVE - Example Toon";
+
+		/// <summary>Colors handed out to the character groups in turn</summary>
+		private static readonly Color[] GROUP_COLOR_PALETTE =
+		{
+			Color.FromArgb(0x4F, 0x9D, 0xE0), Color.FromArgb(0x5C, 0xC2, 0x8A), Color.FromArgb(0xE0, 0xA8, 0x3E),
+			Color.FromArgb(0xC0, 0x7C, 0xD8), Color.FromArgb(0xE0, 0x7B, 0x5A), Color.FromArgb(0x3F, 0xC0, 0xC0),
+			Color.FromArgb(0xB0, 0xC0, 0x4F), Color.FromArgb(0xD8, 0x7C, 0xA8)
+		};
+		#endregion
+
 		#region Private fields
 		private bool _enablePerClientThumbnailLayouts;
 		private bool _enableClientLayoutTracking;
@@ -23,33 +39,18 @@ namespace EveOPreview.Configuration.Implementation
 			// migrated from the legacy CycleGroupN* entries or defaulted in ApplyRestrictions()
 			this.CycleGroups = null;
 
-			this.PerClientActiveClientHighlightColor = new Dictionary<string, Color>
-			{
-				{"EVE - Example Toon 1", Color.Red},
-				{"EVE - Example Toon 2", Color.Green}
-			};
-			this.PerClientPreventPreviewColor = new Dictionary<string, Color>
-			{
-				{"EVE - Example Toon 1", Color.Red},
-				{"EVE - Example Toon 2", Color.Green}
-			};
-			this.PerClientPreventPreviews = new Dictionary<string, bool>
-			{
-				{"EVE - Example Toon 1", false},
-				{"EVE - Example Toon 2", true}
-			};
+			// Legacy per-client dictionaries: they are still read from existing
+			// configuration files and migrated into the character registry below,
+			// but they are never written back
+			this.PerClientActiveClientHighlightColor = new Dictionary<string, Color>();
+			this.PerClientPreventPreviewColor = new Dictionary<string, Color>();
+			this.PerClientPreventPreviews = new Dictionary<string, bool>();
+			this.PerClientThumbnailSize = new Dictionary<string, Size>();
+			this.PerClientZoomAnchor = new Dictionary<string, ZoomAnchor>();
 
-			this.PerClientThumbnailSize = new Dictionary<string, Size>
-			{
-				{"EVE - Example Toon 1", new Size(200, 200)},
-				{"EVE - Example Toon 2", new Size(200, 200)}
-			};
-
-			this.PerClientZoomAnchor = new Dictionary<string, ZoomAnchor>
-			{
-				{"EVE - Example Toon 1", ZoomAnchor.N },
-				{"EVE - Example Toon 2", ZoomAnchor.S}
-			};
+			this.Characters = new List<CharacterInfo>();
+			this.CharacterGroups = new List<CharacterGroup>();
+			this.ClientPreviewSettings = new Dictionary<string, PreviewSettings>();
 
 			this.PerClientLayout = new Dictionary<string, Dictionary<string, Point>>();
 			this.FlatLayout = new Dictionary<string, Point>();
@@ -221,20 +222,41 @@ namespace EveOPreview.Configuration.Implementation
 		public bool ShouldSerializeCycleGroup5ClientsOrder() => false;
 		#endregion
 
+		#region Character registry
+		/// <summary>Every character that has been seen logged in at least once</summary>
+		[JsonProperty("Characters")]
+		private List<CharacterInfo> Characters { get; set; }
+
+		/// <summary>Character groups (accounts). Membership lives in CharacterInfo.GroupId</summary>
+		[JsonProperty("CharacterGroups")]
+		private List<CharacterGroup> CharacterGroups { get; set; }
+
+		/// <summary>Per-window preview configuration, keyed by the client title</summary>
+		[JsonProperty("PreviewSettings")]
+		private Dictionary<string, PreviewSettings> ClientPreviewSettings { get; set; }
+		#endregion
+
+		#region Legacy per-client entries (read for migration, never written back)
 		[JsonProperty("PerClientPreventPreviewColor")]
-		public Dictionary<string, Color> PerClientPreventPreviewColor { get; set; }
+		private Dictionary<string, Color> PerClientPreventPreviewColor { get; set; }
+		public bool ShouldSerializePerClientPreventPreviewColor() => false;
 
 		[JsonProperty("PerClientActiveClientHighlightColor")]
-		public Dictionary<string, Color> PerClientActiveClientHighlightColor { get; set; }
+		private Dictionary<string, Color> PerClientActiveClientHighlightColor { get; set; }
+		public bool ShouldSerializePerClientActiveClientHighlightColor() => false;
 
 		[JsonProperty("PerClientPreventPreviews")]
-		public Dictionary<string, bool> PerClientPreventPreviews { get; set; }
+		private Dictionary<string, bool> PerClientPreventPreviews { get; set; }
+		public bool ShouldSerializePerClientPreventPreviews() => false;
 
 		[JsonProperty("PerClientThumbnailSize")]
-		public Dictionary<string, Size> PerClientThumbnailSize { get; set; }
+		private Dictionary<string, Size> PerClientThumbnailSize { get; set; }
+		public bool ShouldSerializePerClientThumbnailSize() => false;
 
 		[JsonProperty("PerClientZoomAnchor")]
-		public Dictionary<string, ZoomAnchor> PerClientZoomAnchor{ get; set; }
+		private Dictionary<string, ZoomAnchor> PerClientZoomAnchor { get; set; }
+		public bool ShouldSerializePerClientZoomAnchor() => false;
+		#endregion
 		public bool MinimizeToTray { get; set; }
 		public int ThumbnailRefreshPeriod { get; set; }
 		public int ThumbnailResizeTimeoutPeriod { get; set; }
@@ -397,10 +419,599 @@ namespace EveOPreview.Configuration.Implementation
 		[JsonProperty]
 		private List<string> ExecutablesToPreview { get; set; }
 
+		#region Character registry
+		private readonly object _registrySyncRoot = new object();
+
+		// Rebuilt on every load by SanitizeCharacterRegistry()
+		private Dictionary<string, CharacterInfo> _characterIndex = new Dictionary<string, CharacterInfo>(StringComparer.Ordinal);
+
+		public IReadOnlyList<CharacterInfo> GetCharacters()
+		{
+			lock (this._registrySyncRoot)
+			{
+				return new List<CharacterInfo>(this.Characters);
+			}
+		}
+
+		public CharacterInfo GetCharacter(string title)
+		{
+			lock (this._registrySyncRoot)
+			{
+				return this.FindCharacterLocked(title);
+			}
+		}
+
+		/// <summary>
+		/// Adds the character to the registry (or refreshes its 'last seen' stamp).
+		/// Returns true when the registry has actually changed and has to be saved
+		/// </summary>
+		public bool RegisterCharacter(string title)
+		{
+			if (!CharacterInfo.IsCharacterTitle(title))
+			{
+				return false;
+			}
+
+			lock (this._registrySyncRoot)
+			{
+				DateTime now = DateTime.UtcNow;
+				CharacterInfo character = this.FindCharacterLocked(title);
+
+				if (character != null)
+				{
+					// A refreshed 'last seen' stamp alone is not worth a configuration write
+					character.LastSeen = now;
+					return false;
+				}
+
+				this.AddCharacterLocked(title, now);
+				return true;
+			}
+		}
+
+		/// <summary>Drops the character and every setting stored for it</summary>
+		/// <summary>
+		/// Blacklists the character (or takes it off the blacklist). A blacklisted character
+		/// keeps its settings but disappears from every list the application offers
+		/// </summary>
+		public void SetCharacterIgnored(string title, bool ignored)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterInfo character = this.FindCharacterLocked(title);
+
+				if (character == null)
+				{
+					return;
+				}
+
+				character.Ignored = ignored;
+			}
+
+			if (!ignored)
+			{
+				return;
+			}
+
+			// A blacklisted character leaves the cycle order and gives up its hotkey.
+			// Its preview settings and position stay, so taking it off the blacklist
+			// brings it back the way it was
+			this.ClientHotkey.Remove(title);
+
+			foreach (CycleGroup group in this.CycleGroups)
+			{
+				group.ClientsOrder.Remove(title);
+			}
+		}
+
+		public void SetCharacterGroupColor(string groupId, Color color)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterGroup group = this.FindGroupLocked(groupId);
+
+				if (group != null)
+				{
+					group.Color = color;
+				}
+			}
+		}
+
+		public bool ForgetCharacter(string title)
+		{
+			if (string.IsNullOrEmpty(title))
+			{
+				return false;
+			}
+
+			lock (this._registrySyncRoot)
+			{
+				CharacterInfo character = this.FindCharacterLocked(title);
+
+				if (character == null)
+				{
+					return false;
+				}
+
+				this.Characters.Remove(character);
+				this._characterIndex.Remove(title);
+				this.ClientPreviewSettings.Remove(title);
+			}
+
+			// Everything else that is keyed by the client title
+			this.FlatLayout.Remove(title);
+			this.ClientLayout.Remove(title);
+			this.ClientHotkey.Remove(title);
+			this.DisableThumbnail.Remove(title);
+			this.PriorityClients.Remove(title);
+			this.PerClientLayout.Remove(title);
+
+			foreach (Dictionary<string, Point> layout in this.PerClientLayout.Values)
+			{
+				layout.Remove(title);
+			}
+
+			foreach (CycleGroup group in this.CycleGroups)
+			{
+				group.ClientsOrder.Remove(title);
+			}
+
+			this.SanitizeCharacterRegistry();
+
+			return true;
+		}
+
+		public IReadOnlyList<CharacterGroup> GetCharacterGroups()
+		{
+			lock (this._registrySyncRoot)
+			{
+				return new List<CharacterGroup>(this.CharacterGroups);
+			}
+		}
+
+		public CharacterGroup GetCharacterGroupById(string groupId)
+		{
+			lock (this._registrySyncRoot)
+			{
+				return this.FindGroupLocked(groupId);
+			}
+		}
+
+		/// <summary>Group (account) the character belongs to, null for an ungrouped one</summary>
+		public CharacterGroup GetCharacterGroupOf(string title)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterInfo character = this.FindCharacterLocked(title);
+
+				return (character == null) ? null : this.FindGroupLocked(character.GroupId);
+			}
+		}
+
+		public IReadOnlyList<string> GetGroupMembers(string groupId)
+		{
+			lock (this._registrySyncRoot)
+			{
+				return this.GetGroupMembersLocked(groupId);
+			}
+		}
+
+		/// <summary>
+		/// Clients a setting written for this one has to be written for as well.
+		/// The client itself always comes first; the rest of its group follows it
+		/// when that group is managed as a whole
+		/// </summary>
+		public IReadOnlyList<string> GetLinkedClients(string title)
+		{
+			List<string> result = new List<string> { title };
+
+			if (!CharacterInfo.IsCharacterTitle(title))
+			{
+				return result;
+			}
+
+			lock (this._registrySyncRoot)
+			{
+				CharacterInfo character = this.FindCharacterLocked(title);
+				CharacterGroup group = (character == null) ? null : this.FindGroupLocked(character.GroupId);
+
+				if ((group == null) || !group.ManageAsWhole)
+				{
+					return result;
+				}
+
+				foreach (string member in this.GetGroupMembersLocked(group.Id))
+				{
+					if (!string.Equals(member, title, StringComparison.Ordinal))
+					{
+						result.Add(member);
+					}
+				}
+			}
+
+			return result;
+		}
+
+		/// <summary>
+		/// Puts the characters into one group. Two characters that already belong to
+		/// different groups are never merged automatically: a client cannot switch the
+		/// account without a restart, so that combination means a stale or a bogus entry
+		/// and only the user can tell which one it is.
+		/// Returns true when the registry has changed
+		/// </summary>
+		public bool LinkCharacters(IEnumerable<string> titles)
+		{
+			List<string> members = titles.Where(CharacterInfo.IsCharacterTitle).Distinct(StringComparer.Ordinal).ToList();
+
+			if (members.Count < 2)
+			{
+				return false;
+			}
+
+			lock (this._registrySyncRoot)
+			{
+				DateTime now = DateTime.UtcNow;
+
+				foreach (string title in members)
+				{
+					if (this.FindCharacterLocked(title) == null)
+					{
+						this.AddCharacterLocked(title, now);
+					}
+				}
+
+				List<string> groupIds = members.Select(title => this._characterIndex[title].GroupId)
+												.Where(id => this.FindGroupLocked(id) != null)
+												.Distinct(StringComparer.Ordinal)
+												.ToList();
+
+				if (groupIds.Count > 1)
+				{
+					return false;
+				}
+
+				string groupId = groupIds.FirstOrDefault()
+									?? this.AddGroupLocked(CharacterInfo.GetDisplayName(members[0])).Id;
+
+				bool changed = false;
+
+				foreach (string title in members)
+				{
+					CharacterInfo character = this._characterIndex[title];
+
+					if (!string.Equals(character.GroupId, groupId, StringComparison.Ordinal))
+					{
+						character.GroupId = groupId;
+						changed = true;
+					}
+				}
+
+				if (changed)
+				{
+					this.PropagateGroupSettingsLocked(groupId);
+				}
+
+				return changed;
+			}
+		}
+
+		/// <summary>
+		/// Hands the stored preview settings and the stored preview position of a group over
+		/// to the members that have none yet. Done once, when a character joins the group,
+		/// so that the lookups stay a plain dictionary hit
+		/// </summary>
+		private void PropagateGroupSettingsLocked(string groupId)
+		{
+			CharacterGroup group = this.FindGroupLocked(groupId);
+
+			if ((group == null) || !group.ManageAsWhole)
+			{
+				return;
+			}
+
+			List<string> members = this.GetGroupMembersLocked(groupId);
+
+			PreviewSettings settings = members.Select(member => this.ClientPreviewSettings.TryGetValue(member, out PreviewSettings stored) ? stored : null)
+												.FirstOrDefault(stored => stored != null);
+
+			bool hasLocation = false;
+			Point location = Point.Empty;
+
+			foreach (string member in members)
+			{
+				if (this.FlatLayout.TryGetValue(member, out location))
+				{
+					hasLocation = true;
+					break;
+				}
+			}
+
+			foreach (string member in members)
+			{
+				if ((settings != null) && !this.ClientPreviewSettings.ContainsKey(member))
+				{
+					this.ClientPreviewSettings[member] = settings.Clone();
+				}
+
+				if (hasLocation && !this.FlatLayout.ContainsKey(member))
+				{
+					this.FlatLayout[member] = location;
+				}
+			}
+		}
+
+		/// <summary>Moves the character into another group. A null group id detaches it</summary>
+		public void SetCharacterGroup(string title, string groupId)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterInfo character = this.FindCharacterLocked(title);
+
+				if (character == null)
+				{
+					return;
+				}
+
+				character.GroupId = (this.FindGroupLocked(groupId) != null) ? groupId : null;
+
+				this.PropagateGroupSettingsLocked(character.GroupId);
+			}
+
+			this.SanitizeCharacterRegistry();
+		}
+
+		public CharacterGroup CreateCharacterGroup(string name)
+		{
+			lock (this._registrySyncRoot)
+			{
+				return this.AddGroupLocked(name);
+			}
+		}
+
+		public void RenameCharacterGroup(string groupId, string name)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterGroup group = this.FindGroupLocked(groupId);
+
+				if ((group != null) && !string.IsNullOrWhiteSpace(name))
+				{
+					group.Name = name.Trim();
+				}
+			}
+		}
+
+		public void SetGroupManageAsWhole(string groupId, bool value)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterGroup group = this.FindGroupLocked(groupId);
+
+				if (group != null)
+				{
+					group.ManageAsWhole = value;
+				}
+			}
+		}
+
+		public void RemoveCharacterGroup(string groupId)
+		{
+			lock (this._registrySyncRoot)
+			{
+				CharacterGroup group = this.FindGroupLocked(groupId);
+
+				if (group == null)
+				{
+					return;
+				}
+
+				foreach (CharacterInfo character in this.Characters)
+				{
+					if (string.Equals(character.GroupId, groupId, StringComparison.Ordinal))
+					{
+						character.GroupId = null;
+					}
+				}
+
+				this.CharacterGroups.Remove(group);
+			}
+		}
+		#endregion
+
+		#region Per-window preview settings
+		/// <summary>A copy of the stored entry of this client, null when it has none</summary>
+		public PreviewSettings GetPreviewSettings(string title)
+		{
+			if (string.IsNullOrEmpty(title))
+			{
+				return null;
+			}
+
+			lock (this._registrySyncRoot)
+			{
+				return this.ClientPreviewSettings.TryGetValue(title, out PreviewSettings settings) ? settings.Clone() : null;
+			}
+		}
+
+		/// <summary>
+		/// Stores the preview settings of the client. They are applied to the whole group
+		/// of that client when the group is managed as a whole
+		/// </summary>
+		public void SetPreviewSettings(string title, PreviewSettings settings)
+		{
+			if (string.IsNullOrEmpty(title))
+			{
+				return;
+			}
+
+			foreach (string client in this.GetLinkedClients(title))
+			{
+				lock (this._registrySyncRoot)
+				{
+					if ((settings == null) || settings.IsEmpty)
+					{
+						this.ClientPreviewSettings.Remove(client);
+						continue;
+					}
+
+					this.ClientPreviewSettings[client] = settings.Clone();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Preview settings of the client with every value filled in: the stored ones where
+		/// the client has its own settings enabled, the global ones everywhere else
+		/// </summary>
+		public PreviewSettings ResolvePreviewSettings(string title)
+		{
+			PreviewSettings custom = this.FindCustomSettings(title);
+
+			return new PreviewSettings
+			{
+				UseCustomSettings = custom != null,
+
+				ThumbnailSize = custom?.ThumbnailSize ?? this.ThumbnailSize,
+				ThumbnailOpacity = custom?.ThumbnailOpacity ?? this.ThumbnailOpacity,
+
+				PreventPreviews = custom?.PreventPreviews ?? this.PreventPreviews,
+				PreventPreviewColor = custom?.PreventPreviewColor ?? this.PreventPreviewColor,
+
+				EnableActiveClientHighlight = custom?.EnableActiveClientHighlight ?? this.EnableActiveClientHighlight,
+				ActiveClientHighlightColor = custom?.ActiveClientHighlightColor ?? this.ActiveClientHighlightColor,
+				ActiveClientHighlightThickness = custom?.ActiveClientHighlightThickness ?? this.ActiveClientHighlightThickness,
+
+				ShowThumbnailOverlays = custom?.ShowThumbnailOverlays ?? this.ShowThumbnailOverlays,
+				OverlayAlwaysOnTop = custom?.OverlayAlwaysOnTop ?? this.OverlayAlwaysOnTop,
+				ShowThumbnailFrames = custom?.ShowThumbnailFrames ?? this.ShowThumbnailFrames,
+
+				ShowClientName = custom?.ShowClientName ?? this.ShowClientName,
+				OverlayLabelAnchor = custom?.OverlayLabelAnchor ?? this.OverlayLabelAnchor,
+				OverlayLabelColor = custom?.OverlayLabelColor ?? this.OverlayLabelColor,
+				OverlayLabelFont = custom?.OverlayLabelFont ?? this.OverlayLabelFont,
+				OverlayLabelOutlineEnabled = custom?.OverlayLabelOutlineEnabled ?? this.OverlayLabelOutlineEnabled,
+				OverlayLabelOutlineThickness = custom?.OverlayLabelOutlineThickness ?? this.OverlayLabelOutlineThickness,
+				OverlayLabelOutlineColor = custom?.OverlayLabelOutlineColor ?? this.OverlayLabelOutlineColor,
+
+				ShowCycleGroupName = custom?.ShowCycleGroupName ?? this.ShowCycleGroupName,
+				CycleGroupIndicatorAnchor = custom?.CycleGroupIndicatorAnchor ?? this.CycleGroupIndicatorAnchor,
+				CycleGroupNameColor = custom?.CycleGroupNameColor ?? this.CycleGroupNameColor,
+				CycleGroupNameFont = custom?.CycleGroupNameFont ?? this.CycleGroupNameFont,
+				CycleGroupNameOutlineEnabled = custom?.CycleGroupNameOutlineEnabled ?? this.CycleGroupNameOutlineEnabled,
+				CycleGroupNameOutlineThickness = custom?.CycleGroupNameOutlineThickness ?? this.CycleGroupNameOutlineThickness,
+				CycleGroupNameOutlineColor = custom?.CycleGroupNameOutlineColor ?? this.CycleGroupNameOutlineColor,
+
+				ThumbnailZoomEnabled = custom?.ThumbnailZoomEnabled ?? this.ThumbnailZoomEnabled,
+				ThumbnailZoomFactor = custom?.ThumbnailZoomFactor ?? this.ThumbnailZoomFactor,
+				ThumbnailZoomAnchor = custom?.ThumbnailZoomAnchor ?? this.ThumbnailZoomAnchor
+			};
+		}
+
+		public bool GetPreventPreviews(string currentClient, bool defaultValue)
+		{
+			return this.FindCustomSettings(currentClient)?.PreventPreviews ?? defaultValue;
+		}
+
+		public Color GetPreventPreviewColor(string currentClient, Color defaultColor)
+		{
+			return this.FindCustomSettings(currentClient)?.PreventPreviewColor ?? defaultColor;
+		}
+
+		public Color GetActiveClientHighlightColor(string currentClient, Color defaultColor)
+		{
+			return this.FindCustomSettings(currentClient)?.ActiveClientHighlightColor ?? defaultColor;
+		}
+
+		/// <summary>Stored entry of the client, but only when its own settings are enabled</summary>
+		private PreviewSettings FindCustomSettings(string title)
+		{
+			if (string.IsNullOrEmpty(title))
+			{
+				return null;
+			}
+
+			lock (this._registrySyncRoot)
+			{
+				return this.ClientPreviewSettings.TryGetValue(title, out PreviewSettings settings) && settings.UseCustomSettings
+						? settings
+						: null;
+			}
+		}
+		#endregion
+
+		#region Character registry internals
+		private CharacterInfo FindCharacterLocked(string title)
+		{
+			return (!string.IsNullOrEmpty(title) && this._characterIndex.TryGetValue(title, out CharacterInfo character))
+					? character
+					: null;
+		}
+
+		private CharacterInfo AddCharacterLocked(string title, DateTime? timestamp)
+		{
+			CharacterInfo character = new CharacterInfo(title, timestamp, timestamp);
+
+			this.Characters.Add(character);
+			this._characterIndex[title] = character;
+
+			return character;
+		}
+
+		private CharacterGroup FindGroupLocked(string groupId)
+		{
+			if (string.IsNullOrEmpty(groupId))
+			{
+				return null;
+			}
+
+			return this.CharacterGroups.FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.Ordinal));
+		}
+
+		private List<string> GetGroupMembersLocked(string groupId)
+		{
+			List<string> members = new List<string>();
+
+			if (string.IsNullOrEmpty(groupId))
+			{
+				return members;
+			}
+
+			foreach (CharacterInfo character in this.Characters)
+			{
+				if (string.Equals(character.GroupId, groupId, StringComparison.Ordinal))
+				{
+					members.Add(character.Title);
+				}
+			}
+
+			return members;
+		}
+
+		private CharacterGroup AddGroupLocked(string name)
+		{
+			int index = 1;
+
+			while (this.CharacterGroups.Any(group => group.Id == "g" + index))
+			{
+				index++;
+			}
+
+			CharacterGroup newGroup = new CharacterGroup
+			{
+				Id = "g" + index,
+				Name = string.IsNullOrWhiteSpace(name) ? "g" + index : name.Trim(),
+				ManageAsWhole = true,
+				Color = ThumbnailConfiguration.GROUP_COLOR_PALETTE[this.CharacterGroups.Count % ThumbnailConfiguration.GROUP_COLOR_PALETTE.Length]
+			};
+
+			this.CharacterGroups.Add(newGroup);
+
+			return newGroup;
+		}
+		#endregion
+
 		public Point GetThumbnailLocation(string currentClient, string activeClient, Point defaultLocation)
 		{
-			Point location;
-
 			// What this code does:
 			// If Per-Client layouts are enabled
 			//    and client name is known
@@ -409,27 +1020,44 @@ namespace EveOPreview.Configuration.Implementation
 			// then return that entry
 			// otherwise try to get client layout from the flat all-clients layout
 			// If there is no layout too then use the default one
+			// A client that shares its position with the rest of its group also picks up
+			// the stored position of any of its group mates - that is what puts a character
+			// logging in for the first time into the slot of its account right away
+			IReadOnlyList<string> clients = this.GetLinkedClients(currentClient);
+
 			if (this.EnablePerClientThumbnailLayouts && !string.IsNullOrEmpty(activeClient))
 			{
-				Dictionary<string, Point> layoutSource;
-				if (this.PerClientLayout.TryGetValue(activeClient, out layoutSource) && layoutSource.TryGetValue(currentClient, out location))
+				if (this.PerClientLayout.TryGetValue(activeClient, out Dictionary<string, Point> layoutSource))
+				{
+					foreach (string client in clients)
+					{
+						if (layoutSource.TryGetValue(client, out Point perClientLocation))
+						{
+							return perClientLocation;
+						}
+					}
+				}
+			}
+
+			foreach (string client in clients)
+			{
+				if (this.FlatLayout.TryGetValue(client, out Point location))
 				{
 					return location;
 				}
 			}
 
-			return this.FlatLayout.TryGetValue(currentClient, out location) ? location : defaultLocation;
+			return defaultLocation;
 		}
 
 		public Size GetThumbnailSize(string currentClient, string activeClient, Size defaultSize)
 		{
-			Size sizeOfThumbnail;
-			return this.PerClientThumbnailSize.TryGetValue(currentClient, out sizeOfThumbnail) ? sizeOfThumbnail : defaultSize;
+			return this.FindCustomSettings(currentClient)?.ThumbnailSize ?? defaultSize;
 		}
+
 		public ZoomAnchor GetZoomAnchor(string currentClient, ZoomAnchor defaultZoomAnchor)
 		{
-			ZoomAnchor zoomAnchor;
-			return this.PerClientZoomAnchor.TryGetValue(currentClient, out zoomAnchor) ? zoomAnchor : defaultZoomAnchor;
+			return this.FindCustomSettings(currentClient)?.ThumbnailZoomAnchor ?? defaultZoomAnchor;
 		}
 
 		public void SetThumbnailLocation(string currentClient, string activeClient, Point location)
@@ -454,7 +1082,11 @@ namespace EveOPreview.Configuration.Implementation
 				layoutSource = this.FlatLayout;
 			}
 
-			layoutSource[currentClient] = location;
+			// The position of a group managed as a whole is stored for all of its members
+			foreach (string client in this.GetLinkedClients(currentClient))
+			{
+				layoutSource[client] = location;
+			}
 		}
 
 		public ClientLayout GetClientLayout(string currentClient)
@@ -577,6 +1209,7 @@ namespace EveOPreview.Configuration.Implementation
 
 			this.EnsureAppearance();
 			this.EnsureCycleGroups();
+			this.EnsureCharacters();
 		}
 
 		/// <summary>
@@ -701,6 +1334,249 @@ namespace EveOPreview.Configuration.Implementation
 				BackwardHotkeys = backwardHotkeys?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>(),
 				ClientsOrder = clientsOrder != null ? new Dictionary<string, int>(clientsOrder) : new Dictionary<string, int>()
 			});
+		}
+
+		/// <summary>
+		/// Builds the character registry out of the entries stored by the earlier versions
+		/// of the configuration file and keeps the registry consistent afterwards
+		/// </summary>
+		private void EnsureCharacters()
+		{
+			this.Characters = this.Characters ?? new List<CharacterInfo>();
+			this.CharacterGroups = this.CharacterGroups ?? new List<CharacterGroup>();
+			this.ClientPreviewSettings = this.ClientPreviewSettings ?? new Dictionary<string, PreviewSettings>();
+
+			if (this.ConfigVersion < ThumbnailConfiguration.CONFIG_VERSION_CHARACTER_REGISTRY)
+			{
+				this.MigrateLegacyClientEntries();
+				this.ConfigVersion = ThumbnailConfiguration.CONFIG_VERSION_CHARACTER_REGISTRY;
+			}
+
+			this.SanitizeCharacterRegistry();
+		}
+
+		/// <summary>
+		/// Every client title the configuration has ever stored a setting for is a character
+		/// the user has logged in at least once, so the registry starts fully populated
+		/// instead of waiting for every character to log in once again
+		/// </summary>
+		private void MigrateLegacyClientEntries()
+		{
+			foreach (string title in this.CollectStoredClientTitles())
+			{
+				if (this.Characters.Any(character => string.Equals(character.Title, title, StringComparison.Ordinal)))
+				{
+					continue;
+				}
+
+				// The moment these characters were seen for the first time is unknown
+				this.Characters.Add(new CharacterInfo(title, null, null));
+			}
+
+			foreach (KeyValuePair<string, Size> entry in this.PerClientThumbnailSize)
+			{
+				PreviewSettings settings = this.GetLegacySettingsTarget(entry.Key);
+
+				if (settings != null)
+				{
+					settings.ThumbnailSize = entry.Value;
+				}
+			}
+
+			foreach (KeyValuePair<string, ZoomAnchor> entry in this.PerClientZoomAnchor)
+			{
+				PreviewSettings settings = this.GetLegacySettingsTarget(entry.Key);
+
+				if (settings != null)
+				{
+					settings.ThumbnailZoomAnchor = entry.Value;
+				}
+			}
+
+			foreach (KeyValuePair<string, bool> entry in this.PerClientPreventPreviews)
+			{
+				PreviewSettings settings = this.GetLegacySettingsTarget(entry.Key);
+
+				if (settings != null)
+				{
+					settings.PreventPreviews = entry.Value;
+				}
+			}
+
+			foreach (KeyValuePair<string, Color> entry in this.PerClientPreventPreviewColor)
+			{
+				PreviewSettings settings = this.GetLegacySettingsTarget(entry.Key);
+
+				if (settings != null)
+				{
+					settings.PreventPreviewColor = entry.Value;
+				}
+			}
+
+			foreach (KeyValuePair<string, Color> entry in this.PerClientActiveClientHighlightColor)
+			{
+				PreviewSettings settings = this.GetLegacySettingsTarget(entry.Key);
+
+				if (settings != null)
+				{
+					settings.ActiveClientHighlightColor = entry.Value;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Preview settings entry a legacy per-client value is migrated into. Legacy values
+		/// were applied unconditionally, so the migrated entry is switched on right away
+		/// </summary>
+		private PreviewSettings GetLegacySettingsTarget(string title)
+		{
+			if (!ThumbnailConfiguration.IsStoredClientTitle(title))
+			{
+				return null;
+			}
+
+			if (!this.ClientPreviewSettings.TryGetValue(title, out PreviewSettings settings))
+			{
+				settings = new PreviewSettings();
+				this.ClientPreviewSettings[title] = settings;
+			}
+
+			settings.UseCustomSettings = true;
+
+			return settings;
+		}
+
+		private HashSet<string> CollectStoredClientTitles()
+		{
+			HashSet<string> titles = new HashSet<string>(StringComparer.Ordinal);
+
+			void Collect(IEnumerable<string> source)
+			{
+				if (source == null)
+				{
+					return;
+				}
+
+				foreach (string title in source)
+				{
+					if (ThumbnailConfiguration.IsStoredClientTitle(title))
+					{
+						titles.Add(title);
+					}
+				}
+			}
+
+			Collect(this.FlatLayout?.Keys);
+			Collect(this.ClientLayout?.Keys);
+			Collect(this.ClientHotkey?.Keys);
+			Collect(this.DisableThumbnail?.Keys);
+			Collect(this.PriorityClients);
+			Collect(this.PerClientThumbnailSize?.Keys);
+			Collect(this.PerClientZoomAnchor?.Keys);
+			Collect(this.PerClientPreventPreviews?.Keys);
+			Collect(this.PerClientPreventPreviewColor?.Keys);
+			Collect(this.PerClientActiveClientHighlightColor?.Keys);
+
+			if (this.PerClientLayout != null)
+			{
+				Collect(this.PerClientLayout.Keys);
+
+				foreach (Dictionary<string, Point> layout in this.PerClientLayout.Values)
+				{
+					Collect(layout?.Keys);
+				}
+			}
+
+			if (this.CycleGroups != null)
+			{
+				foreach (CycleGroup group in this.CycleGroups)
+				{
+					Collect(group.ClientsOrder?.Keys);
+				}
+			}
+
+			return titles;
+		}
+
+		/// <summary>
+		/// Filters out the client titles that do not belong to a character: the login
+		/// screen and the sample entries older builds seeded fresh configurations with
+		/// </summary>
+		private static bool IsStoredClientTitle(string title)
+		{
+			return CharacterInfo.IsCharacterTitle(title)
+					&& !title.StartsWith(ThumbnailConfiguration.EXAMPLE_CLIENT_TITLE_PREFIX, StringComparison.Ordinal);
+		}
+
+		private void SanitizeCharacterRegistry()
+		{
+			lock (this._registrySyncRoot)
+			{
+				Dictionary<string, CharacterInfo> index = new Dictionary<string, CharacterInfo>(StringComparer.Ordinal);
+				List<CharacterInfo> characters = new List<CharacterInfo>(this.Characters.Count);
+
+				foreach (CharacterInfo character in this.Characters)
+				{
+					if ((character == null) || !ThumbnailConfiguration.IsStoredClientTitle(character.Title)
+						|| index.ContainsKey(character.Title))
+					{
+						continue;
+					}
+
+					index.Add(character.Title, character);
+					characters.Add(character);
+				}
+
+				// Entries edited by hand can carry empty or duplicate group ids
+				List<CharacterGroup> groups = new List<CharacterGroup>(this.CharacterGroups.Count);
+				HashSet<string> groupIds = new HashSet<string>(StringComparer.Ordinal);
+
+				foreach (CharacterGroup group in this.CharacterGroups)
+				{
+					if ((group == null) || string.IsNullOrWhiteSpace(group.Id) || !groupIds.Add(group.Id))
+					{
+						continue;
+					}
+
+					if (string.IsNullOrWhiteSpace(group.Name))
+					{
+						group.Name = group.Id;
+					}
+
+					group.Hotkeys = group.Hotkeys ?? new List<string>();
+
+					if (group.Color.IsEmpty)
+					{
+						group.Color = ThumbnailConfiguration.GROUP_COLOR_PALETTE[groups.Count % ThumbnailConfiguration.GROUP_COLOR_PALETTE.Length];
+					}
+
+					groups.Add(group);
+				}
+
+				foreach (CharacterInfo character in characters)
+				{
+					if (!string.IsNullOrEmpty(character.GroupId) && !groupIds.Contains(character.GroupId))
+					{
+						character.GroupId = null;
+					}
+				}
+
+				groups.RemoveAll(group => !characters.Any(character => string.Equals(character.GroupId, group.Id, StringComparison.Ordinal)));
+
+				this.Characters = characters;
+				this.CharacterGroups = groups;
+				this._characterIndex = index;
+
+				foreach (string title in this.ClientPreviewSettings.Keys.ToList())
+				{
+					PreviewSettings settings = this.ClientPreviewSettings[title];
+
+					if ((settings == null) || settings.IsEmpty || !ThumbnailConfiguration.IsStoredClientTitle(title))
+					{
+						this.ClientPreviewSettings.Remove(title);
+					}
+				}
+			}
 		}
 
 		private static int ApplyRestrictions(int value, int minimum, int maximum)
