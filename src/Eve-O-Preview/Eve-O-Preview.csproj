@@ -80,18 +80,6 @@
       <SubType>Component</SubType>
     </Compile>
   </ItemGroup>
-  <!-- Stamps the build time into the assembly so the About tab can tell builds apart -->
-  <Target Name="SetBuildDate" BeforeTargets="CoreGenerateAssemblyInfo">
-    <PropertyGroup>
-      <BuildDateStamp>$([System.DateTime]::Now.ToString("yyyy-MM-dd HH:mm"))</BuildDateStamp>
-    </PropertyGroup>
-    <ItemGroup>
-      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-        <_Parameter1>BuildDate</_Parameter1>
-        <_Parameter2>$(BuildDateStamp)</_Parameter2>
-      </AssemblyAttribute>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
     <EmbeddedResource Include="app.manifest" />
   </ItemGroup>

@@ -1123,14 +1123,7 @@ namespace EveOPreview.Presenters
   target = "Linux";
 #endif
 
-			// The build stamp makes it obvious which build is actually running
-			string buildDate = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
-										.Cast<System.Reflection.AssemblyMetadataAttribute>()
-										.FirstOrDefault(x => x.Key == "BuildDate")?.Value;
-
-			string versionText = $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision} {target}";
-
-			return string.IsNullOrEmpty(buildDate) ? versionText : $"{versionText} ({buildDate})";
+			return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision} {target}";
 		}
 
 		private void ExitApplication()
