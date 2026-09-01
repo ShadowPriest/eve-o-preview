@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using EveOPreview.Localization;
+using EveOPreview.UI.Hotkeys;
 using Newtonsoft.Json;
 
 namespace EveOPreview.Configuration.Implementation
@@ -144,6 +145,12 @@ namespace EveOPreview.Configuration.Implementation
 			this.AggroYellowColor = Color.Gold;
 			this.AggroRedColor = Color.Red;
 			this.AggroFillPercent = 20;
+
+			// Clicks on a preview. These are the combinations the application has always
+			// used, so an existing configuration keeps behaving the way it did
+			this.PreviewClickMinimize = PreviewClickBinding.Compose(Keys.Control, MouseButtons.Left);
+			this.PreviewClickSwitchOut = PreviewClickBinding.Compose(Keys.Control | Keys.Shift, MouseButtons.Left);
+			this.PreviewClickToggleCycleGroup = PreviewClickBinding.Compose(Keys.Shift, MouseButtons.Left);
 
 			this.LoginThumbnailLocation = new Point(5, 5);
 
@@ -383,6 +390,15 @@ namespace EveOPreview.Configuration.Implementation
 		public string Language { get; set; }
 
 		public int ActiveClientHighlightThickness { get; set; }
+
+		/// <summary>Click on a preview that minimizes its client</summary>
+		public string PreviewClickMinimize { get; set; }
+
+		/// <summary>Click on a preview that switches to the last non-client application</summary>
+		public string PreviewClickSwitchOut { get; set; }
+
+		/// <summary>Click on a preview that excludes its client from the cycle groups (and back)</summary>
+		public string PreviewClickToggleCycleGroup { get; set; }
 
 		[JsonProperty("LoginThumbnailLocation")]
 		public Point LoginThumbnailLocation { get; set; }
@@ -1205,6 +1221,11 @@ namespace EveOPreview.Configuration.Implementation
 			this.ActiveClientHighlightThickness = ThumbnailConfiguration.ApplyRestrictions(this.ActiveClientHighlightThickness, 1, 6);
 			this.AggroFillPercent = ThumbnailConfiguration.ApplyRestrictions(this.AggroFillPercent, 1, 100);
 			this.GameLogsFolder = this.GameLogsFolder ?? "";
+
+			// An unparsable click binding is dropped: the action then has no click at all
+			this.PreviewClickMinimize = PreviewClickBinding.Normalize(this.PreviewClickMinimize);
+			this.PreviewClickSwitchOut = PreviewClickBinding.Normalize(this.PreviewClickSwitchOut);
+			this.PreviewClickToggleCycleGroup = PreviewClickBinding.Normalize(this.PreviewClickToggleCycleGroup);
 			this.Language = LanguageManager.Normalize(this.Language);
 
 			this.EnsureAppearance();

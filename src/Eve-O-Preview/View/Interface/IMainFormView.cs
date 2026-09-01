@@ -48,6 +48,11 @@ namespace EveOPreview.View
 		Color CycleGroupNameColor { get; set; }
 		Font CycleGroupNameFont { get; set; }
 
+		/// <summary>Clicks on a preview window, stored as "Shift+LButton" and the like</summary>
+		string PreviewClickMinimize { get; set; }
+		string PreviewClickSwitchOut { get; set; }
+		string PreviewClickToggleCycleGroup { get; set; }
+
 		bool LockThumbnailLocation { get; set; }
 		bool ThumbnailSnapToGrid { get; set; }
 		bool ThumbnailSnapToGridFillCell { get; set; }

@@ -597,4 +597,31 @@ The application started with default settings and will not save any settings unt
   <data name="CycleGroups_WholeAccount" xml:space="preserve">
     <value>Add and move the whole account</value>
   </data>
+  <data name="Tab_PreviewClicks" xml:space="preserve">
+    <value>Preview clicks</value>
+  </data>
+  <data name="PreviewClicks_Hint" xml:space="preserve">
+    <value>Actions bound to a click on a preview. A plain left click always activates the client; the right button moves the preview while it is not assigned here.</value>
+  </data>
+  <data name="PreviewClicks_ToggleCycleGroup" xml:space="preserve">
+    <value>Exclude the client from the cycle groups (and back)</value>
+  </data>
+  <data name="PreviewClicks_Minimize" xml:space="preserve">
+    <value>Minimize the client</value>
+  </data>
+  <data name="PreviewClicks_SwitchOut" xml:space="preserve">
+    <value>Switch back to the last active non-EVE window</value>
+  </data>
+  <data name="PreviewClicks_NoButton" xml:space="preserve">
+    <value>(not assigned)</value>
+  </data>
+  <data name="PreviewClicks_LeftClickReserved" xml:space="preserve">
+    <value>A left click without modifiers activates the client and cannot be reassigned.</value>
+  </data>
+  <data name="PreviewClicks_AlreadyAssigned" xml:space="preserve">
+    <value>This combination is already assigned to another action.</value>
+  </data>
+  <data name="Tab_HotkeyBindings" xml:space="preserve">
+    <value>Bindings</value>
+  </data>
 </root>

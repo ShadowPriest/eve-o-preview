@@ -93,6 +93,9 @@ namespace EveOPreview.View
 			Label CycleGroupAddClientLabel;
 			TabPage HotkeysTabPage;
 			Panel HotkeysPanel;
+			TabControl HotkeysSubTabControl;
+			TabPage HotkeyBindingsSubPage;
+			TabPage PreviewClicksSubPage;
 			TabPage AboutTabPage;
 			Panel AboutPanel;
 			Label CreditMaintLabel;
@@ -302,6 +305,10 @@ namespace EveOPreview.View
 			CycleGroupAddClientLabel = new Label();
 			HotkeysTabPage = new TabPage();
 			HotkeysPanel = new Panel();
+			HotkeysSubTabControl = new TabControl();
+			HotkeyBindingsSubPage = new TabPage();
+			PreviewClicksSubPage = new TabPage();
+			PreviewClicksPanel = new Panel();
 			AboutTabPage = new TabPage();
 			AboutPanel = new Panel();
 			CreditMaintLabel = new Label();
@@ -385,6 +392,9 @@ namespace EveOPreview.View
 			CycleGroupsPanel.SuspendLayout();
 			HotkeysTabPage.SuspendLayout();
 			HotkeysPanel.SuspendLayout();
+			HotkeysSubTabControl.SuspendLayout();
+			HotkeyBindingsSubPage.SuspendLayout();
+			PreviewClicksSubPage.SuspendLayout();
 			AboutTabPage.SuspendLayout();
 			AboutPanel.SuspendLayout();
 			GameLogsTabPage.SuspendLayout();
@@ -2879,7 +2889,7 @@ namespace EveOPreview.View
 			// HotkeysTabPage
 			//
 			HotkeysTabPage.BackColor = SystemColors.Control;
-			HotkeysTabPage.Controls.Add(HotkeysPanel);
+			HotkeysTabPage.Controls.Add(HotkeysSubTabControl);
 			HotkeysTabPage.Location = new Point(124, 4);
 			HotkeysTabPage.Margin = new Padding(4);
 			HotkeysTabPage.Name = "HotkeysTabPage";
@@ -2894,6 +2904,47 @@ namespace EveOPreview.View
 			HotkeysPanel.Controls.Add(EditHotkeyButton);
 			HotkeysPanel.Controls.Add(RemoveHotkeyButton);
 			HotkeysPanel.Controls.Add(HotkeyStatusLabel);
+			HotkeysSubTabControl.Controls.Add(HotkeyBindingsSubPage);
+			HotkeysSubTabControl.Controls.Add(PreviewClicksSubPage);
+			HotkeysSubTabControl.Dock = DockStyle.Fill;
+			HotkeysSubTabControl.Location = new Point(0, 0);
+			HotkeysSubTabControl.Name = "HotkeysSubTabControl";
+			HotkeysSubTabControl.SelectedIndex = 0;
+			HotkeysSubTabControl.Size = new Size(327, 322);
+			HotkeysSubTabControl.TabIndex = 0;
+			//
+			// HotkeyBindingsSubPage
+			//
+			HotkeyBindingsSubPage.BackColor = SystemColors.Control;
+			HotkeyBindingsSubPage.Controls.Add(HotkeysPanel);
+			HotkeyBindingsSubPage.Location = new Point(4, 24);
+			HotkeyBindingsSubPage.Name = "HotkeyBindingsSubPage";
+			HotkeyBindingsSubPage.Size = new Size(319, 294);
+			HotkeyBindingsSubPage.TabIndex = 0;
+			HotkeyBindingsSubPage.Text = "Hotkeys";
+			//
+			// PreviewClicksSubPage
+			//
+			PreviewClicksSubPage.BackColor = SystemColors.Control;
+			PreviewClicksSubPage.Controls.Add(PreviewClicksPanel);
+			PreviewClicksSubPage.Location = new Point(4, 24);
+			PreviewClicksSubPage.Name = "PreviewClicksSubPage";
+			PreviewClicksSubPage.Padding = new Padding(3);
+			PreviewClicksSubPage.Size = new Size(319, 294);
+			PreviewClicksSubPage.TabIndex = 1;
+			PreviewClicksSubPage.Text = "Preview clicks";
+			//
+			// PreviewClicksPanel
+			//
+			PreviewClicksPanel.Dock = DockStyle.Fill;
+			PreviewClicksPanel.Location = new Point(3, 3);
+			PreviewClicksPanel.Margin = new Padding(4);
+			PreviewClicksPanel.Name = "PreviewClicksPanel";
+			PreviewClicksPanel.Size = new Size(313, 288);
+			PreviewClicksPanel.TabIndex = 0;
+			//
+			// HotkeysPanel
+			//
 			HotkeysPanel.Dock = DockStyle.Fill;
 			HotkeysPanel.Location = new Point(0, 0);
 			HotkeysPanel.Margin = new Padding(4);
@@ -3190,6 +3241,9 @@ namespace EveOPreview.View
 			CycleGroupsPanel.PerformLayout();
 			HotkeysTabPage.ResumeLayout(false);
 			HotkeysPanel.ResumeLayout(false);
+			HotkeysSubTabControl.ResumeLayout(false);
+			HotkeyBindingsSubPage.ResumeLayout(false);
+			PreviewClicksSubPage.ResumeLayout(false);
 			HotkeysPanel.PerformLayout();
 			AboutTabPage.ResumeLayout(false);
 			AboutPanel.ResumeLayout(false);
@@ -3263,6 +3317,7 @@ namespace EveOPreview.View
 		private Button CharacterForgetButton;
 		private Button CharacterSuggestGroupsButton;
 		private Button CharacterPreviewSettingsButton;
+		private Panel PreviewClicksPanel;
 		private Panel CharacterGroupColorButton;
 		private CheckBox CycleGroupWholeAccountCheckBox;
 		private LinkLabel DocumentationLink;

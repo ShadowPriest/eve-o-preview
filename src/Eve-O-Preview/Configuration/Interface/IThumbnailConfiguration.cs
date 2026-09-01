@@ -80,6 +80,11 @@ namespace EveOPreview.Configuration
 		int CycleGroupNameOutlineThickness { get; set; }
 		Color CycleGroupNameOutlineColor { get; set; }
 
+		/// <summary>Clicks on a preview window, stored as "Shift+LButton" and the like</summary>
+		string PreviewClickMinimize { get; set; }
+		string PreviewClickSwitchOut { get; set; }
+		string PreviewClickToggleCycleGroup { get; set; }
+
 		Point LoginThumbnailLocation { get; set; }
 		Size MainWindowSize { get; set; }
 

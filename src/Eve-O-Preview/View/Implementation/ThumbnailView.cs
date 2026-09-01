@@ -1001,17 +1001,29 @@ namespace EveOPreview.View
 		#region Custom GUI events
 		protected virtual void MouseDownEventHandler(MouseButtons mouseButtons, Keys modifierKeys)
 		{
+			// The assignable clicks are checked first. What is left over keeps the fixed
+			// meaning it has always had: a left click activates the client, the right
+			// button starts the custom mouse mode
+			if (PreviewClickBinding.Matches(this._config.PreviewClickToggleCycleGroup, mouseButtons, modifierKeys))
+			{
+				this.ThumbnailToggleCycleGroup?.Invoke(this.Id);
+				return;
+			}
+
+			if (PreviewClickBinding.Matches(this._config.PreviewClickMinimize, mouseButtons, modifierKeys))
+			{
+				this.ThumbnailDeactivated?.Invoke(this.Id, false);
+				return;
+			}
+
+			if (PreviewClickBinding.Matches(this._config.PreviewClickSwitchOut, mouseButtons, modifierKeys))
+			{
+				this.ThumbnailDeactivated?.Invoke(this.Id, true);
+				return;
+			}
+
 			switch (mouseButtons)
 			{
-				case MouseButtons.Left when modifierKeys == Keys.Control:
-					this.ThumbnailDeactivated?.Invoke(this.Id, false);
-					break;
-				case MouseButtons.Left when modifierKeys == Keys.Shift:
-					this.ThumbnailToggleCycleGroup?.Invoke(this.Id);
-					break;
-				case MouseButtons.Left when modifierKeys == (Keys.Control | Keys.Shift):
-					this.ThumbnailDeactivated?.Invoke(this.Id, true);
-					break;
 				case MouseButtons.Left:
 					var oldWindow = this._thumbnailManager.GetActiveClient();
 					this.ThumbnailActivated?.Invoke(this.Id);

@@ -180,6 +180,10 @@ namespace EveOPreview.Presenters
 			this.View.CycleGroupNameFont = this._configuration.CycleGroupNameFont;
 			this.View.ShowThumbnailFrames = this._configuration.ShowThumbnailFrames;
 			this.View.LockThumbnailLocation = this._configuration.LockThumbnailLocation;
+
+			this.View.PreviewClickMinimize = this._configuration.PreviewClickMinimize;
+			this.View.PreviewClickSwitchOut = this._configuration.PreviewClickSwitchOut;
+			this.View.PreviewClickToggleCycleGroup = this._configuration.PreviewClickToggleCycleGroup;
 			this.View.ThumbnailSnapToGrid = this._configuration.ThumbnailSnapToGrid;
 			this.View.ThumbnailSnapToGridSizeX = this._configuration.ThumbnailSnapToGridSizeX;
 			this.View.ThumbnailSnapToGridSizeY = this._configuration.ThumbnailSnapToGridSizeY;
@@ -310,6 +314,10 @@ namespace EveOPreview.Presenters
 			}
 
             this._configuration.LockThumbnailLocation = this.View.LockThumbnailLocation;
+
+			this._configuration.PreviewClickMinimize = this.View.PreviewClickMinimize;
+			this._configuration.PreviewClickSwitchOut = this.View.PreviewClickSwitchOut;
+			this._configuration.PreviewClickToggleCycleGroup = this.View.PreviewClickToggleCycleGroup;
 			this._configuration.ThumbnailSnapToGrid = this.View.ThumbnailSnapToGrid;
 			this._configuration.ThumbnailSnapToGridSizeX = this.View.ThumbnailSnapToGridSizeX;
             this._configuration.ThumbnailSnapToGridSizeY = this.View.ThumbnailSnapToGridSizeY;

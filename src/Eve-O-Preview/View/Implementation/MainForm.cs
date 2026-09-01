@@ -1,5 +1,6 @@
 ﻿using EveOPreview.Configuration;
 using EveOPreview.Localization;
+using EveOPreview.UI.Hotkeys;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -71,6 +72,7 @@ namespace EveOPreview.View
 			this.ClientCycleGroupCombo.Enabled = false;
 
 			this.InitCharactersContextMenu();
+			this.InitPreviewClicks();
 
 			this.HotkeyBindingsListView.ClientSizeChanged += this.HotkeyBindingsListViewResize_Handler;
 			this.HotkeyBindingsListView.DoubleClick += this.HotkeyBindingsListView_DoubleClick_Handler;
@@ -943,6 +945,254 @@ namespace EveOPreview.View
 			// The group membership is rendered as a suffix in the Active Clients list
 			this.ThumbnailsList.Invalidate();
 		}
+
+		#region Preview clicks
+		private PreviewClickRow _previewClickMinimizeRow;
+		private PreviewClickRow _previewClickSwitchOutRow;
+		private PreviewClickRow _previewClickToggleGroupRow;
+		private Label _previewClickStatusLabel;
+
+		public string PreviewClickMinimize
+		{
+			get => this._previewClickMinimizeRow.Value;
+			set => this._previewClickMinimizeRow.Value = value;
+		}
+
+		public string PreviewClickSwitchOut
+		{
+			get => this._previewClickSwitchOutRow.Value;
+			set => this._previewClickSwitchOutRow.Value = value;
+		}
+
+		public string PreviewClickToggleCycleGroup
+		{
+			get => this._previewClickToggleGroupRow.Value;
+			set => this._previewClickToggleGroupRow.Value = value;
+		}
+
+		/// <summary>
+		/// The rows are built here instead of the designer: they are three copies of the
+		/// same modifiers-plus-button editor and the list is going to grow
+		/// </summary>
+		private void InitPreviewClicks()
+		{
+			Label hintLabel = new Label
+			{
+				Text = Strings.PreviewClicks_Hint,
+				Location = new Point(6, 8),
+				Size = new Size(301, 48),
+				ForeColor = SystemColors.GrayText
+			};
+
+			this.PreviewClicksPanel.Controls.Add(hintLabel);
+
+			int top = 62;
+
+			this._previewClickToggleGroupRow = this.AddPreviewClickRow(Strings.PreviewClicks_ToggleCycleGroup, ref top);
+			this._previewClickMinimizeRow = this.AddPreviewClickRow(Strings.PreviewClicks_Minimize, ref top);
+			this._previewClickSwitchOutRow = this.AddPreviewClickRow(Strings.PreviewClicks_SwitchOut, ref top);
+
+			this._previewClickStatusLabel = new Label
+			{
+				Location = new Point(6, top + 6),
+				Size = new Size(301, 32),
+				ForeColor = SystemColors.GrayText
+			};
+
+			this.PreviewClicksPanel.Controls.Add(this._previewClickStatusLabel);
+		}
+
+		private PreviewClickRow AddPreviewClickRow(string caption, ref int top)
+		{
+			Label captionLabel = new Label
+			{
+				Text = caption,
+				Location = new Point(6, top),
+				Size = new Size(301, 15),
+				AutoEllipsis = true
+			};
+
+			PreviewClickRow row = new PreviewClickRow(this.PreviewClicksPanel, top + 20, this.PreviewClickChanged_Handler);
+
+			this.PreviewClicksPanel.Controls.Add(captionLabel);
+
+			top += 56;
+
+			return row;
+		}
+
+		private void PreviewClickChanged_Handler(object sender, EventArgs e)
+		{
+			if (this._suppressEvents)
+			{
+				return;
+			}
+
+			PreviewClickRow[] rows = { this._previewClickToggleGroupRow, this._previewClickMinimizeRow, this._previewClickSwitchOutRow };
+			PreviewClickRow changedRow = rows.FirstOrDefault(row => row.Owns(sender));
+
+			if (changedRow == null)
+			{
+				return;
+			}
+
+			string value = changedRow.Value;
+
+			// The plain left click activates the client and is not up for grabs
+			if (PreviewClickBinding.IsReservedForActivation(value))
+			{
+				this.RejectPreviewClick(changedRow, Strings.PreviewClicks_LeftClickReserved);
+				return;
+			}
+
+			if (rows.Any(row => (row != changedRow) && (row.Value.Length > 0) && (row.Value == value)))
+			{
+				this.RejectPreviewClick(changedRow, Strings.PreviewClicks_AlreadyAssigned);
+				return;
+			}
+
+			this._previewClickStatusLabel.Text = "";
+			changedRow.Accept();
+
+			this.ApplicationSettingsChanged?.Invoke();
+		}
+
+		private void RejectPreviewClick(PreviewClickRow row, string message)
+		{
+			this._previewClickStatusLabel.Text = message;
+
+			bool suppressed = this._suppressEvents;
+			this._suppressEvents = true;
+
+			try
+			{
+				row.Revert();
+			}
+			finally
+			{
+				this._suppressEvents = suppressed;
+			}
+		}
+
+		/// <summary>One assignable click: the modifier check boxes and the mouse button</summary>
+		private sealed class PreviewClickRow
+		{
+			private readonly CheckBox _control;
+			private readonly CheckBox _shift;
+			private readonly CheckBox _alt;
+			private readonly ComboBox _button;
+
+			private string _acceptedValue;
+
+			public PreviewClickRow(Control parent, int top, EventHandler changedHandler)
+			{
+				this._control = PreviewClickRow.CreateModifier("Ctrl", 20, top);
+				this._shift = PreviewClickRow.CreateModifier("Shift", 76, top);
+				this._alt = PreviewClickRow.CreateModifier("Alt", 138, top);
+
+				this._button = new ComboBox
+				{
+					Location = new Point(190, top - 2),
+					Size = new Size(117, 23),
+					DropDownStyle = ComboBoxStyle.DropDownList
+				};
+
+				this._button.Items.Add(Strings.PreviewClicks_NoButton);
+				this._button.Items.AddRange(PreviewClickBinding.GetButtonNames());
+				this._button.SelectedIndex = 0;
+
+				this._acceptedValue = "";
+
+				parent.Controls.Add(this._control);
+				parent.Controls.Add(this._shift);
+				parent.Controls.Add(this._alt);
+				parent.Controls.Add(this._button);
+
+				this._control.CheckedChanged += changedHandler;
+				this._shift.CheckedChanged += changedHandler;
+				this._alt.CheckedChanged += changedHandler;
+				this._button.SelectedIndexChanged += changedHandler;
+			}
+
+			public bool Owns(object control)
+			{
+				return object.ReferenceEquals(control, this._control) || object.ReferenceEquals(control, this._shift)
+						|| object.ReferenceEquals(control, this._alt) || object.ReferenceEquals(control, this._button);
+			}
+
+			public string Value
+			{
+				get
+				{
+					if (this._button.SelectedIndex <= 0)
+					{
+						return "";
+					}
+
+					Keys modifiers = (this._control.Checked ? Keys.Control : Keys.None)
+									| (this._shift.Checked ? Keys.Shift : Keys.None)
+									| (this._alt.Checked ? Keys.Alt : Keys.None);
+
+					return PreviewClickBinding.Compose(modifiers, PreviewClickRow.GetButton((string)this._button.SelectedItem));
+				}
+
+				set
+				{
+					string normalized = PreviewClickBinding.Normalize(value);
+
+					PreviewClickBinding.TryParse(normalized, out Keys modifiers, out MouseButtons button);
+
+					this._control.Checked = (modifiers & Keys.Control) == Keys.Control;
+					this._shift.Checked = (modifiers & Keys.Shift) == Keys.Shift;
+					this._alt.Checked = (modifiers & Keys.Alt) == Keys.Alt;
+
+					string name = PreviewClickBinding.GetButtonName(button);
+					this._button.SelectedIndex = (name == null) ? 0 : Math.Max(0, this._button.Items.IndexOf(name));
+
+					this._acceptedValue = normalized;
+				}
+			}
+
+			/// <summary>Remembers the current combination as the one that got through</summary>
+			public void Accept()
+			{
+				this._acceptedValue = this.Value;
+			}
+
+			/// <summary>Puts the controls back to the last combination that got through</summary>
+			public void Revert()
+			{
+				this.Value = this._acceptedValue;
+			}
+
+			private static CheckBox CreateModifier(string caption, int left, int top)
+			{
+				return new CheckBox
+				{
+					Text = caption,
+					Location = new Point(left, top),
+					AutoSize = true
+				};
+			}
+
+			private static MouseButtons GetButton(string name)
+			{
+				switch (name)
+				{
+					case PreviewClickBinding.MIDDLE_BUTTON:
+						return MouseButtons.Middle;
+					case PreviewClickBinding.RIGHT_BUTTON:
+						return MouseButtons.Right;
+					case PreviewClickBinding.X_BUTTON_1:
+						return MouseButtons.XButton1;
+					case PreviewClickBinding.X_BUTTON_2:
+						return MouseButtons.XButton2;
+					default:
+						return MouseButtons.Left;
+				}
+			}
+		}
+		#endregion
 
 		#region Character registry
 		private ToolStripMenuItem _characterPreviewSettingsMenuItem;
@@ -2306,6 +2556,8 @@ namespace EveOPreview.View
 				["ClientsTabPage"] = Strings.Tab_Clients,
 				["ClientsActiveSubPage"] = Strings.Tab_ActiveClients,
 				["CharactersSubPage"] = Strings.Tab_Characters,
+				["HotkeyBindingsSubPage"] = Strings.Tab_HotkeyBindings,
+				["PreviewClicksSubPage"] = Strings.Tab_PreviewClicks,
 				["CharacterFilterLabel"] = Strings.Characters_Filter,
 				["CharacterGroupLabel"] = Strings.Characters_Group,
 				["CharacterManageAsWholeCheckBox"] = Strings.Characters_ManageAsWhole,

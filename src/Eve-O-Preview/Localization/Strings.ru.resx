@@ -597,4 +597,31 @@
   <data name="CycleGroups_WholeAccount" xml:space="preserve">
     <value>Добавлять и двигать весь аккаунт</value>
   </data>
+  <data name="Tab_PreviewClicks" xml:space="preserve">
+    <value>Клик по превью</value>
+  </data>
+  <data name="PreviewClicks_Hint" xml:space="preserve">
+    <value>Действия по клику на превью. Обычный левый клик всегда активирует клиента; правая кнопка перемещает превью, пока не назначена здесь.</value>
+  </data>
+  <data name="PreviewClicks_ToggleCycleGroup" xml:space="preserve">
+    <value>Исключить клиента из цикл-групп (и вернуть)</value>
+  </data>
+  <data name="PreviewClicks_Minimize" xml:space="preserve">
+    <value>Свернуть клиента</value>
+  </data>
+  <data name="PreviewClicks_SwitchOut" xml:space="preserve">
+    <value>Вернуться в последнее активное не EVE окно</value>
+  </data>
+  <data name="PreviewClicks_NoButton" xml:space="preserve">
+    <value>(не назначено)</value>
+  </data>
+  <data name="PreviewClicks_LeftClickReserved" xml:space="preserve">
+    <value>Левый клик без модификаторов активирует клиента и не может быть переназначен.</value>
+  </data>
+  <data name="PreviewClicks_AlreadyAssigned" xml:space="preserve">
+    <value>Эта комбинация уже назначена другому действию.</value>
+  </data>
+  <data name="Tab_HotkeyBindings" xml:space="preserve">
+    <value>Сочетания</value>
+  </data>
 </root>
