@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace EveOPreview.View
 		private Point _baseMousePosition;
 		private Size _baseZoomMaximumSize;
 
-		private HotkeyHandler _hotkeyHandler;
+		private readonly List<HotkeyHandler> _hotkeyHandlers = new List<HotkeyHandler>();
 
 		private IThumbnailConfiguration _config;
 		private Lazy<Color> _myBorderColor;
@@ -640,34 +641,40 @@ namespace EveOPreview.View
 			this.RestoreWindowSizeAndLocation();
 		}
 
-		public void RegisterHotkey(Keys hotkey)
+		public void RegisterHotkeys(IEnumerable<Keys> hotkeys)
 		{
-			if (this._hotkeyHandler != null)
-			{
-				this.UnregisterHotkey();
-			}
+			this.UnregisterHotkeys();
 
-			if (hotkey == Keys.None)
+			if (hotkeys == null)
 			{
 				return;
 			}
 
-			this._hotkeyHandler = new HotkeyHandler(this.Handle, hotkey);
-			this._hotkeyHandler.Pressed += HotkeyPressed_Handler;
-			this._hotkeyHandler.Register();
+			foreach (Keys hotkey in hotkeys)
+			{
+				if (hotkey == Keys.None)
+				{
+					continue;
+				}
+
+				HotkeyHandler handler = new HotkeyHandler(this.Handle, hotkey);
+				handler.Pressed += this.HotkeyPressed_Handler;
+				handler.Register();
+
+				this._hotkeyHandlers.Add(handler);
+			}
 		}
 
-		public void UnregisterHotkey()
+		public void UnregisterHotkeys()
 		{
-			if (this._hotkeyHandler == null)
+			foreach (HotkeyHandler handler in this._hotkeyHandlers)
 			{
-				return;
+				handler.Unregister();
+				handler.Pressed -= this.HotkeyPressed_Handler;
+				handler.Dispose();
 			}
 
-			this._hotkeyHandler.Unregister();
-			this._hotkeyHandler.Pressed -= HotkeyPressed_Handler;
-			this._hotkeyHandler.Dispose();
-			this._hotkeyHandler = null;
+			this._hotkeyHandlers.Clear();
 		}
 
 		public void Refresh(bool forceRefresh)

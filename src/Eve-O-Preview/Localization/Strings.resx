@@ -624,4 +624,13 @@ The application started with default settings and will not save any settings unt
   <data name="Tab_HotkeyBindings" xml:space="preserve">
     <value>Bindings</value>
   </data>
+  <data name="HotkeyDialog_DuplicateBinding" xml:space="preserve">
+    <value>The same combination is entered twice.</value>
+  </data>
+  <data name="Hotkey_RemovedAll" xml:space="preserve">
+    <value>The hotkeys of the action are removed</value>
+  </data>
+  <data name="HotkeyDialog_Required" xml:space="preserve">
+    <value>Required</value>
+  </data>
 </root>

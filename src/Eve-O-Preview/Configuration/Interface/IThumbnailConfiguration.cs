@@ -157,13 +157,17 @@ namespace EveOPreview.Configuration
 		ClientLayout GetClientLayout(string currentClient);
 		void SetClientLayout(string currentClient, ClientLayout layout);
 
-		Keys GetClientHotkey(string currentClient);
-		string GetClientHotkeyString(string currentClient);
-		void SetClientHotkey(string currentClient, Keys hotkey);
-		void SetClientHotkey(string currentClient, string hotkey);
-		IReadOnlyDictionary<string, string> GetClientHotkeys();
-		void RemoveClientHotkey(string currentClient);
+		/// <summary>Hotkeys of one client - an action can be reached by more than one of them</summary>
+		IReadOnlyList<string> GetClientHotkeys(string currentClient);
+
+		IReadOnlyDictionary<string, IReadOnlyList<string>> GetClientHotkeys();
+		void AddClientHotkey(string currentClient, string hotkey);
+		void SetClientHotkeys(string currentClient, IEnumerable<string> hotkeys);
+		void RemoveClientHotkey(string currentClient, string hotkey);
 		Keys StringToKey(string hotkey);
+
+		/// <summary>Canonical form used to compare and store hotkeys</summary>
+		string NormalizeHotkey(string hotkey);
 		bool IsPriorityClient(string currentClient);
 		bool IsExecutableToPreview(string processName);
 

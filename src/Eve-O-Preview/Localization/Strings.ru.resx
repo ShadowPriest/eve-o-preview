@@ -624,4 +624,13 @@
   <data name="Tab_HotkeyBindings" xml:space="preserve">
     <value>Сочетания</value>
   </data>
+  <data name="HotkeyDialog_DuplicateBinding" xml:space="preserve">
+    <value>Одна и та же комбинация указана дважды.</value>
+  </data>
+  <data name="Hotkey_RemovedAll" xml:space="preserve">
+    <value>Горячие клавиши действия удалены</value>
+  </data>
+  <data name="HotkeyDialog_Required" xml:space="preserve">
+    <value>Обязательно к заполнению</value>
+  </data>
 </root>

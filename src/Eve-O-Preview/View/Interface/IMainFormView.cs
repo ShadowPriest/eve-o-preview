@@ -97,7 +97,8 @@ namespace EveOPreview.View
 		void RefreshZoomSettings();
 
 		void SetHotkeyActions(IList<(string ActionId, string DisplayName)> actions);
-		void SetHotkeyBindings(IList<(string ActionId, string ActionName, string Hotkey)> bindings);
+		/// <summary>One entry per action with every combination that reaches it</summary>
+		void SetHotkeyBindings(IList<(string ActionId, string ActionName, IList<string> Hotkeys)> bindings);
 		void SetHotkeyStatus(string status);
 
 		/// <summary>Asks the user a yes/no question. True when the answer is yes</summary>
@@ -124,9 +125,11 @@ namespace EveOPreview.View
 		Action ThumbnailsSizeChanged { get; set; }
 		Action<string> ThumbnailStateChanged { get; set; }
 		Action DocumentationLinkActivated { get; set; }
-		Action<string, string> HotkeyBindingAssigned { get; set; }
-		Action<string, string> HotkeyBindingRemoved { get; set; }
-		Action<string, string, string, string> HotkeyBindingEdited { get; set; }
+		/// <summary>(action id, every combination the action is to be reachable by)</summary>
+		Action<string, IList<string>> HotkeyBindingsChanged { get; set; }
+
+		/// <summary>The action gives up all of its combinations</summary>
+		Action<string> HotkeyBindingsRemoved { get; set; }
 		Action<string, IList<string>> CycleGroupClientsChanged { get; set; }
 		Action<string, string> ThumbnailCycleGroupChanged { get; set; }
 		Action CycleGroupAddRequested { get; set; }

@@ -832,17 +832,21 @@ namespace EveOPreview.View
 			this._hotkeyActions = new List<(string ActionId, string DisplayName)>(actions);
 		}
 
-		public void SetHotkeyBindings(IList<(string ActionId, string ActionName, string Hotkey)> bindings)
+		public void SetHotkeyBindings(IList<(string ActionId, string ActionName, IList<string> Hotkeys)> bindings)
 		{
-			this._hotkeyBindings = new List<(string ActionId, string ActionName, string Hotkey)>(bindings);
+			// The dialog needs them one by one to spot a combination taken by another action
+			this._hotkeyBindings = bindings
+									.SelectMany(binding => binding.Hotkeys.Select(hotkey => (binding.ActionId, binding.ActionName, hotkey)))
+									.ToList();
 
 			this.HotkeyBindingsListView.BeginUpdate();
 			this.HotkeyBindingsListView.Items.Clear();
 
-			foreach ((string actionId, string actionName, string hotkey) in bindings)
+			foreach ((string actionId, string actionName, IList<string> hotkeys) in bindings)
 			{
-				ListViewItem item = new ListViewItem(new[] { actionName, hotkey });
-				item.Tag = (actionId, hotkey);
+				// Every combination of the action stands in one row, joined into one string
+				ListViewItem item = new ListViewItem(new[] { actionName, string.Join(", ", hotkeys) });
+				item.Tag = (actionId, hotkeys);
 				this.HotkeyBindingsListView.Items.Add(item);
 			}
 
@@ -1705,11 +1709,9 @@ namespace EveOPreview.View
 
 		public Action DocumentationLinkActivated { get; set; }
 
-		public Action<string, string> HotkeyBindingAssigned { get; set; }
+		public Action<string, IList<string>> HotkeyBindingsChanged { get; set; }
 
-		public Action<string, string> HotkeyBindingRemoved { get; set; }
-
-		public Action<string, string, string, string> HotkeyBindingEdited { get; set; }
+		public Action<string> HotkeyBindingsRemoved { get; set; }
 
 		public Action<string, IList<string>> CycleGroupClientsChanged { get; set; }
 
@@ -2123,7 +2125,7 @@ namespace EveOPreview.View
 					return;
 				}
 
-				this.HotkeyBindingAssigned?.Invoke(dialog.SelectedActionId, dialog.HotkeyString);
+				this.HotkeyBindingsChanged?.Invoke(dialog.SelectedActionId, dialog.HotkeyStrings);
 			}
 		}
 
@@ -2135,16 +2137,16 @@ namespace EveOPreview.View
 				return;
 			}
 
-			(string actionId, string hotkey) = ((string, string))this.HotkeyBindingsListView.SelectedItems[0].Tag;
+			(string actionId, IList<string> hotkeys) = ((string, IList<string>))this.HotkeyBindingsListView.SelectedItems[0].Tag;
 
-			using (HotkeyEditDialog dialog = new HotkeyEditDialog(this._hotkeyActions, this._activeClients, this._hotkeyBindings, actionId, hotkey))
+			using (HotkeyEditDialog dialog = new HotkeyEditDialog(this._hotkeyActions, this._activeClients, this._hotkeyBindings, actionId, hotkeys))
 			{
 				if (this.ShowHotkeyDialog(dialog) != DialogResult.OK)
 				{
 					return;
 				}
 
-				this.HotkeyBindingEdited?.Invoke(actionId, hotkey, dialog.SelectedActionId, dialog.HotkeyString);
+				this.HotkeyBindingsChanged?.Invoke(dialog.SelectedActionId, dialog.HotkeyStrings);
 			}
 		}
 
@@ -2186,9 +2188,9 @@ namespace EveOPreview.View
 				return;
 			}
 
-			(string actionId, string hotkey) = ((string, string))this.HotkeyBindingsListView.SelectedItems[0].Tag;
+			(string actionId, IList<string> hotkeys) = ((string, IList<string>))this.HotkeyBindingsListView.SelectedItems[0].Tag;
 
-			this.HotkeyBindingRemoved?.Invoke(actionId, hotkey);
+			this.HotkeyBindingsRemoved?.Invoke(actionId);
 		}
 
 		private string SelectedCycleGroupName => this.CycleGroupSelectCombo.SelectedItem as string;

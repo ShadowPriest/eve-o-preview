@@ -265,9 +265,8 @@ namespace EveOPreview.Services
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
 				string title = entry.Value.Title;
-				string binding = this._configuration.GetClientHotkeyString(title);
 
-				if ((binding != null) && MouseBinding.IsMouseBinding(binding))
+				foreach (string binding in this._configuration.GetClientHotkeys(title).Where(MouseBinding.IsMouseBinding))
 				{
 					this._mouseHook.Register(binding, () => this.ActivateClientByTitle(title));
 				}
@@ -355,6 +354,12 @@ namespace EveOPreview.Services
 			return characters.Any(character => members.Contains(character, StringComparer.Ordinal));
 		}
 
+		/// <summary>Keyboard hotkeys of the client; the mouse bindings go through the hook instead</summary>
+		private IEnumerable<Keys> GetClientHotkeyKeys(string title)
+		{
+			return this._configuration.GetClientHotkeys(title).Select(binding => this._configuration.StringToKey(binding));
+		}
+
 		private void ActivateClientByTitle(string title)
 		{
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
@@ -384,7 +389,7 @@ namespace EveOPreview.Services
 			// Re-register per-client hotkeys on the active thumbnail views
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
-				entry.Value.RegisterHotkey(this._configuration.GetClientHotkey(entry.Value.Title));
+				entry.Value.RegisterHotkeys(this.GetClientHotkeyKeys(entry.Value.Title));
 			}
 		}
 
@@ -400,7 +405,7 @@ namespace EveOPreview.Services
 
 			foreach (KeyValuePair<IntPtr, IThumbnailView> entry in this._thumbnailViews)
 			{
-				entry.Value.UnregisterHotkey();
+				entry.Value.UnregisterHotkeys();
 			}
 		}
 
@@ -1086,7 +1091,7 @@ namespace EveOPreview.Services
 
 				view.ThumbnailToggleCycleGroup = this.ThumbnailToggleCycleGroup;
 
-				view.RegisterHotkey(this._configuration.GetClientHotkey(view.Title));
+				view.RegisterHotkeys(this.GetClientHotkeyKeys(view.Title));
 
 				if (this._isClickThroughActive)
 				{
@@ -1119,7 +1124,7 @@ namespace EveOPreview.Services
 					view.Title = process.Title;
 					viewsAdded.Add(view.Title);
 
-					view.RegisterHotkey(this._configuration.GetClientHotkey(process.Title));
+					view.RegisterHotkeys(this.GetClientHotkeyKeys(process.Title));
 
 					// A client that has just logged a character in still sits at the login
 					// screen position - it belongs at the position of that character now.
@@ -1150,7 +1155,7 @@ namespace EveOPreview.Services
 					viewsRemoved.Add(view.Title);
 				}
 
-				view.UnregisterHotkey();
+				view.UnregisterHotkeys();
 
 				view.ThumbnailResized = null;
 				view.ThumbnailMoved = null;

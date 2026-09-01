@@ -57,6 +57,7 @@ namespace EveOPreview.Configuration.Implementation
 			this.FlatLayout = new Dictionary<string, Point>();
 			this.ClientLayout = new Dictionary<string, ClientLayout>();
 			this.ClientHotkey = new Dictionary<string, string>();
+			this.ClientHotkeys = new Dictionary<string, List<string>>();
 			this.MinimizeAllClientsHotkeys = new List<string> { "Control+F22" };
 			this.ToggleAllPreviewsHotkeys = new List<string>();
 			this.ClickThroughHotkeys = new List<string>();
@@ -419,8 +420,14 @@ namespace EveOPreview.Configuration.Implementation
 		private Dictionary<string, Point> FlatLayout { get; set; }
 		[JsonProperty]
 		private Dictionary<string, ClientLayout> ClientLayout { get; set; }
+		/// <summary>Legacy single hotkey per client, read for migration and never written back</summary>
 		[JsonProperty]
 		private Dictionary<string, string> ClientHotkey { get; set; }
+		public bool ShouldSerializeClientHotkey() => false;
+
+		/// <summary>Hotkeys of a client: an action can be reached by more than one of them</summary>
+		[JsonProperty]
+		private Dictionary<string, List<string>> ClientHotkeys { get; set; }
 		[JsonProperty]
 		public List<string> MinimizeAllClientsHotkeys { get; set; }
 		[JsonProperty]
@@ -512,7 +519,7 @@ namespace EveOPreview.Configuration.Implementation
 			// A blacklisted character leaves the cycle order and gives up its hotkey.
 			// Its preview settings and position stay, so taking it off the blacklist
 			// brings it back the way it was
-			this.ClientHotkey.Remove(title);
+			this.ClientHotkeys.Remove(title);
 
 			foreach (CycleGroup group in this.CycleGroups)
 			{
@@ -557,7 +564,7 @@ namespace EveOPreview.Configuration.Implementation
 			// Everything else that is keyed by the client title
 			this.FlatLayout.Remove(title);
 			this.ClientLayout.Remove(title);
-			this.ClientHotkey.Remove(title);
+			this.ClientHotkeys.Remove(title);
 			this.DisableThumbnail.Remove(title);
 			this.PriorityClients.Remove(title);
 			this.PerClientLayout.Remove(title);
@@ -1118,41 +1125,85 @@ namespace EveOPreview.Configuration.Implementation
 			this.ClientLayout[currentClient] = layout;
 		}
 
-		public Keys GetClientHotkey(string currentClient)
+		/// <summary>Every hotkey of this client, keyboard and mouse ones alike</summary>
+		public IReadOnlyList<string> GetClientHotkeys(string currentClient)
 		{
-			string hotkey;
-			if (this.ClientHotkey.TryGetValue(currentClient, out hotkey))
+			if (string.IsNullOrEmpty(currentClient) || !this.ClientHotkeys.TryGetValue(currentClient, out List<string> hotkeys))
 			{
-				return this.StringToKey(hotkey);
+				return new List<string>();
 			}
 
-			return Keys.None;
+			return new List<string>(hotkeys);
 		}
 
-		public string GetClientHotkeyString(string currentClient)
+		public IReadOnlyDictionary<string, IReadOnlyList<string>> GetClientHotkeys()
 		{
-			string hotkey;
-			return this.ClientHotkey.TryGetValue(currentClient, out hotkey) ? hotkey : null;
+			Dictionary<string, IReadOnlyList<string>> result = new Dictionary<string, IReadOnlyList<string>>(this.ClientHotkeys.Count);
+
+			foreach (KeyValuePair<string, List<string>> entry in this.ClientHotkeys)
+			{
+				result.Add(entry.Key, new List<string>(entry.Value));
+			}
+
+			return result;
 		}
 
-		public void SetClientHotkey(string currentClient, string hotkey)
+		/// <summary>Adds one more hotkey to the client; an already stored one is not doubled</summary>
+		public void AddClientHotkey(string currentClient, string hotkey)
 		{
-			this.ClientHotkey[currentClient] = hotkey;
+			if (string.IsNullOrEmpty(currentClient) || string.IsNullOrEmpty(hotkey))
+			{
+				return;
+			}
+
+			if (!this.ClientHotkeys.TryGetValue(currentClient, out List<string> hotkeys))
+			{
+				hotkeys = new List<string>();
+				this.ClientHotkeys[currentClient] = hotkeys;
+			}
+
+			hotkeys.RemoveAll(string.IsNullOrEmpty);
+
+			string normalized = this.NormalizeHotkey(hotkey);
+
+			if (!hotkeys.Any(stored => string.Equals(this.NormalizeHotkey(stored), normalized, StringComparison.OrdinalIgnoreCase)))
+			{
+				hotkeys.Add(normalized);
+			}
 		}
 
-		public void SetClientHotkey(string currentClient, Keys hotkey)
+		/// <summary>Replaces every hotkey of the client at once</summary>
+		public void SetClientHotkeys(string currentClient, IEnumerable<string> hotkeys)
 		{
-			this.ClientHotkey[currentClient] = (new KeysConverter()).ConvertToInvariantString(hotkey);
+			if (string.IsNullOrEmpty(currentClient))
+			{
+				return;
+			}
+
+			this.ClientHotkeys.Remove(currentClient);
+
+			foreach (string hotkey in hotkeys ?? new List<string>())
+			{
+				this.AddClientHotkey(currentClient, hotkey);
+			}
 		}
 
-		public IReadOnlyDictionary<string, string> GetClientHotkeys()
+		/// <summary>Drops one hotkey of the client; the rest of them stay</summary>
+		public void RemoveClientHotkey(string currentClient, string hotkey)
 		{
-			return new Dictionary<string, string>(this.ClientHotkey);
-		}
+			if (string.IsNullOrEmpty(currentClient) || !this.ClientHotkeys.TryGetValue(currentClient, out List<string> hotkeys))
+			{
+				return;
+			}
 
-		public void RemoveClientHotkey(string currentClient)
-		{
-			this.ClientHotkey.Remove(currentClient);
+			string normalized = this.NormalizeHotkey(hotkey);
+
+			hotkeys.RemoveAll(stored => string.Equals(this.NormalizeHotkey(stored), normalized, StringComparison.OrdinalIgnoreCase));
+
+			if (hotkeys.Count == 0)
+			{
+				this.ClientHotkeys.Remove(currentClient);
+			}
 		}
 
 		public Keys StringToKey(string hotkey)
@@ -1172,6 +1223,44 @@ namespace EveOPreview.Configuration.Implementation
 				// Protect from incorrect values
 				return Keys.None;
 			}
+		}
+
+		/// <summary>
+		/// Canonical form of a hotkey. A hand written "Control+F1" and the "Ctrl+F1" the
+		/// key converter produces are the same combination and have to compare equal
+		/// </summary>
+		public string NormalizeHotkey(string hotkey)
+		{
+			if (string.IsNullOrEmpty(hotkey))
+			{
+				return "";
+			}
+
+			if (MouseBinding.IsMouseBinding(hotkey))
+			{
+				return MouseBinding.Normalize(hotkey);
+			}
+
+			Keys keys = this.StringToKey(hotkey);
+
+			return (keys == Keys.None) ? hotkey : (new KeysConverter()).ConvertToInvariantString(keys);
+		}
+
+		/// <summary>Brings every hotkey of the list to the canonical form and drops the duplicates</summary>
+		private void NormalizeHotkeyList(List<string> hotkeys)
+		{
+			if (hotkeys == null)
+			{
+				return;
+			}
+
+			List<string> normalized = hotkeys.Where(hotkey => !string.IsNullOrEmpty(hotkey))
+											.Select(this.NormalizeHotkey)
+											.Distinct(StringComparer.OrdinalIgnoreCase)
+											.ToList();
+
+			hotkeys.Clear();
+			hotkeys.AddRange(normalized);
 		}
 
 		public bool IsPriorityClient(string currentClient)
@@ -1231,6 +1320,22 @@ namespace EveOPreview.Configuration.Implementation
 			this.EnsureAppearance();
 			this.EnsureCycleGroups();
 			this.EnsureCharacters();
+			this.EnsureClientHotkeys();
+
+			this.NormalizeHotkeyList(this.MinimizeAllClientsHotkeys);
+			this.NormalizeHotkeyList(this.ToggleAllPreviewsHotkeys);
+			this.NormalizeHotkeyList(this.ClickThroughHotkeys);
+
+			foreach (CycleGroup group in this.CycleGroups)
+			{
+				this.NormalizeHotkeyList(group.ForwardHotkeys);
+				this.NormalizeHotkeyList(group.BackwardHotkeys);
+			}
+
+			foreach (CharacterGroup characterGroup in this.GetCharacterGroups())
+			{
+				this.NormalizeHotkeyList(characterGroup.Hotkeys);
+			}
 		}
 
 		/// <summary>
@@ -1361,6 +1466,45 @@ namespace EveOPreview.Configuration.Implementation
 		/// Builds the character registry out of the entries stored by the earlier versions
 		/// of the configuration file and keeps the registry consistent afterwards
 		/// </summary>
+		/// <summary>
+		/// Moves the legacy single hotkey of a client into the list of its hotkeys.
+		/// The legacy entries are read but never written back, the same way the fixed
+		/// cycle group entries are handled
+		/// </summary>
+		private void EnsureClientHotkeys()
+		{
+			this.ClientHotkeys = this.ClientHotkeys ?? new Dictionary<string, List<string>>();
+
+			if (this.ClientHotkey != null)
+			{
+				foreach (KeyValuePair<string, string> entry in this.ClientHotkey)
+				{
+					this.AddClientHotkey(entry.Key, entry.Value);
+				}
+
+				this.ClientHotkey.Clear();
+			}
+
+			foreach (string client in this.ClientHotkeys.Keys.ToList())
+			{
+				// Stored in the canonical form, so that a hand edited file does not end up
+				// with the same combination spelled two different ways
+				List<string> hotkeys = this.ClientHotkeys[client]
+											.Where(hotkey => !string.IsNullOrEmpty(hotkey))
+											.Select(this.NormalizeHotkey)
+											.Distinct(StringComparer.OrdinalIgnoreCase)
+											.ToList();
+
+				if (hotkeys.Count == 0)
+				{
+					this.ClientHotkeys.Remove(client);
+					continue;
+				}
+
+				this.ClientHotkeys[client] = hotkeys;
+			}
+		}
+
 		private void EnsureCharacters()
 		{
 			this.Characters = this.Characters ?? new List<CharacterInfo>();
@@ -1490,6 +1634,7 @@ namespace EveOPreview.Configuration.Implementation
 			Collect(this.FlatLayout?.Keys);
 			Collect(this.ClientLayout?.Keys);
 			Collect(this.ClientHotkey?.Keys);
+			Collect(this.ClientHotkeys?.Keys);
 			Collect(this.DisableThumbnail?.Keys);
 			Collect(this.PriorityClients);
 			Collect(this.PerClientThumbnailSize?.Keys);

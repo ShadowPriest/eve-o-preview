@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using EveOPreview.Configuration;
@@ -43,8 +44,10 @@ namespace EveOPreview.View
 		void BringAboveOtherThumbnails();
 		void SetClickThrough(bool enable);
 
-		void RegisterHotkey(Keys hotkey);
-		void UnregisterHotkey();
+		/// <summary>A client can be reached by several hotkeys at once</summary>
+		void RegisterHotkeys(IEnumerable<Keys> hotkeys);
+
+		void UnregisterHotkeys();
 
 		void Refresh(bool forceRefresh);
 

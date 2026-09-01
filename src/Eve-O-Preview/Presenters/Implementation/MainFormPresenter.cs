@@ -58,9 +58,8 @@ namespace EveOPreview.Presenters
 			this.View.ThumbnailStateChanged = this.UpdateThumbnailState;
 			this.View.DocumentationLinkActivated = this.OpenDocumentationLink;
 			this.View.ApplicationExitRequested = this.ExitApplication;
-			this.View.HotkeyBindingAssigned = this.AssignHotkeyBinding;
-			this.View.HotkeyBindingRemoved = this.RemoveHotkeyBinding;
-			this.View.HotkeyBindingEdited = this.EditHotkeyBinding;
+			this.View.HotkeyBindingsChanged = this.ChangeHotkeyBindings;
+			this.View.HotkeyBindingsRemoved = this.RemoveHotkeyBindings;
 			this.View.CycleGroupClientsChanged = this.ChangeCycleGroupClients;
 			this.View.ThumbnailCycleGroupChanged = this.ChangeThumbnailCycleGroup;
 			this.View.CycleGroupAddRequested = this.AddCycleGroup;
@@ -482,21 +481,37 @@ namespace EveOPreview.Presenters
 
 		private void RefreshHotkeyBindings()
 		{
-			this.View.SetHotkeyBindings(this.GetHotkeyBindings());
+			// The list shows one entry per action with all of its combinations in a row
+			List<(string ActionId, string ActionName, IList<string> Hotkeys)> bindings = new List<(string, string, IList<string>)>();
+
+			foreach ((string actionId, string actionName, string hotkey) in this.GetHotkeyBindings())
+			{
+				int index = bindings.FindIndex(binding => binding.ActionId == actionId);
+
+				if (index < 0)
+				{
+					bindings.Add((actionId, actionName, new List<string> { hotkey }));
+					continue;
+				}
+
+				bindings[index].Hotkeys.Add(hotkey);
+			}
+
+			this.View.SetHotkeyBindings(bindings);
 		}
 
 		private List<(string ActionId, string ActionName, string Hotkey)> GetHotkeyBindings()
 		{
 			List<(string ActionId, string ActionName, string Hotkey)> bindings = new List<(string, string, string)>();
 
-			foreach (KeyValuePair<string, string> entry in this._configuration.GetClientHotkeys().OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+			foreach (KeyValuePair<string, IReadOnlyList<string>> entry in this._configuration.GetClientHotkeys().OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
 			{
-				if (string.IsNullOrEmpty(entry.Value))
+				// One row per combination: a client can be reached by several of them
+				foreach (string hotkey in entry.Value.Where(x => !string.IsNullOrEmpty(x)))
 				{
-					continue;
+					bindings.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + entry.Key,
+									string.Format(Strings.Hotkey_ActivateClient, entry.Key), hotkey));
 				}
-
-				bindings.Add((MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX + entry.Key, string.Format(Strings.Hotkey_ActivateClient, entry.Key), entry.Value));
 			}
 
 			foreach (CharacterGroup characterGroup in this._configuration.GetCharacterGroups())
@@ -542,45 +557,39 @@ namespace EveOPreview.Presenters
 		// Canonical hotkey form used to compare bindings: covers both keyboard and mouse ones
 		private string NormalizeHotkey(string hotkey)
 		{
-			if (MouseBinding.IsMouseBinding(hotkey))
-			{
-				return MouseBinding.Normalize(hotkey);
-			}
-
-			Keys keys = this._configuration.StringToKey(hotkey);
-			return keys == Keys.None ? hotkey : (new KeysConverter()).ConvertToInvariantString(keys);
+			return this._configuration.NormalizeHotkey(hotkey);
 		}
 
-		// Checks that the hotkey can be used and that it is not taken by another action.
-		// The binding identified by (ignoredActionId, ignoredHotkey) is excluded from the check
-		private bool ValidateHotkeyBinding(string actionId, string normalizedHotkey, string ignoredActionId, string ignoredHotkey)
+		// Checks that the combination is not taken by ANOTHER action. The bindings of the
+		// action itself are skipped: the editor hands over its complete set, so whatever it
+		// had before is about to be replaced
+		private bool ValidateHotkeyBinding(string actionId, string normalizedHotkey)
 		{
 			foreach ((string boundActionId, string boundActionName, string boundHotkey) in this.GetHotkeyBindings())
 			{
-				string boundNormalized = this.NormalizeHotkey(boundHotkey);
-
-				if ((boundActionId == ignoredActionId) && (boundNormalized == ignoredHotkey))
+				if (boundActionId == actionId)
 				{
 					continue;
 				}
 
-				if (boundNormalized != normalizedHotkey)
+				if (this.NormalizeHotkey(boundHotkey) != normalizedHotkey)
 				{
 					continue;
 				}
 
-				this.View.SetHotkeyStatus(boundActionId == actionId ? Strings.Hotkey_AlreadyAssigned : string.Format(Strings.Hotkey_UsedBy, boundActionName));
+				this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_UsedBy, boundActionName));
 				return false;
 			}
 
 			return true;
 		}
 
-		private bool TryAddHotkeyToConfig(string actionId, string normalizedHotkey)
+		/// <summary>Stores the complete set of combinations of the action</summary>
+		private bool ReplaceActionHotkeys(string actionId, IList<string> hotkeys)
 		{
 			if (actionId.StartsWith(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX, StringComparison.Ordinal))
 			{
-				this._configuration.SetClientHotkey(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX.Length), normalizedHotkey);
+				this._configuration.SetClientHotkeys(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX.Length), hotkeys);
 				return true;
 			}
 
@@ -593,29 +602,25 @@ namespace EveOPreview.Presenters
 					return false;
 				}
 
-				characterGroup.Hotkeys.RemoveAll(string.IsNullOrEmpty);
-				characterGroup.Hotkeys.Add(normalizedHotkey);
+				MainFormPresenter.ReplaceHotkeyList(characterGroup.Hotkeys, hotkeys);
 				return true;
 			}
 
 			if (actionId == MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL)
 			{
-				this._configuration.MinimizeAllClientsHotkeys.RemoveAll(string.IsNullOrEmpty);
-				this._configuration.MinimizeAllClientsHotkeys.Add(normalizedHotkey);
+				MainFormPresenter.ReplaceHotkeyList(this._configuration.MinimizeAllClientsHotkeys, hotkeys);
 				return true;
 			}
 
 			if (actionId == MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS)
 			{
-				this._configuration.ToggleAllPreviewsHotkeys.RemoveAll(string.IsNullOrEmpty);
-				this._configuration.ToggleAllPreviewsHotkeys.Add(normalizedHotkey);
+				MainFormPresenter.ReplaceHotkeyList(this._configuration.ToggleAllPreviewsHotkeys, hotkeys);
 				return true;
 			}
 
 			if (actionId == MainFormPresenter.HOTKEY_ACTION_CLICK_THROUGH)
 			{
-				this._configuration.ClickThroughHotkeys.RemoveAll(string.IsNullOrEmpty);
-				this._configuration.ClickThroughHotkeys.Add(normalizedHotkey);
+				MainFormPresenter.ReplaceHotkeyList(this._configuration.ClickThroughHotkeys, hotkeys);
 				return true;
 			}
 
@@ -628,48 +633,17 @@ namespace EveOPreview.Presenters
 					return false;
 				}
 
-				List<string> hotkeys = isForward ? group.ForwardHotkeys : group.BackwardHotkeys;
-				hotkeys.RemoveAll(string.IsNullOrEmpty);
-				hotkeys.Add(normalizedHotkey);
+				MainFormPresenter.ReplaceHotkeyList(isForward ? group.ForwardHotkeys : group.BackwardHotkeys, hotkeys);
 				return true;
 			}
 
 			return false;
 		}
 
-		private void RemoveHotkeyFromConfig(string actionId, string normalizedHotkey)
+		private static void ReplaceHotkeyList(List<string> stored, IList<string> hotkeys)
 		{
-			if (actionId.StartsWith(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX, StringComparison.Ordinal))
-			{
-				this._configuration.RemoveClientHotkey(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_CLIENT_PREFIX.Length));
-			}
-			else if (actionId.StartsWith(MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX, StringComparison.Ordinal))
-			{
-				CharacterGroup characterGroup = this._configuration.GetCharacterGroupById(actionId.Substring(MainFormPresenter.HOTKEY_ACTION_ACCOUNT_PREFIX.Length));
-
-				characterGroup?.Hotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
-			}
-			else if (actionId == MainFormPresenter.HOTKEY_ACTION_MINIMIZE_ALL)
-			{
-				this._configuration.MinimizeAllClientsHotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
-			}
-			else if (actionId == MainFormPresenter.HOTKEY_ACTION_TOGGLE_ALL_PREVIEWS)
-			{
-				this._configuration.ToggleAllPreviewsHotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
-			}
-			else if (actionId == MainFormPresenter.HOTKEY_ACTION_CLICK_THROUGH)
-			{
-				this._configuration.ClickThroughHotkeys.RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
-			}
-			else if (MainFormPresenter.TryParseCycleGroupActionId(actionId, out bool isForward, out string groupName))
-			{
-				CycleGroup group = this.FindCycleGroup(groupName);
-
-				if (group != null)
-				{
-					(isForward ? group.ForwardHotkeys : group.BackwardHotkeys).RemoveAll(x => this.NormalizeHotkey(x) == normalizedHotkey);
-				}
-			}
+			stored.Clear();
+			stored.AddRange(hotkeys);
 		}
 
 		private bool IsUsableHotkey(string hotkey)
@@ -677,67 +651,57 @@ namespace EveOPreview.Presenters
 			return MouseBinding.IsMouseBinding(hotkey) || (this._configuration.StringToKey(hotkey) != Keys.None);
 		}
 
-		private async void AssignHotkeyBinding(string actionId, string hotkey)
+		/// <summary>
+		/// The editor hands over the complete set of combinations of one action, so the
+		/// stored ones are replaced rather than added to
+		/// </summary>
+		private async void ChangeHotkeyBindings(string actionId, IList<string> hotkeys)
 		{
-			if (!this.IsUsableHotkey(hotkey))
+			List<string> normalized = new List<string>();
+
+			foreach (string hotkey in hotkeys ?? new List<string>())
 			{
-				this.View.SetHotkeyStatus(Strings.Hotkey_Unsupported);
-				return;
+				if (!this.IsUsableHotkey(hotkey))
+				{
+					this.View.SetHotkeyStatus(Strings.Hotkey_Unsupported);
+					return;
+				}
+
+				string value = this.NormalizeHotkey(hotkey);
+
+				if (normalized.Contains(value, StringComparer.OrdinalIgnoreCase))
+				{
+					this.View.SetHotkeyStatus(Strings.Hotkey_AlreadyAssigned);
+					return;
+				}
+
+				// Nothing that another action already answers to
+				if (!this.ValidateHotkeyBinding(actionId, value))
+				{
+					return;
+				}
+
+				normalized.Add(value);
 			}
 
-			string normalized = this.NormalizeHotkey(hotkey);
-
-			if (!this.ValidateHotkeyBinding(actionId, normalized, null, null))
-			{
-				return;
-			}
-
-			if (!this.TryAddHotkeyToConfig(actionId, normalized))
+			if (!this.ReplaceActionHotkeys(actionId, normalized))
 			{
 				return;
 			}
 
 			await this.ApplyHotkeySettings();
-			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Assigned, normalized));
+			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Assigned, string.Join(", ", normalized)));
 		}
 
-		private async void EditHotkeyBinding(string oldActionId, string oldHotkey, string newActionId, string newHotkey)
+		private async void RemoveHotkeyBindings(string actionId)
 		{
-			if (!this.IsUsableHotkey(newHotkey))
+			if (!this.ReplaceActionHotkeys(actionId, new List<string>()))
 			{
-				this.View.SetHotkeyStatus(Strings.Hotkey_Unsupported);
-				return;
-			}
-
-			string normalizedOld = this.NormalizeHotkey(oldHotkey);
-			string normalizedNew = this.NormalizeHotkey(newHotkey);
-
-			if (!this.ValidateHotkeyBinding(newActionId, normalizedNew, oldActionId, normalizedOld))
-			{
-				return;
-			}
-
-			this.RemoveHotkeyFromConfig(oldActionId, normalizedOld);
-
-			if (!this.TryAddHotkeyToConfig(newActionId, normalizedNew))
-			{
-				// The removal has already happened; still apply it to keep the UI consistent
-				await this.ApplyHotkeySettings();
 				return;
 			}
 
 			await this.ApplyHotkeySettings();
-			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Updated, normalizedNew));
-		}
-
-		private async void RemoveHotkeyBinding(string actionId, string hotkey)
-		{
-			string normalized = this.NormalizeHotkey(hotkey);
-
-			this.RemoveHotkeyFromConfig(actionId, normalized);
-
-			await this.ApplyHotkeySettings();
-			this.View.SetHotkeyStatus(string.Format(Strings.Hotkey_Removed, normalized));
+			this.View.SetHotkeyStatus(Strings.Hotkey_RemovedAll);
 		}
 
 		private async Task ApplyHotkeySettings()
